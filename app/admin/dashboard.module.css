@@ -491,192 +491,212 @@
 }
 
 /* ==========================================================================
-   E-CARD PREVIEW CONTAINER (Matching Canvas Download 1:1)
+   MINIMALIST & CLEAN US-STYLE E-CARD (Matching website design language)
    ========================================================================== */
 .ecardFrame {
   width: 100%;
-  max-width: 460px;
-  background: linear-gradient(175deg, #FFFDF8 0%, #F5F9F2 50%, #FFF9EB 100%);
-  border-radius: 28px;
-  border: 8px solid #E8DFCB;
-  box-shadow: 0 16px 40px rgba(41, 75, 53, 0.16),
-              inset 0 0 0 2px #789B63;
-  padding: 24px 22px 28px;
+  max-width: 440px;
+  background: #FFFFFF;
+  border-radius: 20px;
+  border: 1px solid #DCE8D2;
+  box-shadow: 0 12px 32px rgba(41, 75, 53, 0.08);
+  padding: 36px 28px 32px;
   text-align: center;
   position: relative;
   overflow: hidden;
 }
 
-/* Decorative Bamboo Stalks on Left & Right */
-.ecardStalkLeft {
+/* Bamboo Tree on left and right borders */
+.ecardBambooTreeLeft {
   position: absolute;
-  left: -6px;
-  top: 18%;
-  opacity: 0.45;
+  left: 2px;
+  top: 15%;
+  opacity: 0.35;
   pointer-events: none;
 }
 
-.ecardStalkRight {
+.ecardBambooTreeRight {
   position: absolute;
-  right: -6px;
-  top: 28%;
-  opacity: 0.45;
+  right: 2px;
+  top: 25%;
+  opacity: 0.35;
   transform: scaleX(-1);
   pointer-events: none;
 }
 
-/* Top VIP Pill Badge */
-.ecardTopBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-heading);
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  background: linear-gradient(135deg, #FFF2D1 0%, #FFE5A3 100%);
-  color: #7A5712;
-  padding: 6px 18px;
-  border-radius: var(--radius-full);
-  border: 1.5px solid #D9B66F;
-  box-shadow: 0 4px 10px rgba(217, 182, 111, 0.3);
-  margin-bottom: 12px;
+/* Subtle background panda paw prints */
+.ecardBgPaw {
+  position: absolute;
+  color: #789B63;
+  opacity: 0.12;
+  pointer-events: none;
+  font-size: 1.4rem;
+  user-select: none;
 }
 
-/* Center Panda Illustration Mascot */
+.ecardPawTopLeft {
+  top: 40px;
+  left: 36px;
+  transform: rotate(-20deg);
+}
+
+.ecardPawTopRight {
+  top: 50px;
+  right: 38px;
+  transform: rotate(25deg);
+}
+
+.ecardPawBottomLeft {
+  bottom: 60px;
+  left: 32px;
+  transform: rotate(15deg);
+}
+
+.ecardPawBottomRight {
+  bottom: 70px;
+  right: 34px;
+  transform: rotate(-20deg);
+}
+
+/* Mascot & Celebratory Elements Wrap */
 .ecardMascotWrap {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 8px;
+  gap: 16px;
+  margin-bottom: 16px;
   position: relative;
 }
 
-/* Main Event Titles */
-.ecardEventSubtitle {
-  font-family: var(--font-heading);
-  font-size: 0.82rem;
+.ecardCelebrationBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #F4F9F1;
+  border: 1px solid #DCE8D2;
+  font-size: 1.35rem;
+  box-shadow: 0 4px 10px rgba(41, 75, 53, 0.06);
+}
+
+/* Elegant Celebration Invite Header */
+.ecardInviteLead {
+  font-family: var(--font-hand);
+  font-size: 1.65rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
   color: #5D8049;
   margin-bottom: 2px;
+  line-height: 1.2;
 }
 
 .ecardEventTitle {
   font-family: var(--font-heading);
-  font-size: 1.65rem;
-  font-weight: 800;
-  color: var(--deep-forest-green);
-  line-height: 1.2;
-  margin-bottom: 16px;
-  text-shadow: 0 1px 2px rgba(41, 75, 53, 0.08);
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #294B35;
+  line-height: 1.25;
+  margin: 0 0 18px;
 }
 
 .ecardEventTitle span {
   color: #B58422;
 }
 
-/* Guest Name Showcase Box */
-.ecardGuestBox {
-  background: rgba(255, 255, 255, 0.95);
-  border: 2px solid #789B63;
-  border-radius: 18px;
-  padding: 14px 18px;
-  margin: 0 auto 16px;
-  box-shadow: 0 8px 22px rgba(41, 75, 53, 0.08);
-  position: relative;
+/* Clean Guest Salutation */
+.ecardGuestSection {
+  margin-bottom: 20px;
 }
 
 .ecardGuestGreeting {
-  font-family: var(--font-hand);
-  font-size: 1.45rem;
-  color: #6C8E58;
-  margin: 0 0 2px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8C6A1E;
+  margin-bottom: 4px;
   display: block;
 }
 
 .ecardGuestName {
   font-family: var(--font-heading);
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: var(--deep-forest-green);
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #252525;
   margin: 0;
-  letter-spacing: -0.01em;
 }
 
-/* Friendly Invitation Verse */
 .ecardInvitationText {
-  font-size: 0.9rem;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
   color: #4A5B4E;
-  line-height: 1.5;
-  margin-bottom: 16px;
-  padding: 0 8px;
+  line-height: 1.55;
+  margin: 0 auto 24px;
+  max-width: 360px;
 }
 
-/* Party Details Card Box */
+/* Modern, Clean Event Details Box */
 .ecardDetailsBox {
-  background: #FFFFFF;
-  border: 1.5px dashed #789B63;
-  border-radius: 16px;
-  padding: 14px 16px;
-  margin-bottom: 14px;
+  background: #F9FCF8;
+  border: 1px solid #E1EBE0;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 24px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(41, 75, 53, 0.05);
+  gap: 10px;
+  text-align: left;
 }
 
 .ecardDetailRow {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--deep-forest-green);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #294B35;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .ecardDetailRow svg {
-  color: #5D8049;
+  color: #789B63;
   flex-shrink: 0;
 }
 
 .ecardCodeRow {
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px dashed #dce8d2;
+  padding-top: 10px;
+  border-top: 1px solid #EAEFE7;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #6E7E73;
+  font-weight: 600;
 }
 
 .ecardCodePill {
   font-family: monospace;
   font-size: 0.95rem;
-  font-weight: 800;
-  color: #8C6A1E;
-  background: #FFF4DC;
-  border: 1px solid #E4C882;
-  padding: 3px 12px;
+  font-weight: 700;
+  color: #294B35;
+  background: #EAF3E5;
+  padding: 3px 10px;
   border-radius: 6px;
   letter-spacing: 0.05em;
 }
 
-/* Footers */
+/* Simple, warm sign-off */
 .ecardFooterLove {
   font-family: var(--font-hand);
-  font-size: 1.4rem;
-  color: #B58422;
+  font-size: 1.5rem;
+  color: #5D8049;
   margin-bottom: 4px;
 }
 
 .ecardFootnote {
-  font-size: 0.75rem;
-  color: #839788;
-  font-weight: 500;
+  font-size: 0.78rem;
+  color: #8E9E93;
 }
 
 .modalFooter {
@@ -690,26 +710,23 @@
 }
 
 .downloadBtn {
-  background: linear-gradient(135deg, #3C8D40 0%, #294B35 100%);
+  background: #294B35;
   color: #ffffff;
   font-family: var(--font-heading);
   font-size: 0.92rem;
   font-weight: 700;
   padding: 10px 20px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 14px rgba(41, 75, 53, 0.25);
   transition: all var(--transition-fast);
 }
 
 .downloadBtn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(41, 75, 53, 0.35);
-  background: linear-gradient(135deg, #449d49 0%, #22402c 100%);
+  background: #3C8D40;
 }
 
 @keyframes fadeIn {

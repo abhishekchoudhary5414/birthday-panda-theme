@@ -12,6 +12,7 @@
     "@neondatabase/serverless": "^1.2.1",
     "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.4",
+    "html-to-image": "^1.11.13",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.16.0",
     "next": "^15.1.0",

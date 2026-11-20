@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { toPng } from 'html-to-image';
 import {
   Shield,
   RefreshCw,
@@ -72,6 +73,8 @@ export default function AdminDashboardPage() {
 
   // Selected guest for eCard preview modal
   const [selectedEcardGuest, setSelectedEcardGuest] = useState<Guest | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const ecardRef = useRef<HTMLDivElement>(null);
 
   // Load guests and stats
   const fetchGuests = useCallback(async () => {
@@ -312,6 +315,128 @@ export default function AdminDashboardPage() {
     ctx.restore();
   };
 
+  // Helper to draw a panda paw print
+  const drawPandaPawCanvas = (ctx: CanvasRenderingContext2D, x: number, y: number, size = 18, angle = 0, color = 'rgba(120, 155, 99, 0.35)') => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate((angle * Math.PI) / 180);
+    ctx.fillStyle = color;
+
+    // Main pad
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size, size * 0.8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 4 Toes
+    const toeR = size * 0.32;
+    const toeOffsets = [
+      { dx: -size * 0.8, dy: -size * 0.8 },
+      { dx: -size * 0.3, dy: -size * 1.1 },
+      { dx: size * 0.3, dy: -size * 1.1 },
+      { dx: size * 0.8, dy: -size * 0.8 },
+    ];
+    toeOffsets.forEach((t) => {
+      ctx.beginPath();
+      ctx.arc(t.dx, t.dy, toeR, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.restore();
+  };
+
+  // Helper to draw festive colorful party balloons
+  const drawBalloonsCanvas = (ctx: CanvasRenderingContext2D, x: number, y: number, isRight = false) => {
+    ctx.save();
+    ctx.translate(x, y);
+    if (isRight) ctx.scale(-1, 1);
+
+    const balloons = [
+      { dx: 0, dy: 0, r: 28, color: '#789B63', knot: '#5D8049' },
+      { dx: 34, dy: -20, r: 24, color: '#D9B66F', knot: '#B38D40' },
+      { dx: -22, dy: -18, r: 22, color: '#FF9E9E', knot: '#E57373' },
+    ];
+
+    // Strings converging down
+    balloons.forEach((b) => {
+      ctx.strokeStyle = '#8E9E93';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 2]);
+      ctx.beginPath();
+      ctx.moveTo(b.dx, b.dy + b.r);
+      ctx.quadraticCurveTo(b.dx * 0.5, b.dy + b.r + 35, 10, 110);
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+
+    // Balloon bodies
+    balloons.forEach((b) => {
+      ctx.fillStyle = b.color;
+      ctx.beginPath();
+      ctx.ellipse(b.dx, b.dy, b.r * 0.85, b.r, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Knot
+      ctx.fillStyle = b.knot;
+      ctx.beginPath();
+      ctx.moveTo(b.dx - 4, b.dy + b.r);
+      ctx.lineTo(b.dx + 4, b.dy + b.r);
+      ctx.lineTo(b.dx, b.dy + b.r + 6);
+      ctx.closePath();
+      ctx.fill();
+
+      // Soft Highlight
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(b.dx - b.r * 0.35, b.dy - b.r * 0.35, b.r * 0.28, b.r * 0.16, -0.6, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.restore();
+  };
+
+  // Helper to draw cute birthday gift boxes
+  const drawGiftBoxCanvas = (ctx: CanvasRenderingContext2D, x: number, y: number, boxW: number, boxH: number, boxColor: string, ribbonColor: string) => {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Box Shadow
+    ctx.fillStyle = 'rgba(41, 75, 53, 0.15)';
+    ctx.beginPath();
+    ctx.ellipse(boxW / 2, boxH + 4, boxW * 0.6, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Box base
+    ctx.fillStyle = boxColor;
+    ctx.beginPath();
+    ctx.roundRect(0, 0, boxW, boxH, [6]);
+    ctx.fill();
+
+    // Box Lid
+    const lidW = boxW + 8;
+    const lidH = 12;
+    ctx.beginPath();
+    ctx.roundRect(-4, -4, lidW, lidH, [4]);
+    ctx.fill();
+
+    // Vertical Ribbon
+    ctx.fillStyle = ribbonColor;
+    ctx.fillRect(boxW / 2 - 4, -4, 8, boxH + 4);
+
+    // Horizontal Ribbon
+    ctx.fillRect(0, boxH / 2 - 3, boxW, 6);
+
+    // Ribbon Bow
+    ctx.beginPath();
+    ctx.arc(boxW / 2 - 7, -8, 6, 0, Math.PI * 2);
+    ctx.arc(boxW / 2 + 7, -8, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(boxW / 2, -7, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  };
+
   // Helper to draw decorative bamboo stalks along the side
   const drawBambooSide = (ctx: CanvasRenderingContext2D, x: number, isRight = false) => {
     ctx.save();
@@ -356,157 +481,30 @@ export default function AdminDashboardPage() {
     ctx.restore();
   };
 
-  // Handle eCard download as high-res PNG image matching the preview 1:1
-  const handleDownloadEcard = (guest: Guest) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 900;
-    canvas.height = 1200;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  // Direct DOM-to-PNG download ensuring exact 1:1 match with on-screen preview
+  const handleDownloadEcard = async (guest: Guest) => {
+    if (!ecardRef.current || isDownloading) return;
 
-    // 1. Soft Warm Cream & Bamboo Gradient Background
-    const grad = ctx.createLinearGradient(0, 0, 0, 1200);
-    grad.addColorStop(0, '#FFFDF8');
-    grad.addColorStop(0.5, '#F5F9F2');
-    grad.addColorStop(1, '#FFF9EB');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 900, 1200);
+    try {
+      setIsDownloading(true);
+      // Generate crystal-clear PNG directly from preview DOM element
+      const dataUrl = await toPng(ecardRef.current, {
+        pixelRatio: 2.5, // High resolution output
+        cacheBust: true,
+        backgroundColor: '#FFFFFF',
+      });
 
-    // Subtle bamboo polka/texture dots
-    ctx.fillStyle = 'rgba(220, 232, 210, 0.4)';
-    for (let x = 60; x < 840; x += 40) {
-      for (let y = 60; y < 1140; y += 40) {
-        ctx.beginPath();
-        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `Ditvi-1st-Birthday-Invitation-${guest.name.replace(/\s+/g, '_')}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Failed to export eCard image:', err);
+    } finally {
+      setIsDownloading(false);
     }
-
-    // 2. Outer Luxury Golden Sand Border & Bamboo Green Inner Frame
-    ctx.strokeStyle = '#E8DFCB';
-    ctx.lineWidth = 16;
-    ctx.beginPath();
-    ctx.roundRect(25, 25, 850, 1150, [32]);
-    ctx.stroke();
-
-    ctx.strokeStyle = '#789B63';
-    ctx.lineWidth = 3.5;
-    ctx.beginPath();
-    ctx.roundRect(42, 42, 816, 1116, [24]);
-    ctx.stroke();
-
-    // Corner Accents
-    ctx.strokeStyle = '#D9B66F';
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(55, 55, 30, 30);
-    ctx.strokeRect(815, 55, 30, 30);
-    ctx.strokeRect(55, 1115, 30, 30);
-    ctx.strokeRect(815, 1115, 30, 30);
-
-    // 3. Side Bamboo Stalks
-    drawBambooSide(ctx, 42, false);
-    drawBambooSide(ctx, 858, true);
-
-    // 4. Top VIP Badge Pill
-    ctx.fillStyle = '#FFF2D1';
-    ctx.beginPath();
-    ctx.roundRect(240, 80, 420, 52, [26]);
-    ctx.fill();
-    ctx.strokeStyle = '#D9B66F';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillStyle = '#7A5712';
-    ctx.textAlign = 'center';
-    ctx.fillText('✨  OFFICIAL VIP BIRTHDAY INVITATION  ✨', 450, 113);
-
-    // 5. Cute Party Mascot Illustration
-    drawCutePandaOnCanvas(ctx, 450, 255, 1.35);
-
-    // 6. Celebration Header Title
-    ctx.font = 'bold 22px sans-serif';
-    ctx.fillStyle = '#5D8049';
-    ctx.fillText('CELEBRATING 1 WONDERFUL YEAR OF SMILES', 450, 400);
-
-    ctx.font = 'bold 44px sans-serif';
-    ctx.fillStyle = '#294B35';
-    ctx.fillText("Ditvi's 1st Birthday Bash", 450, 450);
-
-    // 7. Guest Name Showcase Box
-    ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath();
-    ctx.roundRect(120, 485, 660, 120, [22]);
-    ctx.fill();
-    ctx.strokeStyle = '#789B63';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    // Guest greeting cursive
-    ctx.font = 'italic 30px cursive, sans-serif';
-    ctx.fillStyle = '#6C8E58';
-    ctx.fillText('Dearest Cordially Invited:', 450, 530);
-
-    // Guest full name
-    ctx.font = 'bold 46px sans-serif';
-    ctx.fillStyle = '#294B35';
-    const fullName = `${guest.title ? guest.title + ' ' : ''}${guest.name}`;
-    ctx.fillText(fullName, 450, 582);
-
-    // 8. Invitation Heartfelt Verse
-    ctx.font = '22px sans-serif';
-    ctx.fillStyle = '#4A5B4E';
-    ctx.fillText('You are warmly invited to celebrate 365 days of cute panda giggles,', 450, 645);
-    ctx.fillText('wobbly baby steps, sweet treats, and bamboo forest adventures!', 450, 680);
-
-    // 9. Party Details Box (matching UI)
-    ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath();
-    ctx.roundRect(140, 715, 620, 270, [20]);
-    ctx.fill();
-    ctx.setLineDash([8, 6]);
-    ctx.strokeStyle = '#789B63';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-    ctx.setLineDash([]); // Reset line dash
-
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 26px sans-serif';
-    ctx.fillStyle = '#294B35';
-    ctx.fillText('📅  Saturday, December 12, 2026', 450, 775);
-    ctx.fillText('⏰  3:30 PM – 7:30 PM CST', 450, 830);
-    ctx.fillText('📍  The Bamboo Pavilion, Austin, TX', 450, 885);
-
-    // Inner Pass Code Pill
-    ctx.fillStyle = '#FFF4DC';
-    ctx.beginPath();
-    ctx.roundRect(280, 920, 340, 45, [10]);
-    ctx.fill();
-    ctx.strokeStyle = '#E4C882';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    ctx.font = 'bold 22px monospace';
-    ctx.fillStyle = '#8C6A1E';
-    ctx.fillText(`VIP Pass: ${guest.invite_code}`, 450, 951);
-
-    // 10. Footer Love & Signature
-    ctx.font = 'italic 36px cursive, sans-serif';
-    ctx.fillStyle = '#B58422';
-    ctx.fillText('With Love & Happiness, Ditvi & Family 🌿', 450, 1040);
-
-    ctx.font = '18px sans-serif';
-    ctx.fillStyle = '#839788';
-    ctx.fillText('Please present this eCard at entrance for check-in', 450, 1090);
-
-    // 11. Trigger Download
-    const dataUrl = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = `Ditvi-1st-Birthday-eCard-${guest.name.replace(/\s+/g, '_')}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   };
 
   return (
@@ -879,72 +877,74 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className={styles.modalBody}>
-              <div className={styles.ecardFrame}>
-                {/* Decorative Bamboo Stalks */}
-                <div className={styles.ecardStalkLeft} aria-hidden="true">
-                  <BambooStalkDecoration height={320} />
+              <div ref={ecardRef} className={styles.ecardFrame}>
+                {/* Bamboo Trees on sides */}
+                <div className={styles.ecardBambooTreeLeft} aria-hidden="true">
+                  <BambooStalkDecoration height={360} />
                 </div>
-                <div className={styles.ecardStalkRight} aria-hidden="true">
-                  <BambooStalkDecoration height={320} />
-                </div>
-
-                {/* Top VIP Badge */}
-                <div>
-                  <span className={styles.ecardTopBadge}>
-                    <Sparkles size={13} color="#B58422" />
-                    <span>Official VIP Birthday Invitation</span>
-                  </span>
+                <div className={styles.ecardBambooTreeRight} aria-hidden="true">
+                  <BambooStalkDecoration height={360} />
                 </div>
 
-                {/* Cute Panda Mascot */}
+                {/* Background Panda Paws */}
+                <span className={`${styles.ecardBgPaw} ${styles.ecardPawTopLeft}`} aria-hidden="true">🐾</span>
+                <span className={`${styles.ecardBgPaw} ${styles.ecardPawTopRight}`} aria-hidden="true">🐾</span>
+                <span className={`${styles.ecardBgPaw} ${styles.ecardPawBottomLeft}`} aria-hidden="true">🐾</span>
+                <span className={`${styles.ecardBgPaw} ${styles.ecardPawBottomRight}`} aria-hidden="true">🐾</span>
+
+                {/* Clean Top Tag */}
+           
+
+                {/* Friendly Panda Mascot flanked by Balloon & Birthday Cake */}
                 <div className={styles.ecardMascotWrap}>
-                  <PartyPanda size={145} />
+                  <div className={styles.ecardCelebrationBadge} title="Balloons">
+                    🎈
+                  </div>
+                  <PartyPanda size={125} />
+                  <div className={styles.ecardCelebrationBadge} title="Birthday Cake">
+                    🎂
+                  </div>
                 </div>
 
-                {/* Event Titles */}
-                <div className={styles.ecardEventSubtitle}>Celebrating 1 Wonderful Year of Smiles</div>
+                {/* Event Heading - Requested Wording & Styling */}
+                <div className={styles.ecardInviteLead}>You Are Invited to</div>
                 <h2 className={styles.ecardEventTitle}>
-                  Ditvi&apos;s 1st Birthday <span>Bash</span>
+                  Ditvi&apos;s 1st Birthday <span>Party</span>
                 </h2>
 
-                {/* Guest Box */}
-                <div className={styles.ecardGuestBox}>
-                  <span className={styles.ecardGuestGreeting}>Dearest Cordially Invited:</span>
+                {/* Guest Personalization */}
+                <div className={styles.ecardGuestSection}>
+                  <span className={styles.ecardGuestGreeting}>Invited Guest</span>
                   <h3 className={styles.ecardGuestName}>
                     {selectedEcardGuest.title ? `${selectedEcardGuest.title} ` : ''}{selectedEcardGuest.name}
                   </h3>
                 </div>
 
                 <p className={styles.ecardInvitationText}>
-                  You are warmly invited to celebrate 365 days of cute panda giggles, wobbly baby steps, sweet treats, and bamboo forest adventures!
+                  Please join us for a fun afternoon celebrating Ditvi&apos;s first birthday with family, friends, and treats!
                 </p>
 
-                {/* Party Details Card */}
+                {/* Clean Modern Event Details Card */}
                 <div className={styles.ecardDetailsBox}>
                   <div className={styles.ecardDetailRow}>
-                    <Calendar size={16} />
+                    <Calendar size={18} />
                     <span>Saturday, December 12, 2026</span>
                   </div>
                   <div className={styles.ecardDetailRow}>
-                    <Clock size={16} />
+                    <Clock size={18} />
                     <span>3:30 PM &ndash; 7:30 PM CST</span>
                   </div>
                   <div className={styles.ecardDetailRow}>
-                    <MapPin size={16} />
-                    <span>The Bamboo Pavilion, Austin, TX</span>
-                  </div>
-                  <div className={styles.ecardCodeRow}>
-                    <KeyRound size={15} color="#8C6A1E" />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#6e7e73' }}>VIP Pass:</span>
-                    <span className={styles.ecardCodePill}>{selectedEcardGuest.invite_code}</span>
+                    <MapPin size={18} />
+                    <span>The Bamboo Pavilion &bull; Austin, TX</span>
                   </div>
                 </div>
 
                 <div className={styles.ecardFooterLove}>
-                  With Love &amp; Happiness, Ditvi &amp; Family 🌿
+                  Warmly, Ditvi &amp; Family 🌿
                 </div>
                 <div className={styles.ecardFootnote}>
-                  Please present this eCard at entrance for check-in
+                  Please present this invitation code at arrival
                 </div>
               </div>
             </div>
@@ -959,11 +959,12 @@ export default function AdminDashboardPage() {
               </button>
               <button
                 type="button"
+                disabled={isDownloading}
                 className={styles.downloadBtn}
                 onClick={() => handleDownloadEcard(selectedEcardGuest)}
               >
                 <Download size={16} />
-                <span>Download eCard (PNG)</span>
+                <span>{isDownloading ? 'Generating Image...' : 'Download eCard (PNG)'}</span>
               </button>
             </div>
           </div>
