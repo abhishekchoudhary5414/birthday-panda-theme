@@ -1,0 +1,306 @@
+.gifts-section {
+          background: #FFFFFF;
+          position: relative;
+        }
+
+        .registry-demo-banner {
+          max-width: 800px;
+          margin: 0 auto 30px;
+          background: rgba(241, 230, 211, 0.6);
+          border: 1px solid var(--accent-gold);
+          border-radius: var(--radius-md);
+          padding: 12px 18px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 0.88rem;
+          color: var(--text-primary);
+        }
+
+        .banner-icon {
+          color: #B58422;
+          flex-shrink: 0;
+        }
+
+        .filter-pills-row {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 10px;
+          margin-bottom: 38px;
+        }
+
+        .filter-pill {
+          font-family: var(--font-heading);
+          font-size: 0.92rem;
+          font-weight: 600;
+          padding: 8px 18px;
+          border-radius: var(--radius-full);
+          background: var(--cream-bg);
+          color: var(--text-secondary);
+          border: 1px solid rgba(120, 155, 99, 0.25);
+          transition: all var(--transition-fast);
+        }
+
+        .filter-pill:hover {
+          background: var(--soft-sage);
+          color: var(--deep-forest-green);
+        }
+
+        .filter-pill.active {
+          background: var(--deep-forest-green);
+          color: #FFFFFF;
+          border-color: transparent;
+          box-shadow: 0 4px 12px rgba(41, 75, 53, 0.2);
+        }
+
+        /* Gifts Grid */
+        .gifts-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 28px;
+        }
+
+        .gift-card {
+          display: flex;
+          flex-direction: column;
+          padding: 20px;
+          background: #FFFFFF;
+        }
+
+        .gift-image-box {
+          position: relative;
+          width: 100%;
+          height: 220px;
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          margin-bottom: 16px;
+          background: var(--cream-bg);
+        }
+
+        .gift-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.4s ease;
+        }
+
+        .gift-card:hover .gift-img {
+          transform: scale(1.05);
+        }
+
+        .gift-status-badge {
+          position: absolute;
+          top: 10px;
+          left: 10px;
+          font-family: var(--font-heading);
+          font-size: 0.76rem;
+          font-weight: 700;
+          padding: 4px 10px;
+          border-radius: var(--radius-full);
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        .gift-status-badge.available {
+          background: rgba(120, 155, 99, 0.9);
+          color: #FFFFFF;
+        }
+
+        .gift-status-badge.reserved {
+          background: rgba(217, 182, 111, 0.95);
+          color: #2F2100;
+        }
+
+        .gift-price-tag {
+          position: absolute;
+          bottom: 10px;
+          right: 10px;
+          background: rgba(37, 37, 37, 0.75);
+          backdrop-filter: blur(4px);
+          color: #FFFFFF;
+          font-family: var(--font-heading);
+          font-size: 0.85rem;
+          font-weight: 700;
+          padding: 4px 10px;
+          border-radius: var(--radius-full);
+        }
+
+        .gift-body {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .gift-age-tag {
+          font-size: 0.78rem;
+          color: var(--bamboo-leaf);
+          font-weight: 700;
+          text-transform: uppercase;
+          margin-bottom: 6px;
+        }
+
+        .gift-title {
+          font-size: 1.25rem;
+          color: var(--deep-forest-green);
+          margin-bottom: 8px;
+          line-height: 1.3;
+        }
+
+        .gift-desc {
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+          line-height: 1.5;
+          margin-bottom: 18px;
+        }
+
+        .gift-footer {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: auto;
+        }
+
+        .btn-reserve {
+          flex: 1;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 10px 16px;
+          border-radius: var(--radius-full);
+          font-family: var(--font-heading);
+          font-size: 0.88rem;
+          font-weight: 700;
+          background: var(--soft-sage);
+          color: var(--deep-forest-green);
+          border: 1px solid var(--bamboo-green);
+          transition: all var(--transition-fast);
+        }
+
+        .btn-reserve:hover {
+          background: var(--bamboo-green);
+          color: #FFFFFF;
+        }
+
+        .btn-reserve.is-reserved {
+          background: var(--accent-gold);
+          color: #2F2100;
+          border-color: #B58422;
+        }
+
+        .btn-details {
+          padding: 10px 12px;
+          background: var(--cream-bg);
+          border: 1px solid rgba(120, 155, 99, 0.3);
+          border-radius: var(--radius-full);
+          color: var(--text-secondary);
+          transition: all var(--transition-fast);
+        }
+
+        .btn-details:hover {
+          background: var(--soft-sage);
+          color: var(--deep-forest-green);
+        }
+
+        /* Modal */
+        .modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(20, 30, 22, 0.7);
+          backdrop-filter: blur(6px);
+          z-index: 2100;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+        }
+
+        .modal-dialog {
+          background: #FFFFFF;
+          border-radius: var(--radius-lg);
+          max-width: 600px;
+          width: 100%;
+          overflow: hidden;
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+          animation: popIn 0.25s ease;
+        }
+
+        .modal-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 20px 24px;
+          border-bottom: 1px solid var(--soft-sage);
+        }
+
+        .modal-title {
+          font-size: 1.35rem;
+          color: var(--deep-forest-green);
+        }
+
+        .modal-close-btn {
+          font-size: 1.8rem;
+          line-height: 1;
+          color: var(--text-muted);
+          padding: 0 4px;
+        }
+
+        .modal-body {
+          padding: 24px;
+        }
+
+        .modal-img-box {
+          height: 240px;
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          margin-bottom: 20px;
+        }
+
+        .modal-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .modal-meta-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
+        .modal-price {
+          font-family: var(--font-heading);
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: var(--bamboo-green);
+        }
+
+        .modal-age {
+          font-size: 0.85rem;
+          color: var(--text-muted);
+          font-weight: 600;
+        }
+
+        .modal-desc {
+          font-size: 0.95rem;
+          color: var(--text-secondary);
+          line-height: 1.6;
+          margin-bottom: 24px;
+        }
+
+        .modal-actions {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        @media (max-width: 600px) {
+          .gifts-grid {
+            grid-template-columns: 1fr;
+          }
+          .modal-actions {
+            flex-direction: column;
+          }
+        }

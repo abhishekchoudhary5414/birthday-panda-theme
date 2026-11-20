@@ -1,0 +1,127 @@
+.ambient-background {
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          overflow: hidden;
+        }
+
+        .floating-leaves-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          pointer-events: none;
+          z-index: 99;
+          overflow: hidden;
+        }
+
+        .ambient-bamboo {
+          position: absolute;
+          opacity: 0.12;
+        }
+
+        .ambient-bamboo-left {
+          left: 1%;
+          top: 5%;
+        }
+
+        .ambient-bamboo-right {
+          right: 2%;
+          bottom: 1%;
+          transform: scaleX(-1);
+        }
+
+        .ambient-panda {
+          position: absolute;
+          opacity: 0.15;
+        }
+
+        .ambient-panda-top {
+          right: 8%;
+          top: 8%;
+          transform: rotate(12deg);
+        }
+
+        .ambient-panda-bottom {
+          left: 5%;
+          bottom: 2%;
+          transform: rotate(-8deg);
+        }
+
+        .ambient-panda-mid-left {
+          left: 18%;
+          top: 54%;
+          transform: rotate(-12deg);
+        }
+
+        .ambient-panda-mid-right {
+          right: 18%;
+          top: 48%;
+          transform: rotate(10deg);
+        }
+
+        .ambient-paw {
+          position: absolute;
+          color: #294b35;
+          filter: drop-shadow(0 2px 4px rgba(41, 75, 53, 0.08));
+          animation: pawSoftGlow 6s ease-in-out infinite alternate;
+          transition: transform 0.3s ease;
+        }
+
+        @keyframes pawSoftGlow {
+          0% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.08);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+
+        .floating-leaf-item {
+          position: absolute;
+          top: -40px;
+          animation-name: leafFall;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+          will-change: transform, opacity;
+        }
+
+        @media (max-width: 600px) {
+          .ambient-bamboo-left {
+            left: -20px;
+          }
+
+          .ambient-bamboo-right {
+            right: -24px;
+          }
+
+          .ambient-panda-top,
+          .ambient-panda-bottom,
+          .ambient-panda-mid-left,
+          .ambient-panda-mid-right {
+            display: none;
+          }
+
+        }
+
+        @keyframes leafFall {
+          0% {
+            transform: translateY(-40px) translateX(0) rotate(0deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.8;
+          }
+          85% {
+            opacity: 0.8;
+          }
+          100% {
+            transform: translateY(105vh) translateX(80px) rotate(380deg);
+            opacity: 0;
+          }
+        }

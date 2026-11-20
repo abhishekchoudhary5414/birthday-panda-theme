@@ -1,0 +1,230 @@
+.fortune-section {
+          background: #FFFFFF;
+          position: relative;
+        }
+
+        .fortune-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          max-width: 650px;
+          margin: 0 auto;
+        }
+
+        /* Jar Visual */
+        .fortune-jar-visual {
+          position: relative;
+          width: 220px;
+          height: 270px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin-bottom: 24px;
+        }
+
+        .fortune-jar-visual.shaking {
+          animation: jarShake 0.4s ease-in-out infinite;
+        }
+
+        @keyframes jarShake {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          25% { transform: translateY(-8px) rotate(-6deg); }
+          50% { transform: translateY(-3px) rotate(4deg); }
+          75% { transform: translateY(-6px) rotate(-4deg); }
+        }
+
+        /* Sticks */
+        .fortune-sticks-bundle {
+          position: absolute;
+          top: -24px;
+          display: flex;
+          justify-content: center;
+          gap: 10px;
+          z-index: 2;
+        }
+
+        .stick {
+          width: 12px;
+          height: 90px;
+          background: linear-gradient(180deg, #E6C587 0%, #C9A45C 100%);
+          border-radius: 6px 6px 0 0;
+          border: 1px solid #9C7830;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .s-1 { transform: rotate(-12deg); height: 80px; }
+        .s-2 { transform: rotate(-5deg); height: 95px; }
+        .s-3 { transform: rotate(0deg); height: 110px; background: linear-gradient(180deg, #FF6B6B 0%, #E6C587 30%); }
+        .s-4 { transform: rotate(6deg); height: 92px; }
+        .s-5 { transform: rotate(14deg); height: 84px; }
+
+        .fortune-jar-visual.shaking .active-draw {
+          animation: stickJump 0.4s ease-in-out infinite alternate;
+        }
+
+        @keyframes stickJump {
+          from { transform: translateY(0) rotate(0deg); }
+          to { transform: translateY(-18px) rotate(0deg); }
+        }
+
+        /* Bamboo Cylinder */
+        .bamboo-cylinder {
+          position: absolute;
+          bottom: 15px;
+          width: 160px;
+          height: 200px;
+          background: linear-gradient(90deg, #5B7B4B 0%, #789B63 40%, #8EB377 70%, #5B7B4B 100%);
+          border-radius: 12px;
+          border: 2px solid #3E5A31;
+          box-shadow: inset 0 4px 12px rgba(255, 255, 255, 0.25), 0 10px 25px rgba(41, 75, 53, 0.2);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          z-index: 5;
+        }
+
+        .bamboo-rim {
+          position: absolute;
+          top: -8px;
+          width: 174px;
+          height: 18px;
+          background: #4B683B;
+          border-radius: 9px;
+          border: 2px solid #2F4424;
+        }
+
+        .bamboo-knot {
+          position: absolute;
+          width: 166px;
+          height: 5px;
+          background: #4B683B;
+          border-radius: 2px;
+        }
+        .k-1 { top: 55px; }
+        .k-2 { bottom: 50px; }
+
+        .jar-emblem {
+          background: rgba(255, 249, 239, 0.95);
+          border: 2px solid var(--accent-gold);
+          border-radius: 50%;
+          width: 84px;
+          height: 84px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+          z-index: 6;
+        }
+
+        .emblem-char {
+          font-size: 1.8rem;
+          color: #DC3545;
+          font-weight: 700;
+          line-height: 1;
+        }
+
+        .emblem-text {
+          font-size: 0.62rem;
+          font-family: var(--font-heading);
+          font-weight: 700;
+          color: var(--deep-forest-green);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .jar-ground-shadow {
+          position: absolute;
+          bottom: 0;
+          width: 190px;
+          height: 20px;
+          background: radial-gradient(ellipse at center, rgba(41, 75, 53, 0.3) 0%, transparent 70%);
+          border-radius: 50%;
+        }
+
+        /* Controls */
+        .fortune-controls {
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .pick-btn {
+          font-size: 1.15rem;
+          padding: 16px 36px;
+        }
+
+        .draw-hint {
+          font-size: 0.88rem;
+          color: var(--text-muted);
+        }
+
+        /* Reveal Card */
+        .fortune-reveal-card {
+          width: 100%;
+          text-align: center;
+          padding: 34px 32px;
+          background: linear-gradient(135deg, #FFFFFF 0%, #FFFDF8 100%);
+          border: 2px solid var(--accent-gold);
+          box-shadow: 0 16px 36px rgba(217, 182, 111, 0.25);
+          animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card-ornament-top {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: 14px;
+        }
+
+        .fortune-theme-badge {
+          font-family: var(--font-heading);
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: #8C6A1E;
+          background: #FFF4DC;
+          padding: 4px 14px;
+          border-radius: var(--radius-full);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .fortune-emoji-circle {
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          background: var(--soft-sage);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 2rem;
+          margin: 0 auto 16px;
+          box-shadow: var(--shadow-sm);
+        }
+
+        .fortune-message-text {
+          font-family: var(--font-heading);
+          font-size: 1.45rem;
+          line-height: 1.4;
+          color: var(--deep-forest-green);
+          margin-bottom: 12px;
+        }
+
+        .fortune-signature {
+          font-size: 0.9rem;
+          color: var(--text-muted);
+          font-style: italic;
+          margin-bottom: 26px;
+        }
+
+        .fortune-card-actions {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }

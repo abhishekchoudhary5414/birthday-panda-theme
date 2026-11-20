@@ -1,0 +1,206 @@
+.timeline-section {
+          position: relative;
+          background: linear-gradient(180deg, transparent 0%, rgba(241, 230, 211, 0.4) 50%, transparent 100%);
+        }
+
+        .timeline-container {
+          position: relative;
+          max-width: 1000px;
+          margin: 40px auto 0;
+          padding: 20px 0;
+        }
+
+        /* Bamboo Stalk Line */
+        .bamboo-spine {
+          position: absolute;
+          left: 50%;
+          top: 0;
+          bottom: 0;
+          width: 12px;
+          background: repeating-linear-gradient(
+            to bottom,
+            var(--bamboo-green) 0px,
+            var(--bamboo-green) 90px,
+            var(--deep-forest-green) 90px,
+            var(--deep-forest-green) 96px
+          );
+          border-radius: var(--radius-full);
+          transform: translateX(-50%);
+          box-shadow: 0 0 12px rgba(120, 155, 99, 0.35);
+        }
+
+        .timeline-item {
+          display: flex;
+          position: relative;
+          margin-bottom: 60px;
+          width: 50%;
+        }
+
+        .timeline-item.left {
+          left: 0;
+          padding-right: 50px;
+          justify-content: flex-end;
+        }
+
+        .timeline-item.right {
+          left: 50%;
+          padding-left: 50px;
+          justify-content: flex-start;
+        }
+
+        /* Bamboo Node */
+        .bamboo-node {
+          position: absolute;
+          top: 32px;
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: #FFFFFF;
+          border: 4px solid var(--bamboo-green);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+          box-shadow: 0 4px 14px rgba(41, 75, 53, 0.18);
+        }
+
+        .timeline-item.left .bamboo-node {
+          right: -22px;
+        }
+
+        .timeline-item.right .bamboo-node {
+          left: -22px;
+        }
+
+        .bamboo-node-inner {
+          width: 26px;
+          height: 26px;
+          border-radius: 50%;
+          background: var(--soft-sage);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .node-number {
+          font-family: var(--font-heading);
+          font-size: 0.85rem;
+          font-weight: 700;
+          color: var(--deep-forest-green);
+        }
+
+        .node-leaf {
+          position: absolute;
+          width: 18px;
+          height: 9px;
+          background: var(--bamboo-leaf);
+          border-radius: 18px 0;
+          top: -6px;
+          right: -4px;
+          transform: rotate(20deg);
+        }
+
+        /* Card */
+        .timeline-content-card {
+          width: 100%;
+          max-width: 420px;
+          padding: 24px;
+        }
+
+        .card-top-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 14px;
+        }
+
+        .timeline-tag {
+          font-family: var(--font-heading);
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: var(--deep-forest-green);
+          background: var(--soft-sage);
+          padding: 4px 12px;
+          border-radius: var(--radius-full);
+        }
+
+        .timeline-date {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.82rem;
+          font-weight: 600;
+          color: var(--text-muted);
+        }
+
+        .timeline-img-box {
+          position: relative;
+          width: 100%;
+          height: 200px;
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          margin-bottom: 16px;
+          box-shadow: var(--shadow-sm);
+        }
+
+        .timeline-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform var(--transition-normal);
+        }
+
+        .timeline-content-card:hover .timeline-img {
+          transform: scale(1.04);
+        }
+
+        .timeline-badge-month {
+          position: absolute;
+          bottom: 10px;
+          left: 10px;
+          background: rgba(37, 37, 37, 0.75);
+          backdrop-filter: blur(4px);
+          color: #FFFFFF;
+          font-family: var(--font-heading);
+          font-size: 0.82rem;
+          font-weight: 700;
+          padding: 4px 12px;
+          border-radius: var(--radius-full);
+        }
+
+        .timeline-item-title {
+          font-size: 1.35rem;
+          color: var(--deep-forest-green);
+          margin-bottom: 8px;
+        }
+
+        .timeline-item-desc {
+          font-size: 0.94rem;
+          line-height: 1.6;
+          color: var(--text-secondary);
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+          .bamboo-spine {
+            left: 24px;
+          }
+
+          .timeline-item {
+            width: 100%;
+            left: 0 !important;
+            padding-left: 64px !important;
+            padding-right: 0 !important;
+            justify-content: flex-start !important;
+          }
+
+          .timeline-item.left .bamboo-node,
+          .timeline-item.right .bamboo-node {
+            left: 2px;
+            right: auto;
+          }
+
+          .timeline-content-card {
+            max-width: 100%;
+          }
+        }
