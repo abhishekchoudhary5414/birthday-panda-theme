@@ -119,6 +119,9 @@ export const Footer: React.FC = () => {
             <a href="#wishes" className={styles['footer-link']}>Wish Wall</a>
             <a href="#stream" className={styles['footer-link']}>Live Stream</a>
             <a href="#contact" className={styles['footer-link']}>Venue</a>
+            <a href="/admin/login" className={styles['footer-link']} style={{ color: 'var(--accent-gold)', fontWeight: 700 }}>
+              🔐 Admin
+            </a>
           </nav>
 
           <div className={styles['footer-hashtags']}>
@@ -135,7 +138,10 @@ export const Footer: React.FC = () => {
           </p>
 
           <p className={styles['footer-copyright']}>
-            &copy; 2026 The Chen Family. Designed for Liam&apos;s Birthday Guests.
+            &copy; 2026 The Chen Family. Designed for Ditvi&apos;s Birthday Guests. &bull;{' '}
+            <a href="/admin/login" style={{ color: 'var(--accent-gold)', textDecoration: 'underline', fontSize: '0.8rem' }}>
+              Admin Console
+            </a>
           </p>
 
           <button

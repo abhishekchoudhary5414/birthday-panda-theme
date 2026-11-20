@@ -1,0 +1,749 @@
+.dashboardContainer {
+  display: flex;
+  min-height: 100vh;
+  background: #f8faf7;
+  color: #252525;
+  font-family: var(--font-body);
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background: #ffffff;
+  border-right: 1px solid rgba(120, 155, 99, 0.2);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.sidebarHeader {
+  padding: 24px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(120, 155, 99, 0.15);
+}
+
+.sidebarLogoShield {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.sidebarTitle {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--deep-forest-green);
+}
+
+.sidebarNav {
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #4a5b4e;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  width: 100%;
+}
+
+.navItem:hover {
+  background: var(--soft-sage);
+  color: var(--deep-forest-green);
+}
+
+.navItem.active {
+  background: #eaf3e5;
+  color: var(--deep-forest-green);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--bamboo-green);
+}
+
+.navIcon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* Main Content Area */
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: #ffffff;
+  padding: 32px 40px;
+}
+
+.topBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  border-bottom: 1px solid rgba(120, 155, 99, 0.15);
+  padding-bottom: 20px;
+}
+
+.consoleHeaderTitle {
+  font-family: var(--font-heading);
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #2e6930;
+  margin-bottom: 4px;
+}
+
+.consoleSubtext {
+  font-size: 0.95rem;
+  color: #6e7e73;
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(120, 155, 99, 0.3);
+  background: #ffffff;
+  color: var(--deep-forest-green);
+  transition: all var(--transition-fast);
+}
+
+.topBtn:hover {
+  background: var(--soft-sage);
+}
+
+.topBtn.closeBtn:hover {
+  background: #ffe5e5;
+  border-color: #ffb8b8;
+  color: #d32f2f;
+}
+
+/* Guest Management Section */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #3b2a59;
+  margin-bottom: 24px;
+}
+
+.addGuestBox {
+  background: #ffffff;
+  border: 1px solid rgba(120, 155, 99, 0.25);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(41, 75, 53, 0.05);
+}
+
+.addGuestTitle {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2e6930;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.addGuestForm {
+  display: grid;
+  grid-template-columns: 110px 1.2fr 1fr 1fr auto;
+  gap: 12px;
+}
+
+.titleSelect {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #dce8d2;
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--deep-forest-green);
+  outline: none;
+  background: #fafcfa;
+  cursor: pointer;
+}
+
+.titleSelect:focus {
+  border-color: var(--bamboo-green);
+  background: #ffffff;
+}
+
+.inputField {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #dce8d2;
+  font-size: 0.92rem;
+  outline: none;
+  background: #fafcfa;
+}
+
+.inputField:focus {
+  border-color: var(--bamboo-green);
+  background: #ffffff;
+}
+
+.btnAdd {
+  background: #3c8d40;
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 10px 28px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btnAdd:hover:not(:disabled) {
+  background: #2e6930;
+  transform: translateY(-1px);
+}
+
+.btnAdd:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Filter Bar */
+.filterBar {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  color: #4a90e2;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 14px 10px 42px;
+  border-radius: 8px;
+  border: 1.5px solid #e1e7de;
+  font-size: 0.92rem;
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: var(--bamboo-green);
+}
+
+.selectFilter {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #e1e7de;
+  font-size: 0.92rem;
+  outline: none;
+  background: #ffffff;
+}
+
+/* Table */
+.tableCard {
+  background: #ffffff;
+  border: 1px solid #e1e7de;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(41, 75, 53, 0.05);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.th {
+  background: #f0f6ee;
+  color: #4a5b4e;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 18px;
+  border-bottom: 1px solid #e1e7de;
+}
+
+.td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f0f4ee;
+  font-size: 0.92rem;
+  vertical-align: middle;
+}
+
+.tr:hover {
+  background: #fbfdfa;
+}
+
+.guestName {
+  font-weight: 700;
+  color: var(--deep-forest-green);
+}
+
+.inviteCodePill {
+  font-family: monospace;
+  font-size: 0.82rem;
+  background: #f1e6d3;
+  color: #8c6a1e;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.statusBadge {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: capitalize;
+}
+
+.statusPending {
+  background: #fff4dc;
+  color: #b58422;
+}
+
+.statusConfirmed {
+  background: #dce8d2;
+  color: #294b35;
+}
+
+.statusDeclined {
+  background: #ffe5e5;
+  color: #d32f2f;
+}
+
+.actionBtn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  color: #6e7e73;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actionBtn:hover {
+  background: #ffe5e5;
+  color: #d32f2f;
+}
+
+.ecardBtn {
+  background: #eaf3e5;
+  color: #2e6930;
+  border: 1px solid rgba(120, 155, 99, 0.3);
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ecardBtn:hover {
+  background: var(--bamboo-green);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(41, 75, 53, 0.15);
+}
+
+.actionsGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Modal styles for eCard preview */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 36, 25, 0.72);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modalCard {
+  background: #ffffff;
+  border-radius: 24px;
+  max-width: 580px;
+  width: 100%;
+  max-height: 94vh;
+  overflow: hidden;
+  box-shadow: 0 28px 60px rgba(18, 41, 26, 0.35);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(120, 155, 99, 0.3);
+}
+
+.modalHeader {
+  padding: 16px 22px;
+  background: linear-gradient(135deg, #eef5ea 0%, #f7faf4 100%);
+  border-bottom: 1px solid #dce8d2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modalTitle {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--deep-forest-green);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modalCloseBtn {
+  background: rgba(41, 75, 53, 0.08);
+  border: none;
+  cursor: pointer;
+  color: #4a5b4e;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.modalCloseBtn:hover {
+  background: #ffe5e5;
+  color: #d32f2f;
+  transform: rotate(90deg);
+}
+
+.modalBody {
+  padding: 24px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f4f8f1;
+  background-image: radial-gradient(#dce8d2 1.5px, transparent 1.5px);
+  background-size: 20px 20px;
+}
+
+/* ==========================================================================
+   E-CARD PREVIEW CONTAINER (Matching Canvas Download 1:1)
+   ========================================================================== */
+.ecardFrame {
+  width: 100%;
+  max-width: 460px;
+  background: linear-gradient(175deg, #FFFDF8 0%, #F5F9F2 50%, #FFF9EB 100%);
+  border-radius: 28px;
+  border: 8px solid #E8DFCB;
+  box-shadow: 0 16px 40px rgba(41, 75, 53, 0.16),
+              inset 0 0 0 2px #789B63;
+  padding: 24px 22px 28px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative Bamboo Stalks on Left & Right */
+.ecardStalkLeft {
+  position: absolute;
+  left: -6px;
+  top: 18%;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.ecardStalkRight {
+  position: absolute;
+  right: -6px;
+  top: 28%;
+  opacity: 0.45;
+  transform: scaleX(-1);
+  pointer-events: none;
+}
+
+/* Top VIP Pill Badge */
+.ecardTopBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  background: linear-gradient(135deg, #FFF2D1 0%, #FFE5A3 100%);
+  color: #7A5712;
+  padding: 6px 18px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid #D9B66F;
+  box-shadow: 0 4px 10px rgba(217, 182, 111, 0.3);
+  margin-bottom: 12px;
+}
+
+/* Center Panda Illustration Mascot */
+.ecardMascotWrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+/* Main Event Titles */
+.ecardEventSubtitle {
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #5D8049;
+  margin-bottom: 2px;
+}
+
+.ecardEventTitle {
+  font-family: var(--font-heading);
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--deep-forest-green);
+  line-height: 1.2;
+  margin-bottom: 16px;
+  text-shadow: 0 1px 2px rgba(41, 75, 53, 0.08);
+}
+
+.ecardEventTitle span {
+  color: #B58422;
+}
+
+/* Guest Name Showcase Box */
+.ecardGuestBox {
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #789B63;
+  border-radius: 18px;
+  padding: 14px 18px;
+  margin: 0 auto 16px;
+  box-shadow: 0 8px 22px rgba(41, 75, 53, 0.08);
+  position: relative;
+}
+
+.ecardGuestGreeting {
+  font-family: var(--font-hand);
+  font-size: 1.45rem;
+  color: #6C8E58;
+  margin: 0 0 2px;
+  display: block;
+}
+
+.ecardGuestName {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--deep-forest-green);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+/* Friendly Invitation Verse */
+.ecardInvitationText {
+  font-size: 0.9rem;
+  color: #4A5B4E;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  padding: 0 8px;
+}
+
+/* Party Details Card Box */
+.ecardDetailsBox {
+  background: #FFFFFF;
+  border: 1.5px dashed #789B63;
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(41, 75, 53, 0.05);
+}
+
+.ecardDetailRow {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--deep-forest-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ecardDetailRow svg {
+  color: #5D8049;
+  flex-shrink: 0;
+}
+
+.ecardCodeRow {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed #dce8d2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ecardCodePill {
+  font-family: monospace;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #8C6A1E;
+  background: #FFF4DC;
+  border: 1px solid #E4C882;
+  padding: 3px 12px;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
+}
+
+/* Footers */
+.ecardFooterLove {
+  font-family: var(--font-hand);
+  font-size: 1.4rem;
+  color: #B58422;
+  margin-bottom: 4px;
+}
+
+.ecardFootnote {
+  font-size: 0.75rem;
+  color: #839788;
+  font-weight: 500;
+}
+
+.modalFooter {
+  padding: 16px 22px;
+  background: #ffffff;
+  border-top: 1px solid #e1e7de;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.downloadBtn {
+  background: linear-gradient(135deg, #3C8D40 0%, #294B35 100%);
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(41, 75, 53, 0.25);
+  transition: all var(--transition-fast);
+}
+
+.downloadBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(41, 75, 53, 0.35);
+  background: linear-gradient(135deg, #449d49 0%, #22402c 100%);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.emptyState {
+  text-align: center;
+  padding: 48px 20px;
+  color: #6e7e73;
+}
+
+.emptyIcon {
+  font-size: 2.4rem;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px) {
+  .dashboardContainer {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(120, 155, 99, 0.2);
+  }
+  .mainContent {
+    padding: 20px 16px;
+  }
+  .addGuestForm {
+    grid-template-columns: 1fr;
+  }
+  .filterBar {
+    grid-template-columns: 1fr;
+  }
+}

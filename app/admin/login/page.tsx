@@ -1,0 +1,117 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
+import styles from './login.module.css';
+
+export default function AdminLoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('birthday.ditvi@gmail.com');
+  const [password, setPassword] = useState('Ditvi@3112');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Login failed');
+      }
+
+      router.push('/admin');
+      router.refresh();
+    } catch (err: unknown) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className={styles.loginWrapper}>
+      <div className={styles.loginCard}>
+        <div className={styles.brandHeader}>
+          <span className={styles.brandIcon}>🐼</span>
+          <h1 className={styles.brandTitle}>Event Admin Console</h1>
+          <p className={styles.brandSubtitle}>Ditvi&apos;s 1st Birthday Celebration</p>
+        </div>
+
+        {error && (
+          <div className={styles.errorBanner} role="alert">
+            <AlertCircle size={18} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.inputGroup}>
+            <label htmlFor="email" className={styles.label}>
+              Admin Username / Email
+            </label>
+            <div className={styles.inputWrapper}>
+              <Mail size={18} className={styles.inputIcon} />
+              <input
+                id="email"
+                type="email"
+                className={styles.input}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="birthday.ditvi@gmail.com"
+                required
+              />
+            </div>
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label htmlFor="password" className={styles.label}>
+              Password
+            </label>
+            <div className={styles.inputWrapper}>
+              <Lock size={18} className={styles.inputIcon} />
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                className={styles.input}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                className={styles.togglePassBtn}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" disabled={loading} className={styles.submitBtn}>
+            <ShieldCheck size={18} />
+            <span>{loading ? 'Authenticating...' : 'Sign In to Console'}</span>
+          </button>
+        </form>
+
+        <Link href="/" className={styles.backHomeLink}>
+          ← Back to Celebration Website
+        </Link>
+      </div>
+    </div>
+  );
+}
