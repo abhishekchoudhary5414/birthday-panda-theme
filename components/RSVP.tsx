@@ -112,14 +112,27 @@ export const RSVP: React.FC = () => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
 
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const res = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to submit RSVP');
+      }
+
       setSubmittedRSVP(formData);
       try {
         localStorage.setItem('panda_birthday_rsvp', JSON.stringify(formData));
@@ -136,7 +149,12 @@ export const RSVP: React.FC = () => {
           colors: ['#789B63', '#294B35', '#D9B66F', '#FFB8B8', '#DCE8D2'],
         });
       }
-    }, 600);
+    } catch (err: unknown) {
+      console.error('RSVP submission error:', err);
+      setSubmitError((err as Error).message || 'Failed to submit RSVP. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
@@ -423,13 +441,23 @@ export const RSVP: React.FC = () => {
                   />
                 </div>
 
-                {/* Demo Notice */}
-                <div className={styles['form-demo-notice']}>
-                  <AlertCircle size={15} />
-                  <span>
-                    Interactive Demo Mode: Submitting will store your RSVP in local demo storage.
-                  </span>
-                </div>
+                {submitError && (
+                  <div style={{
+                    padding: '12px 16px',
+                    background: '#fde8e8',
+                    color: '#9b1c1c',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                    border: '1px solid #f8b4b4',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <AlertCircle size={16} />
+                    <span>{submitError}</span>
+                  </div>
+                )}
 
                 {/* Submit Button */}
                 <button

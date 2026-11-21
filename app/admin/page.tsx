@@ -119,6 +119,19 @@ interface AdminWish {
   created_at: string;
 }
 
+interface AdminRSVP {
+  id: number;
+  full_name: string;
+  phone: string;
+  email?: string;
+  attending: string;
+  guests_count: number;
+  dietary?: string;
+  allergies?: string;
+  message?: string;
+  created_at: string;
+}
+
 export default function AdminDashboardPage() {
   const router = useRouter();
 
@@ -352,6 +365,155 @@ export default function AdminDashboardPage() {
       setQuizSubmissionsLoading(false);
     }
   }, []);
+
+  // RSVP Database Records State
+  const [rsvpsList, setRsvpsList] = useState<AdminRSVP[]>([]);
+  const [rsvpsLoading, setRsvpsLoading] = useState(false);
+
+  // Fetch RSVPs from Database
+  const fetchRsvps = useCallback(async () => {
+    try {
+      setRsvpsLoading(true);
+      const res = await fetch('/api/admin/rsvp');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.rsvps) setRsvpsList(data.rsvps);
+      }
+    } catch (err) {
+      console.error('Fetch RSVPs error:', err);
+    } finally {
+      setRsvpsLoading(false);
+    }
+  }, []);
+
+  // Delete RSVP from Database
+  const handleDeleteRsvp = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this RSVP response from the database?')) return;
+    try {
+      const res = await fetch(`/api/admin/rsvp?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchRsvps();
+      } else {
+        alert('Failed to delete RSVP');
+      }
+    } catch (err) {
+      console.error('Delete RSVP error:', err);
+    }
+  };
+
+  // Download RSVP Data as CSV
+  const handleDownloadRsvpCsv = () => {
+    if (rsvpsList.length === 0) {
+      alert('No RSVP data to export.');
+      return;
+    }
+    const headers = ['ID', 'Full Name', 'Phone', 'Email', 'Attending', 'Guests Count', 'Dietary Preference', 'Allergies', 'Personal Message', 'Submitted At'];
+    const rows = rsvpsList.map((r) => [
+      r.id,
+      `"${(r.full_name || '').replace(/"/g, '""')}"`,
+      `"${(r.phone || '').replace(/"/g, '""')}"`,
+      `"${(r.email || '').replace(/"/g, '""')}"`,
+      `"${r.attending === 'yes' ? 'Attending' : 'Not Attending'}"`,
+      r.guests_count || 1,
+      `"${(r.dietary || '').replace(/"/g, '""')}"`,
+      `"${(r.allergies || '').replace(/"/g, '""')}"`,
+      `"${(r.message || '').replace(/"/g, '""')}"`,
+      `"${r.created_at ? new Date(r.created_at).toLocaleString('en-US') : ''}"`,
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Ditvi_Birthday_RSVP_Submissions_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Download RSVP Data as PDF Report
+  const handleDownloadRsvpPdf = async () => {
+    if (rsvpsList.length === 0) {
+      alert('No RSVP data to export.');
+      return;
+    }
+    try {
+      const { default: jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'pt',
+        format: 'a4',
+      });
+
+      // Header Banner
+      doc.setFillColor(41, 75, 53);
+      doc.rect(0, 0, 842, 60, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.text("Ditvi's 1st Birthday - Official Website RSVP Submissions Report", 40, 36);
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Generated on ${new Date().toLocaleString()} • Total Responses: ${rsvpsList.length}`, 40, 50);
+
+      // Table Data
+      const tableData = rsvpsList.map((r, idx) => [
+        idx + 1,
+        r.full_name,
+        r.phone,
+        r.email || '—',
+        r.attending === 'yes' ? 'Attending' : 'Not Attending',
+        r.guests_count || 1,
+        r.dietary || 'None',
+        r.allergies || 'None',
+        r.message || '—',
+        r.created_at ? new Date(r.created_at).toLocaleDateString() : '—',
+      ]);
+
+      autoTable(doc, {
+        head: [['#', 'Guest Name', 'Phone', 'Email', 'Status', 'Guests', 'Diet', 'Allergies', 'Message', 'Date']],
+        body: tableData,
+        startY: 75,
+        theme: 'grid',
+        styles: {
+          fontSize: 8.5,
+          cellPadding: 5,
+          valign: 'middle',
+          textColor: [40, 50, 40],
+        },
+        headStyles: {
+          fillColor: [60, 141, 64],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+        },
+        alternateRowStyles: {
+          fillColor: [247, 250, 245],
+        },
+        columnStyles: {
+          0: { cellWidth: 24, halign: 'center' },
+          1: { cellWidth: 90, fontStyle: 'bold' },
+          2: { cellWidth: 75 },
+          3: { cellWidth: 95 },
+          4: { cellWidth: 65, halign: 'center' },
+          5: { cellWidth: 40, halign: 'center' },
+          6: { cellWidth: 65 },
+          7: { cellWidth: 65 },
+          8: { cellWidth: 160 },
+          9: { cellWidth: 60, halign: 'center' },
+        },
+      });
+
+      doc.save(`Ditvi_Birthday_RSVP_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (err) {
+      console.error('Failed to export RSVP PDF:', err);
+      alert('Failed to generate RSVP PDF report.');
+    }
+  };
 
   // Birthday Wishes State (from Neon DB)
   const [wishesList, setWishesList] = useState<AdminWish[]>([]);
@@ -817,11 +979,16 @@ export default function AdminDashboardPage() {
     fetchQuizSubmissions();
     fetchEventSettings();
     fetchWishes();
-  }, [fetchGuests, fetchQuizQuestions, fetchQuizSubmissions, fetchEventSettings, fetchWishes]);
+    fetchRsvps();
+  }, [fetchGuests, fetchQuizQuestions, fetchQuizSubmissions, fetchEventSettings, fetchWishes, fetchRsvps]);
 
   useEffect(() => {
     if (activeTab === '1') {
       fetchEventSettings();
+    }
+    if (activeTab === '5') {
+      fetchRsvps();
+      fetchGuests();
     }
     if (activeTab === '9') {
       fetchWishes();
@@ -830,7 +997,7 @@ export default function AdminDashboardPage() {
       fetchQuizQuestions();
       fetchQuizSubmissions();
     }
-  }, [activeTab, fetchEventSettings, fetchWishes, fetchQuizQuestions, fetchQuizSubmissions]);
+  }, [activeTab, fetchEventSettings, fetchWishes, fetchQuizQuestions, fetchQuizSubmissions, fetchRsvps, fetchGuests]);
 
   // Handle single guest add
   const handleAddGuest = async (e: React.FormEvent) => {
@@ -1011,7 +1178,7 @@ export default function AdminDashboardPage() {
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10.5);
-      doc.text('Official Guest List & RSVP Status Report', 40, 54);
+      doc.text('Official Guest List Report', 40, 54);
 
       // Event Details
       doc.setTextColor(41, 75, 53);
@@ -1043,9 +1210,6 @@ export default function AdminDashboardPage() {
       doc.setTextColor(41, 75, 53);
       doc.setFont('helvetica', 'bold');
       doc.text(`Total Guests: ${stats.totalGuests}`, 55, 143);
-      doc.text(`Attending: ${stats.attending}`, 180, 143);
-      doc.text(`Pending: ${stats.pending}`, 300, 143);
-      doc.text(`Declined: ${stats.declined}`, 420, 143);
 
       // Table rows
       const tableData = guests.map((g, index) => [
@@ -1053,13 +1217,11 @@ export default function AdminDashboardPage() {
         `${g.title || 'Mr.'} ${g.name}`,
         g.mobile || '—',
         g.email || '—',
-        g.invite_code || '—',
-        g.rsvp_status ? g.rsvp_status.toUpperCase() : 'PENDING',
       ]);
 
       autoTable(doc, {
         startY: 168,
-        head: [['#', 'Guest Name', 'Mobile', 'Email', 'Invite Code', 'RSVP Status']],
+        head: [['#', 'Guest Name', 'Mobile', 'Email']],
         body: tableData,
         theme: 'striped',
         headStyles: {
@@ -2486,8 +2648,6 @@ export default function AdminDashboardPage() {
                     <th className={styles.th}>GUEST NAME</th>
                     <th className={styles.th}>MOBILE</th>
                     <th className={styles.th}>EMAIL</th>
-                    <th className={styles.th}>INVITE CODE</th>
-                    <th className={styles.th}>RSVP STATUS</th>
                     <th className={styles.th}>INVITED</th>
                     <th className={styles.th}>GENERATE ECARD</th>
                     <th className={styles.th}>ACTIONS</th>
@@ -2496,7 +2656,7 @@ export default function AdminDashboardPage() {
                 <tbody>
                   {guests.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className={styles.emptyState}>
+                      <td colSpan={6} className={styles.emptyState}>
                         <div className={styles.emptyIcon}>
                           <SentimentSatisfiedAltIcon sx={{ fontSize: 44, color: '#789b63' }} />
                         </div>
@@ -2511,22 +2671,6 @@ export default function AdminDashboardPage() {
                         </td>
                         <td className={styles.td}>{g.mobile}</td>
                         <td className={styles.td}>{g.email || '—'}</td>
-                        <td className={styles.td}>
-                          <span className={styles.inviteCodePill}>{g.invite_code}</span>
-                        </td>
-                        <td className={styles.td}>
-                          <span
-                            className={`${styles.statusBadge} ${
-                              g.rsvp_status === 'confirmed' || g.rsvp_status === 'attending'
-                                ? styles.statusConfirmed
-                                : g.rsvp_status === 'declined'
-                                ? styles.statusDeclined
-                                : styles.statusPending
-                            }`}
-                          >
-                            {g.rsvp_status}
-                          </span>
-                        </td>
                         <td className={styles.td}>{g.invited ? 'Yes' : 'No'}</td>
                         <td className={styles.td}>
                           <div className={styles.cardButtonGroup}>
@@ -3904,61 +4048,120 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Quick RSVP Table */}
-            <div className={styles.tableResponsive}>
-              <table className={styles.guestTable}>
-                <thead>
-                  <tr>
-                    <th>Guest Name</th>
-                    <th>Mobile</th>
-                    <th>RSVP Status</th>
-                    <th>Update Attendance</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {guests.length === 0 ? (
+            {/* Direct Website RSVP Submissions from Database */}
+            <div style={{ background: '#ffffff', border: '1px solid #dce8d2', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
+                <div>
+                  <h3 style={{ margin: '0 0 4px 0', fontSize: '1.2rem', color: '#294B35', fontWeight: 800 }}>
+                    Website RSVP Submissions ({rsvpsList.length} Records)
+                  </h3>
+                  <p style={{ margin: 0, color: '#6e7e73', fontSize: '0.88rem' }}>
+                    Real-time RSVPs submitted by guests via the public birthday invitation form and stored in the database.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={handleDownloadRsvpCsv}
+                    className={styles.refreshBtn}
+                    style={{ background: '#ffffff', color: '#294B35', borderColor: '#c4d7be' }}
+                    title="Download RSVP data in CSV / Excel format"
+                  >
+                    <FileDownloadIcon sx={{ fontSize: 18, color: '#3c8d40' }} />
+                    <span>Download CSV</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadRsvpPdf}
+                    className={styles.refreshBtn}
+                    style={{ background: '#ffffff', color: '#294B35', borderColor: '#c4d7be' }}
+                    title="Download official RSVP PDF Report"
+                  >
+                    <PictureAsPdfIcon sx={{ fontSize: 18, color: '#d32f2f' }} />
+                    <span>Download PDF</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={fetchRsvps}
+                    className={styles.refreshBtn}
+                    disabled={rsvpsLoading}
+                  >
+                    <RefreshIcon sx={{ fontSize: 18 }} />
+                    <span>{rsvpsLoading ? 'Refreshing...' : 'Refresh Database RSVPs'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.tableResponsive}>
+                <table className={styles.guestTable}>
+                  <thead>
                     <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', padding: '32px', color: '#7b8e7e' }}>
-                        No guests added yet.
-                      </td>
+                      <th>Full Name</th>
+                      <th>Contact Info</th>
+                      <th>Attendance</th>
+                      <th>Guests</th>
+                      <th>Dietary / Allergies</th>
+                      <th>Personal Message</th>
+                      <th>Submitted At</th>
+                      <th>Action</th>
                     </tr>
-                  ) : (
-                    guests.map((g) => (
-                      <tr key={g.id}>
-                        <td>
-                          <strong>{g.title} {g.name}</strong>
-                        </td>
-                        <td>{g.mobile}</td>
-                        <td>
-                          <span className={`${styles.statusBadge} ${styles[g.rsvp_status]}`}>
-                            {g.rsvp_status}
-                          </span>
-                        </td>
-                        <td>
-                          <select
-                            value={g.rsvp_status}
-                            onChange={(e) => handleRsvpStatusChange(g.id, e.target.value)}
-                            style={{
-                              padding: '6px 10px',
-                              borderRadius: '8px',
-                              border: '1px solid #dce8d2',
-                              background: '#ffffff',
-                              color: '#294b35',
-                              fontSize: '0.84rem',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="attending">Attending</option>
-                            <option value="declined">Declined</option>
-                          </select>
+                  </thead>
+                  <tbody>
+                    {rsvpsList.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '32px', color: '#7b8e7e' }}>
+                          No website RSVP responses submitted yet.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      rsvpsList.map((r) => (
+                        <tr key={r.id}>
+                          <td>
+                            <strong>{r.full_name}</strong>
+                          </td>
+                          <td>
+                            <div>{r.phone}</div>
+                            {r.email && <div style={{ fontSize: '0.8rem', color: '#7b8e7e' }}>{r.email}</div>}
+                          </td>
+                          <td>
+                            <span className={`${styles.statusBadge} ${r.attending === 'yes' ? styles.attending : styles.declined}`}>
+                              {r.attending === 'yes' ? 'Attending (Yes)' : 'Not Attending (No)'}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontWeight: 700, color: '#294B35' }}>{r.guests_count || 1}</span>
+                          </td>
+                          <td>
+                            <div style={{ fontSize: '0.86rem' }}>
+                              {r.dietary ? <div><strong>Diet:</strong> {r.dietary}</div> : null}
+                              {r.allergies ? <div style={{ color: '#d32f2f' }}><strong>Allergies:</strong> {r.allergies}</div> : null}
+                              {!r.dietary && !r.allergies && <span style={{ color: '#9e9e9e' }}>None</span>}
+                            </div>
+                          </td>
+                          <td style={{ maxWidth: '240px', wordBreak: 'break-word', fontSize: '0.86rem', color: '#4a5b4e' }}>
+                            {r.message ? `"${r.message}"` : <span style={{ color: '#9e9e9e' }}>—</span>}
+                          </td>
+                          <td style={{ fontSize: '0.8rem', color: '#7b8e7e', whiteSpace: 'nowrap' }}>
+                            {r.created_at ? new Date(r.created_at).toLocaleString() : '—'}
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRsvp(r.id)}
+                              className={styles.actionBtn}
+                              title="Delete RSVP record"
+                            >
+                              <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -4332,19 +4535,6 @@ export default function AdminDashboardPage() {
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
                 />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>RSVP Status</label>
-                <select
-                  className={styles.editSelect}
-                  value={editRsvpStatus}
-                  onChange={(e) => setEditRsvpStatus(e.target.value)}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed / Attending</option>
-                  <option value="declined">Declined</option>
-                </select>
               </div>
 
               <div className={styles.modalFooter} style={{ padding: '16px 0 0', marginTop: '8px' }}>
