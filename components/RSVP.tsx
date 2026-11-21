@@ -77,9 +77,46 @@ export const RSVP: React.FC = () => {
       });
   }, []);
 
-  // Check if previously submitted locally
+  // Check URL query parameters for pre-filling name, number, and email
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const search = window.location.search;
+      let params = new URLSearchParams(search);
+      
+      // If query is inside hash (e.g. /#rsvp?name=...), parse hash query string as fallback
+      if (!params.has('name') && !params.has('phone') && window.location.hash.includes('?')) {
+        const hashQuery = window.location.hash.split('?')[1];
+        if (hashQuery) params = new URLSearchParams(hashQuery);
+      }
+
+      const nameParam = params.get('name') || params.get('fullName');
+      const phoneParam = params.get('phone') || params.get('mobile') || params.get('number');
+      const emailParam = params.get('email');
+
+      if (nameParam || phoneParam || emailParam) {
+        // If a new personalized link is opened, clear old local storage submission so they see the pre-filled form directly
+        setSubmittedRSVP(null);
+
+        setFormData((prev) => ({
+          ...prev,
+          fullName: nameParam ? decodeURIComponent(nameParam).trim() : prev.fullName,
+          phone: phoneParam ? decodeURIComponent(phoneParam).trim() : prev.phone,
+          email: emailParam ? decodeURIComponent(emailParam).trim() : prev.email,
+        }));
+      }
+    } catch (err) {
+      console.error('Error parsing RSVP prefill query params:', err);
+    }
+  }, []);
+
+  // Check if previously submitted locally (only if no query params were provided)
   useEffect(() => {
     try {
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      if (params && (params.get('name') || params.get('phone') || params.get('email'))) {
+        return; // Don't block prefill with previous visitor's submission
+      }
       const saved = localStorage.getItem('panda_birthday_rsvp');
       if (saved) {
         setSubmittedRSVP(JSON.parse(saved));

@@ -53,8 +53,12 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SmartphoneIcon from '@mui/icons-material/Smartphone';
 import ForestIcon from '@mui/icons-material/Forest';
 import StorageIcon from '@mui/icons-material/Storage';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import CheckIcon from '@mui/icons-material/Check';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import LinkIcon from '@mui/icons-material/Link';
+import SendIcon from '@mui/icons-material/Send';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import ChildCareIcon from '@mui/icons-material/ChildCare';
 import PetsIcon from '@mui/icons-material/Pets';
@@ -168,6 +172,9 @@ export default function AdminDashboardPage() {
   const [selectedEcardGuest, setSelectedEcardGuest] = useState<Guest | null>(null);
   // Selected guest for Thank You Card preview modal
   const [selectedThankYouGuest, setSelectedThankYouGuest] = useState<Guest | null>(null);
+  // Guest to delete (confirmation modal)
+  const [guestToDelete, setGuestToDelete] = useState<Guest | null>(null);
+  const [isDeletingGuest, setIsDeletingGuest] = useState(false);
   // Guest being edited in edit modal
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
   const [editTitle, setEditTitle] = useState('Mr.');
@@ -432,7 +439,7 @@ export default function AdminDashboardPage() {
     document.body.removeChild(link);
   };
 
-  // Download RSVP Data as PDF Report
+  // Download RSVP Data as PDF Report - Themed & Styled for Bamboo Grove Context
   const handleDownloadRsvpPdf = async () => {
     if (rsvpsList.length === 0) {
       alert('No RSVP data to export.');
@@ -448,71 +455,202 @@ export default function AdminDashboardPage() {
         format: 'a4',
       });
 
-      // Header Banner
-      doc.setFillColor(41, 75, 53);
-      doc.rect(0, 0, 842, 60, 'F');
+      // Background decorative tint (Warm bamboo cream #FCFDF9)
+      doc.setFillColor(252, 253, 249);
+      doc.rect(0, 0, 841.89, 595.28, 'F');
 
+      // Top Deep Forest Green Header Banner
+      doc.setFillColor(27, 56, 36); // #1B3824
+      doc.rect(0, 0, 841.89, 68, 'F');
+
+      // Gold Sparkle Stripe Divider
+      doc.setFillColor(217, 182, 111); // #D9B66F Gold
+      doc.rect(0, 68, 841.89, 3.5, 'F');
+
+      // Sage Green Accent Sub-stripe
+      doc.setFillColor(120, 155, 99); // #789B63
+      doc.rect(0, 71.5, 841.89, 1.5, 'F');
+
+      // Header Typography
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
-      doc.text("Ditvi's 1st Birthday - Official Website RSVP Submissions Report", 40, 36);
+      doc.text("Ditvi's 1st Birthday Celebration • Bamboo Grove", 42, 34);
 
-      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Generated on ${new Date().toLocaleString()} • Total Responses: ${rsvpsList.length}`, 40, 50);
+      doc.setFontSize(9.5);
+      doc.setTextColor(215, 235, 218);
+      doc.text(
+        `Official RSVP & Meal Preferences Roster • Generated ${new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} • Total Responses: ${rsvpsList.length}`,
+        42,
+        52
+      );
+
+      // Context Info Cards (Event Date, Venue, Key Attendance Stats)
+      // Card 1: Event Context Box
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(220, 232, 210);
+      doc.setLineWidth(1);
+      doc.roundedRect(42, 85, 360, 48, 6, 6, 'FD');
+
+      doc.setTextColor(41, 75, 53);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.text('CELEBRATION EVENT CONTEXT', 54, 100);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(80, 100, 85);
+      const eventDateStr = eventSettings.eventDate || 'Saturday, December 12, 2026';
+      const venueStr = [eventSettings.venueName, eventSettings.venueCity].filter(Boolean).join(', ') || 'Bamboo Grove Party Venue';
+      doc.text(`Date & Time: ${eventDateStr} • ${eventSettings.eventTime || '3:30 PM CST'}`, 54, 113);
+      doc.text(`Location: ${venueStr}`, 54, 125);
+
+      // Card 2: Metrics Summary Pill Box
+      const attendingCount = rsvpsList.filter((r) => r.attending === 'yes').length;
+      const declinedCount = rsvpsList.filter((r) => r.attending === 'no').length;
+      const totalHeadcount = rsvpsList.filter((r) => r.attending === 'yes').reduce((sum, r) => sum + (r.guests_count || 1), 0);
+
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(220, 232, 210);
+      doc.roundedRect(418, 85, 381, 48, 6, 6, 'FD');
+
+      // Metric 1: Attending
+      doc.setTextColor(46, 125, 50);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.text(`${attendingCount}`, 436, 107);
+      doc.setFontSize(7.5);
+      doc.setTextColor(90, 120, 95);
+      doc.text('Attending Families', 436, 122);
+
+      // Metric 2: Headcount
+      doc.setTextColor(181, 132, 34);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.text(`${totalHeadcount}`, 550, 107);
+      doc.setFontSize(7.5);
+      doc.setTextColor(120, 100, 70);
+      doc.text('Total Guest Headcount', 550, 122);
+
+      // Metric 3: Declined
+      doc.setTextColor(211, 47, 47);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.text(`${declinedCount}`, 675, 107);
+      doc.setFontSize(7.5);
+      doc.setTextColor(140, 90, 90);
+      doc.text('Declined / Wishes', 675, 122);
 
       // Table Data
       const tableData = rsvpsList.map((r, idx) => [
-        idx + 1,
+        (idx + 1).toString(),
         r.full_name,
         r.phone,
         r.email || '—',
-        r.attending === 'yes' ? 'Attending' : 'Not Attending',
-        r.guests_count || 1,
-        r.dietary || 'None',
+        r.attending === 'yes' ? 'CONFIRMED' : 'DECLINED',
+        r.attending === 'yes' ? (r.guests_count || 1).toString() : '0',
+        r.dietary || 'Standard',
         r.allergies || 'None',
-        r.message || '—',
+        r.message ? `"${r.message}"` : '—',
         r.created_at ? new Date(r.created_at).toLocaleDateString() : '—',
       ]);
 
       autoTable(doc, {
-        head: [['#', 'Guest Name', 'Phone', 'Email', 'Status', 'Guests', 'Diet', 'Allergies', 'Message', 'Date']],
+        head: [['#', 'Guest Name', 'Mobile', 'Email Address', 'Status', 'Guests', 'Diet Preference', 'Allergies', 'Heartfelt Message', 'Date']],
         body: tableData,
-        startY: 75,
+        startY: 144,
         theme: 'grid',
         styles: {
-          fontSize: 8.5,
-          cellPadding: 5,
+          fontSize: 8,
+          cellPadding: 5.5,
           valign: 'middle',
-          textColor: [40, 50, 40],
+          textColor: [35, 45, 38],
+          lineColor: [225, 235, 220],
+          lineWidth: 0.5,
         },
         headStyles: {
-          fillColor: [60, 141, 64],
+          fillColor: [41, 75, 53], // #294B35
           textColor: [255, 255, 255],
           fontStyle: 'bold',
+          fontSize: 8,
+          halign: 'left',
         },
         alternateRowStyles: {
-          fillColor: [247, 250, 245],
+          fillColor: [248, 251, 246], // Soft bamboo alternate rows
         },
         columnStyles: {
           0: { cellWidth: 24, halign: 'center' },
-          1: { cellWidth: 90, fontStyle: 'bold' },
-          2: { cellWidth: 75 },
-          3: { cellWidth: 95 },
-          4: { cellWidth: 65, halign: 'center' },
-          5: { cellWidth: 40, halign: 'center' },
-          6: { cellWidth: 65 },
-          7: { cellWidth: 65 },
-          8: { cellWidth: 160 },
-          9: { cellWidth: 60, halign: 'center' },
+          1: { cellWidth: 105, fontStyle: 'bold', textColor: [32, 51, 37] },
+          2: { cellWidth: 72 },
+          3: { cellWidth: 100 },
+          4: { cellWidth: 64, halign: 'center', fontStyle: 'bold' },
+          5: { cellWidth: 38, halign: 'center', fontStyle: 'bold' },
+          6: { cellWidth: 68 },
+          7: { cellWidth: 62 },
+          8: { cellWidth: 165, fontStyle: 'italic', textColor: [65, 80, 70] },
+          9: { cellWidth: 59, halign: 'center', fontSize: 7.5 },
+        },
+        didParseCell: (data) => {
+          // Highlight Attending (Green) vs Declined (Red)
+          if (data.column.index === 4 && data.section === 'body') {
+            if (data.cell.raw === 'CONFIRMED') {
+              data.cell.styles.textColor = [46, 125, 50];
+              data.cell.styles.fillColor = [237, 247, 237];
+            } else if (data.cell.raw === 'DECLINED') {
+              data.cell.styles.textColor = [211, 47, 47];
+              data.cell.styles.fillColor = [253, 232, 232];
+            }
+          }
         },
       });
 
-      doc.save(`Ditvi_Birthday_RSVP_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+      // Footer Note
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFillColor(27, 56, 36);
+        doc.rect(42, 568, 757, 1, 'F');
+
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(110, 130, 115);
+        doc.text("Ditvi's 1st Birthday Celebration • Official RSVP Admin Registry • Bamboo Forest Theme", 42, 580);
+        doc.text(`Page ${i} of ${pageCount}`, 755, 580, { align: 'right' });
+      }
+
+      doc.save(`Ditvi_Birthday_Official_RSVP_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Failed to export RSVP PDF:', err);
       alert('Failed to generate RSVP PDF report.');
     }
+  };
+
+  // WhatsApp RSVP Modal State
+  const [whatsappGuest, setWhatsappGuest] = useState<Guest | null>(null);
+  const [whatsappCustomMessage, setWhatsappCustomMessage] = useState<string>('');
+
+  const openWhatsappModal = (guest: Guest) => {
+    setWhatsappGuest(guest);
+    const guestName = guest.name ? `${guest.title ? guest.title + ' ' : ''}${guest.name}` : 'Guest';
+    const defaultMsg = `Dear ${guestName},\n\nYou are cordially invited to Ditvi's 1st Birthday Celebration in the Bamboo Grove! 🐼🎋\n\nPlease confirm your attendance and let us know your preferences by filling out your RSVP using the link below:`;
+    setWhatsappCustomMessage(defaultMsg);
+  };
+
+  const sendWhatsappRsvp = () => {
+    if (!whatsappGuest) return;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const rsvpUrl = `${origin}/rsvp?name=${encodeURIComponent(whatsappGuest.name || '')}&phone=${encodeURIComponent(whatsappGuest.mobile || '')}&email=${encodeURIComponent(whatsappGuest.email || '')}`;
+    
+    const fullText = `${whatsappCustomMessage.trim()}\n\n👉 Fill RSVP Here: ${rsvpUrl}\n\nWe look forward to celebrating together with you! 🎈🎂`;
+
+    // Clean phone number (strip spaces, dashes, etc.)
+    const cleanPhone = (whatsappGuest.mobile || '').replace(/[^0-9]/g, '');
+    const phoneWithCountry = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+
+    const whatsappLink = `https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(fullText)}`;
+    window.open(whatsappLink, '_blank');
+    setWhatsappGuest(null);
   };
 
   // Birthday Wishes State (from Neon DB)
@@ -1147,7 +1285,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Download Guest List in PDF format
+  // Download Guest List in PDF format - Themed & Styled for Bamboo Grove Context
   const handleDownloadPdf = async () => {
     if (guests.length === 0) return;
 
@@ -1162,54 +1300,72 @@ export default function AdminDashboardPage() {
         format: 'a4',
       });
 
+      // Background decorative tint (Warm bamboo cream #FCFDF9)
+      doc.setFillColor(252, 253, 249);
+      doc.rect(0, 0, 595.28, 841.89, 'F');
+
       // Header Banner - Forest Green
-      doc.setFillColor(41, 75, 53); // #294B35
+      doc.setFillColor(27, 56, 36); // #1B3824
       doc.rect(0, 0, 595.28, 70, 'F');
 
-      // Gold Accent Line
-      doc.setFillColor(217, 182, 111); // #D9B66F
-      doc.rect(0, 70, 595.28, 4, 'F');
+      // Gold Sparkle Accent Line
+      doc.setFillColor(217, 182, 111); // #D9B66F Gold
+      doc.rect(0, 70, 595.28, 3.5, 'F');
+
+      // Sage Green Accent Sub-stripe
+      doc.setFillColor(120, 155, 99); // #789B63
+      doc.rect(0, 73.5, 595.28, 1.5, 'F');
 
       // Title & Event Info
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(20);
-      doc.text("Ditvi's 1st Birthday Celebration", 40, 36);
+      doc.setFontSize(18);
+      doc.text("Ditvi's 1st Birthday Celebration • Bamboo Grove", 40, 36);
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10.5);
-      doc.text('Official Guest List Report', 40, 54);
-
-      // Event Details
-      doc.setTextColor(41, 75, 53);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.text('Event Date:', 40, 95);
-      doc.setFont('helvetica', 'normal');
-      doc.text(
-        `${eventSettings.eventDate || 'Saturday, December 12, 2026'}${eventSettings.eventTime ? ` (${eventSettings.eventTime})` : ''}`,
-        105,
-        95
-      );
-
-      doc.setFont('helvetica', 'bold');
-      doc.text('Venue:', 40, 110);
-      doc.setFont('helvetica', 'normal');
-      doc.text(
-        [eventSettings.venueName, eventSettings.venueCity].filter(Boolean).join(', ') || 'To be announced soon by hosts',
-        80,
-        110
-      );
-
-      // Stats Pill summary box
-      doc.setFillColor(248, 250, 247);
-      doc.setDrawColor(220, 232, 210);
-      doc.roundedRect(40, 122, 515, 34, 4, 4, 'FD');
-
       doc.setFontSize(9.5);
+      doc.setTextColor(215, 235, 218);
+      doc.text(
+        `Official Guest Directory • Generated ${new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} • Total Guests: ${guests.length}`,
+        40,
+        54
+      );
+
+      // Event Details & Stats Card
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(220, 232, 210);
+      doc.setLineWidth(1);
+      doc.roundedRect(40, 86, 515, 56, 6, 6, 'FD');
+
       doc.setTextColor(41, 75, 53);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Total Guests: ${stats.totalGuests}`, 55, 143);
+      doc.setFontSize(8.5);
+      doc.text('CELEBRATION EVENT OVERVIEW', 52, 102);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(75, 95, 80);
+      doc.text(
+        `Event Date: ${eventSettings.eventDate || 'Saturday, December 12, 2026'}${eventSettings.eventTime ? ` (${eventSettings.eventTime})` : ''}`,
+        52,
+        116
+      );
+      doc.text(
+        `Venue: ${[eventSettings.venueName, eventSettings.venueCity].filter(Boolean).join(', ') || 'To be announced soon by hosts'}`,
+        52,
+        130
+      );
+
+      // Right Stats Badge inside Card
+      doc.setFillColor(242, 248, 240);
+      doc.roundedRect(420, 94, 120, 40, 4, 4, 'F');
+      doc.setTextColor(41, 75, 53);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text(`${guests.length}`, 480, 114, { align: 'center' });
+      doc.setFontSize(7.5);
+      doc.setTextColor(90, 120, 95);
+      doc.text('Invited Guests', 480, 126, { align: 'center' });
 
       // Table rows
       const tableData = guests.map((g, index) => [
@@ -1217,47 +1373,58 @@ export default function AdminDashboardPage() {
         `${g.title || 'Mr.'} ${g.name}`,
         g.mobile || '—',
         g.email || '—',
+        g.invited ? 'INVITED' : 'PENDING',
       ]);
 
       autoTable(doc, {
-        startY: 168,
-        head: [['#', 'Guest Name', 'Mobile', 'Email']],
+        startY: 154,
+        head: [['#', 'Guest Full Name', 'Mobile Number', 'Email Address', 'Status']],
         body: tableData,
-        theme: 'striped',
+        theme: 'grid',
+        styles: {
+          fontSize: 8.5,
+          cellPadding: 6,
+          valign: 'middle',
+          textColor: [35, 45, 38],
+          lineColor: [225, 235, 220],
+          lineWidth: 0.5,
+        },
         headStyles: {
-          fillColor: [41, 75, 53],
+          fillColor: [41, 75, 53], // #294B35
           textColor: [255, 255, 255],
-          fontSize: 9,
+          fontSize: 8.5,
           fontStyle: 'bold',
           halign: 'left',
         },
-        bodyStyles: {
-          fontSize: 8.5,
-          textColor: [50, 50, 50],
-          cellPadding: 5,
-        },
         alternateRowStyles: {
-          fillColor: [248, 250, 247],
+          fillColor: [248, 251, 246], // Soft bamboo tint
         },
         columnStyles: {
-          0: { cellWidth: 26, halign: 'center' },
-          1: { cellWidth: 130, fontStyle: 'bold' },
-          2: { cellWidth: 95 },
-          3: { cellWidth: 120 },
-          4: { cellWidth: 70, halign: 'center' },
-          5: { cellWidth: 74, halign: 'center' },
+          0: { cellWidth: 28, halign: 'center' },
+          1: { cellWidth: 165, fontStyle: 'bold', textColor: [32, 51, 37] },
+          2: { cellWidth: 110 },
+          3: { cellWidth: 145 },
+          4: { cellWidth: 67, halign: 'center', fontStyle: 'bold', textColor: [46, 125, 50] },
         },
         margin: { left: 40, right: 40, bottom: 40 },
         didDrawPage: (data) => {
           // Footer
           const pageCount = (doc.internal as any).getNumberOfPages ? (doc.internal as any).getNumberOfPages() : (doc as any).internal.pages.length - 1;
           const currentPage = (data as any).pageNumber || 1;
-          doc.setFontSize(8);
-          doc.setTextColor(140, 140, 140);
+          doc.setFillColor(27, 56, 36);
+          doc.rect(40, doc.internal.pageSize.height - 30, 515, 1, 'F');
+          doc.setFontSize(7.5);
+          doc.setTextColor(110, 130, 115);
           doc.text(
-            `Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} | Page ${currentPage} of ${pageCount}`,
+            "Ditvi's 1st Birthday Celebration • Official Guest Directory • Bamboo Forest Theme",
             40,
-            doc.internal.pageSize.height - 20
+            doc.internal.pageSize.height - 18
+          );
+          doc.text(
+            `Page ${currentPage} of ${pageCount}`,
+            555,
+            doc.internal.pageSize.height - 18,
+            { align: 'right' }
           );
         },
       });
@@ -1335,18 +1502,22 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Handle guest delete
-  const handleDeleteGuest = async (id: number) => {
-    if (!confirm('Are you sure you want to remove this guest?')) return;
+  // Handle guest delete confirmation
+  const handleConfirmDeleteGuest = async () => {
+    if (!guestToDelete) return;
     try {
-      const res = await fetch(`/api/admin/guests?id=${id}`, {
+      setIsDeletingGuest(true);
+      const res = await fetch(`/api/admin/guests?id=${guestToDelete.id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
         fetchGuests();
+        setGuestToDelete(null);
       }
     } catch (err) {
       console.error('Delete guest error:', err);
+    } finally {
+      setIsDeletingGuest(false);
     }
   };
 
@@ -2382,29 +2553,106 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Section 3: Guest List Management */}
+        {/* Section 3: Guest List Management - 100% Full Width Bamboo Grove Theme */}
         {activeTab === '3' && (
-          <div>
-            <div className={styles.sectionHeader}>
-              <PeopleIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>Guest List Management ({stats.totalGuests} Guests)</span>
+          <div style={{ width: '100%' }}>
+            {/* Themed Hero Banner */}
+            <div
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #183321 0%, #294B35 55%, #3c6e4a 100%)',
+                borderRadius: '20px',
+                padding: '28px 32px',
+                marginBottom: '24px',
+                color: '#ffffff',
+                boxShadow: '0 8px 24px rgba(41, 75, 53, 0.12)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '20px',
+                boxSizing: 'border-box',
+              }}
+            >
+              <div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)', padding: '5px 14px', borderRadius: '30px', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.5px', marginBottom: '10px', color: '#f0fdf4' }}>
+                  <ParkIcon sx={{ fontSize: 16, color: '#a3e635' }} />
+                  <span>BAMBOO GROVE • OFFICIAL GUEST ROSTER</span>
+                </div>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 6px 0', color: '#ffffff', letterSpacing: '-0.3px' }}>
+                  Guest List Management
+                </h2>
+                <p style={{ margin: 0, fontSize: '0.92rem', color: '#d1e7d6', maxWidth: '580px', lineHeight: 1.5 }}>
+                  Add invitees, trigger personalized WhatsApp invites with autofilled RSVP forms, generate birthday eCards, and track your party guests.
+                </p>
+              </div>
+
+              {/* Stats badges */}
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '12px 20px', textAlign: 'center', minWidth: '100px' }}>
+                  <span style={{ fontSize: '0.74rem', color: '#d1e7d6', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>Total Guests</span>
+                  <span style={{ fontSize: '1.7rem', fontWeight: 800, color: '#ffffff' }}>{stats.totalGuests}</span>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '12px 20px', textAlign: 'center', minWidth: '100px' }}>
+                  <span style={{ fontSize: '0.74rem', color: '#d1e7d6', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>RSVPs Saved</span>
+                  <span style={{ fontSize: '1.7rem', fontWeight: 800, color: '#a3e635' }}>{rsvpsList.length}</span>
+                </div>
+              </div>
             </div>
 
-            {/* Guest Entry Box (Single & Bulk CSV) */}
-            <div className={styles.addGuestBox}>
-              <div className={styles.guestAddTabs}>
+            {/* Guest Entry Box */}
+            <div
+              style={{
+                width: '100%',
+                background: '#ffffff',
+                border: '1.5px solid #dce8d2',
+                borderRadius: '18px',
+                padding: '24px',
+                marginBottom: '24px',
+                boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)',
+                boxSizing: 'border-box',
+              }}
+            >
+              {/* Tab Selector */}
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #edf4ea', paddingBottom: '14px' }}>
                 <button
                   type="button"
-                  className={`${styles.guestAddTabBtn} ${guestAddMode === 'single' ? styles.activeTab : ''}`}
                   onClick={() => setGuestAddMode('single')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '9px 18px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    background: guestAddMode === 'single' ? '#294B35' : '#f0f6ee',
+                    color: guestAddMode === 'single' ? '#ffffff' : '#4a5b4e',
+                    transition: 'all 0.2s',
+                  }}
                 >
                   <AddIcon sx={{ fontSize: 18 }} />
                   <span>Add Single Guest</span>
                 </button>
                 <button
                   type="button"
-                  className={`${styles.guestAddTabBtn} ${guestAddMode === 'csv' ? styles.activeTab : ''}`}
                   onClick={() => setGuestAddMode('csv')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '9px 18px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    background: guestAddMode === 'csv' ? '#294B35' : '#f0f6ee',
+                    color: guestAddMode === 'csv' ? '#ffffff' : '#4a5b4e',
+                    transition: 'all 0.2s',
+                  }}
                 >
                   <UploadFileIcon sx={{ fontSize: 18 }} />
                   <span>Bulk CSV Upload</span>
@@ -2412,51 +2660,108 @@ export default function AdminDashboardPage() {
               </div>
 
               {guestAddMode === 'single' ? (
-                <>
-                  <div className={styles.addGuestTitle}>
-                    <AddIcon sx={{ fontSize: 18 }} />
-                    <span>Add Guest (Single Entry)</span>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', color: '#294B35', fontWeight: 800, fontSize: '1rem' }}>
+                    <PersonIcon sx={{ fontSize: 20, color: '#3c8d40' }} />
+                    <span>Quick Guest Entry</span>
                   </div>
 
-                  <form onSubmit={handleAddGuest} className={styles.addGuestForm}>
+                  <form onSubmit={handleAddGuest} style={{ display: 'grid', gridTemplateColumns: '110px 1.2fr 1fr 1.2fr auto', gap: '12px', alignItems: 'center' }}>
                     <select
-                      className={styles.titleSelect}
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
                       aria-label="Title"
+                      style={{
+                        padding: '11px 12px',
+                        borderRadius: '10px',
+                        border: '1.5px solid #d2ded0',
+                        background: '#fafcfa',
+                        color: '#294B35',
+                        fontWeight: 700,
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        outline: 'none',
+                      }}
                     >
                       <option value="Mr.">Mr.</option>
                       <option value="Miss">Miss</option>
                       <option value="Mrs.">Mrs.</option>
                     </select>
+
                     <input
                       type="text"
-                      placeholder="Guest Name (e.g. jaya)"
-                      className={styles.inputField}
+                      placeholder="Guest Full Name *"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
                       required
+                      style={{
+                        padding: '11px 14px',
+                        borderRadius: '10px',
+                        border: '1.5px solid #d2ded0',
+                        background: '#ffffff',
+                        fontSize: '0.92rem',
+                        color: '#294B35',
+                        outline: 'none',
+                      }}
                     />
+
                     <input
                       type="text"
-                      placeholder="Mobile (e.g. 9691089759)"
-                      className={styles.inputField}
+                      placeholder="Mobile Phone (10-digit) *"
                       value={newMobile}
                       onChange={(e) => setNewMobile(e.target.value)}
                       required
+                      style={{
+                        padding: '11px 14px',
+                        borderRadius: '10px',
+                        border: '1.5px solid #d2ded0',
+                        background: '#ffffff',
+                        fontSize: '0.92rem',
+                        color: '#294B35',
+                        outline: 'none',
+                      }}
                     />
+
                     <input
                       type="email"
                       placeholder="Email Address (Optional)"
-                      className={styles.inputField}
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
+                      style={{
+                        padding: '11px 14px',
+                        borderRadius: '10px',
+                        border: '1.5px solid #d2ded0',
+                        background: '#ffffff',
+                        fontSize: '0.92rem',
+                        color: '#294B35',
+                        outline: 'none',
+                      }}
                     />
-                    <button type="submit" disabled={isSubmitting} className={styles.btnAdd}>
-                      <span>Add</span>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      style={{
+                        padding: '11px 24px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #294B35 0%, #3C8D40 100%)',
+                        color: '#ffffff',
+                        fontWeight: 800,
+                        fontSize: '0.92rem',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        whiteSpace: 'nowrap',
+                        boxShadow: '0 4px 12px rgba(41, 75, 53, 0.2)',
+                      }}
+                    >
+                      <AddIcon sx={{ fontSize: 18 }} />
+                      <span>{isSubmitting ? 'Adding...' : 'Add Guest'}</span>
                     </button>
                   </form>
-                </>
+                </div>
               ) : (
                 <div className={styles.csvUploadContainer}>
                   {/* CSV Format Card */}
@@ -2488,16 +2793,10 @@ export default function AdminDashboardPage() {
                       </thead>
                       <tbody>
                         <tr>
-                          <td>Mr.</td>
-                          <td>John Doe</td>
-                          <td>9876543210</td>
-                          <td>john@example.com</td>
-                        </tr>
-                        <tr>
-                          <td>Miss</td>
-                          <td>Priya Sharma</td>
-                          <td>9876543211</td>
-                          <td>priya@example.com</td>
+                          <td>Mr. / Miss / Mrs.</td>
+                          <td>Abhishek Choudhary</td>
+                          <td>9264248504</td>
+                          <td>guest@example.com</td>
                         </tr>
                       </tbody>
                     </table>
@@ -2508,44 +2807,49 @@ export default function AdminDashboardPage() {
                     className={styles.csvDropZone}
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <UploadFileIcon sx={{ fontSize: 38, color: '#3c8d40' }} />
-                    <div className={styles.csvDropTitle}>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv,text/csv"
+                      onChange={handleCsvFileChange}
+                      style={{ display: 'none' }}
+                    />
+                    <div className={styles.csvDropIcon}>
+                      <UploadFileIcon sx={{ fontSize: 44, color: '#3c8d40' }} />
+                    </div>
+                    <div className={styles.csvDropText}>
                       {csvFileName ? `Selected File: ${csvFileName}` : 'Click here to upload CSV file'}
                     </div>
-                    <div className={styles.csvDropSubtext}>
+                    <div className={styles.csvDropSub}>
                       Select a .CSV file matching the format above (Title, Name, Mobile, Email)
                     </div>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      accept=".csv,text/csv"
-                      className={styles.csvFileInputHidden}
-                      onChange={handleCsvFileChange}
-                    />
                   </div>
 
-                  {/* Success / Error Messages */}
-                  {csvUploadSuccess && (
-                    <div style={{ padding: '10px 14px', background: '#edf7ed', color: '#1e4620', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', border: '1px solid #c8e6c9' }}>
-                      <CheckCircleOutlineIcon sx={{ fontSize: 18, color: '#2e7d32' }} />
-                      <span>{csvUploadSuccess}</span>
-                    </div>
-                  )}
+                  {/* CSV Error */}
                   {csvUploadError && (
-                    <div style={{ padding: '10px 14px', background: '#fde8e8', color: '#9b1c1c', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', border: '1px solid #f8b4b4' }}>
-                      <InfoOutlinedIcon sx={{ fontSize: 18, color: '#c81e1e' }} />
+                    <div className={styles.csvErrorAlert}>
+                      <CloseIcon sx={{ fontSize: 16 }} />
                       <span>{csvUploadError}</span>
                     </div>
                   )}
 
-                  {/* Parsed Preview Table */}
+                  {/* CSV Success / Uploaded message */}
+                  {csvUploadSuccess && (
+                    <div className={styles.csvSuccessAlert}>
+                      <CheckCircleIcon sx={{ fontSize: 16 }} />
+                      <span>{csvUploadSuccess}</span>
+                    </div>
+                  )}
+
+                  {/* CSV Preview */}
                   {csvParsedGuests.length > 0 && (
-                    <div className={styles.csvParsedSection}>
-                      <div className={styles.csvParsedHeader}>
-                        <span className={styles.csvParsedCount}>
-                          Ready to Import: {csvParsedGuests.length} Guests
-                        </span>
-                        <div className={styles.csvActionButtons}>
+                    <div className={styles.csvPreviewContainer}>
+                      <div className={styles.csvPreviewHeader}>
+                        <div className={styles.csvPreviewTitle}>
+                          <CheckCircleIcon sx={{ fontSize: 18, color: '#3c8d40' }} />
+                          <span>Ready to Import: {csvParsedGuests.length} Guests</span>
+                        </div>
+                        <div className={styles.csvPreviewActions}>
                           <button
                             type="button"
                             className={styles.csvClearBtn}
@@ -2604,125 +2908,262 @@ export default function AdminDashboardPage() {
               )}
             </div>
 
-            {/* Filter and Search Bar */}
-            <div className={styles.filterBar}>
-              <div className={styles.searchBox}>
-                <SearchIcon sx={{ fontSize: 18, color: '#6e7e73' }} className={styles.searchIcon} />
-                <input
-                  type="text"
-                  placeholder="Search by name, mobile, email, or code..."
-                  className={styles.searchInput}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+            {/* Filter, Search & Export Bar */}
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '14px',
+                marginBottom: '18px',
+                background: '#ffffff',
+                padding: '16px 20px',
+                borderRadius: '16px',
+                border: '1.5px solid #dce8d2',
+                boxSizing: 'border-box',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '280px' }}>
+                <div
+                  style={{
+                    position: 'relative',
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <SearchIcon sx={{ position: 'absolute', left: '12px', fontSize: 19, color: '#7a8c7e' }} />
+                  <input
+                    type="text"
+                    placeholder="Search guests by name, phone, or email..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px 10px 38px',
+                      borderRadius: '10px',
+                      border: '1.5px solid #d2ded0',
+                      fontSize: '0.9rem',
+                      color: '#294B35',
+                      background: '#fafcfa',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #d2ded0',
+                    background: '#fafcfa',
+                    color: '#294B35',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Pending RSVP</option>
+                  <option value="confirmed">Confirmed / Attending</option>
+                  <option value="declined">Declined</option>
+                </select>
               </div>
 
-              <select
-                className={styles.selectFilter}
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="all">All Guests</option>
-                <option value="pending">Pending RSVP</option>
-                <option value="confirmed">Confirmed / Attending</option>
-                <option value="declined">Declined</option>
-              </select>
-
-              <button
-                type="button"
-                onClick={handleDownloadPdf}
-                className={styles.pdfDownloadBtn}
-                title="Download complete guest list report as PDF"
-                disabled={isGeneratingPdf || guests.length === 0}
-              >
-                <PictureAsPdfIcon sx={{ fontSize: 18 }} />
-                <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download PDF'}</span>
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  disabled={isGeneratingPdf || guests.length === 0}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 18px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #dce8d2',
+                    background: '#ffffff',
+                    color: '#294B35',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <PictureAsPdfIcon sx={{ fontSize: 18, color: '#d32f2f' }} />
+                  <span>{isGeneratingPdf ? 'Generating...' : 'Download PDF List'}</span>
+                </button>
+              </div>
             </div>
 
-            {/* Guest Table */}
-            <div className={styles.tableCard}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th className={styles.th}>GUEST NAME</th>
-                    <th className={styles.th}>MOBILE</th>
-                    <th className={styles.th}>EMAIL</th>
-                    <th className={styles.th}>INVITED</th>
-                    <th className={styles.th}>GENERATE ECARD</th>
-                    <th className={styles.th}>ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {guests.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className={styles.emptyState}>
-                        <div className={styles.emptyIcon}>
-                          <SentimentSatisfiedAltIcon sx={{ fontSize: 44, color: '#789b63' }} />
-                        </div>
-                        <p>{loading ? 'Loading guests...' : 'No guests found yet. Add your first guest above!'}</p>
-                      </td>
+            {/* Themed Guest Table - 100% Full Width */}
+            <div
+              style={{
+                width: '100%',
+                background: '#ffffff',
+                border: '1.5px solid #dce8d2',
+                borderRadius: '18px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)',
+                boxSizing: 'border-box',
+              }}
+            >
+              <div className={styles.tableResponsive} style={{ width: '100%', overflowX: 'auto' }}>
+                <table className={styles.guestTable} style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#f5faf3', borderBottom: '1.5px solid #dce8d2' }}>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px' }}>GUEST NAME</th>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px' }}>MOBILE</th>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px' }}>EMAIL</th>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px' }}>INVITATION STATUS</th>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px', textAlign: 'center' }}>CARDS &amp; INVITE</th>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px', textAlign: 'right' }}>ACTIONS</th>
                     </tr>
-                  ) : (
-                    guests.map((g) => (
-                      <tr key={g.id} className={styles.tr}>
-                        <td className={`${styles.td} ${styles.guestName}`}>
-                          {g.title ? `${g.title} ` : ''}{g.name}
-                        </td>
-                        <td className={styles.td}>{g.mobile}</td>
-                        <td className={styles.td}>{g.email || '—'}</td>
-                        <td className={styles.td}>{g.invited ? 'Yes' : 'No'}</td>
-                        <td className={styles.td}>
-                          <div className={styles.cardButtonGroup}>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedEcardGuest(g)}
-                              className={styles.ecardBtn}
-                              title="Generate & View eCard"
-                            >
-                              <AutoAwesomeIcon sx={{ fontSize: 15 }} />
-                              <span>eCard</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedThankYouGuest(g)}
-                              className={styles.thankYouBtn}
-                              title="Generate & View Thank You Card"
-                            >
-                              <FavoriteIcon sx={{ fontSize: 15 }} />
-                              <span>Thank You</span>
-                            </button>
+                  </thead>
+                  <tbody>
+                    {guests.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '50px 20px' }}>
+                          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#eef6ec', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <SentimentSatisfiedAltIcon sx={{ fontSize: 32, color: '#3c8d40' }} />
                           </div>
-                        </td>
-                        <td className={styles.td}>
-                          <div className={styles.actionsGroup}>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEdit(g)}
-                              className={styles.editBtn}
-                              title="Edit guest"
-                            >
-                              <EditIcon sx={{ fontSize: 16 }} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteGuest(g.id)}
-                              className={styles.actionBtn}
-                              title="Delete guest"
-                            >
-                              <DeleteOutlineIcon sx={{ fontSize: 18 }} />
-                            </button>
-                          </div>
+                          <h4 style={{ margin: '0 0 6px', color: '#294B35', fontSize: '1.1rem' }}>No guests found</h4>
+                          <p style={{ margin: 0, color: '#7a8c7e', fontSize: '0.88rem' }}>
+                            {loading ? 'Fetching guest list from database...' : 'Add your first guest above or import using CSV!'}
+                          </p>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      guests.map((g) => (
+                        <tr key={g.id} style={{ borderBottom: '1px solid #edf4ea', transition: 'background 0.15s' }}>
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#eef6ec', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#294B35', fontWeight: 800, fontSize: '0.85rem' }}>
+                                {(g.name || 'G')[0].toUpperCase()}
+                              </div>
+                              <div>
+                                <strong style={{ color: '#203325', fontSize: '0.94rem' }}>
+                                  {g.title ? `${g.title} ` : ''}{g.name}
+                                </strong>
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '14px 18px', color: '#3f5344', fontSize: '0.9rem' }}>
+                            {g.mobile}
+                          </td>
+                          <td style={{ padding: '14px 18px', color: '#5b6e60', fontSize: '0.88rem' }}>
+                            {g.email || <span style={{ color: '#a0b1a4' }}>—</span>}
+                          </td>
+                          <td style={{ padding: '14px 18px' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '20px', background: '#edf7ed', color: '#1e4620', fontSize: '0.82rem', fontWeight: 700 }}>
+                              <CheckCircleIcon sx={{ fontSize: 14, color: '#2e7d32' }} />
+                              <span>Invited</span>
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 18px', textAlign: 'center' }}>
+                            <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
+                              <button
+                                type="button"
+                                onClick={() => openWhatsappModal(g)}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '6px 12px',
+                                  borderRadius: '8px',
+                                  border: 'none',
+                                  background: '#25D366',
+                                  color: '#ffffff',
+                                  fontWeight: 700,
+                                  fontSize: '0.82rem',
+                                  cursor: 'pointer',
+                                  boxShadow: '0 2px 6px rgba(37, 211, 102, 0.25)',
+                                }}
+                                title="Send WhatsApp RSVP Link (Pre-filled)"
+                              >
+                                <WhatsAppIcon sx={{ fontSize: 15 }} />
+                                <span>WhatsApp</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setSelectedEcardGuest(g)}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  padding: '6px 12px',
+                                  borderRadius: '8px',
+                                  border: '1.5px solid #d2ded0',
+                                  background: '#ffffff',
+                                  color: '#294B35',
+                                  fontWeight: 700,
+                                  fontSize: '0.82rem',
+                                  cursor: 'pointer',
+                                }}
+                                title="Generate & View eCard"
+                              >
+                                <AutoAwesomeIcon sx={{ fontSize: 14, color: '#D9B66F' }} />
+                                <span>eCard</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setSelectedThankYouGuest(g)}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  padding: '6px 12px',
+                                  borderRadius: '8px',
+                                  border: '1.5px solid #d2ded0',
+                                  background: '#ffffff',
+                                  color: '#294B35',
+                                  fontWeight: 700,
+                                  fontSize: '0.82rem',
+                                  cursor: 'pointer',
+                                }}
+                                title="Generate & View Thank You Card"
+                              >
+                                <FavoriteIcon sx={{ fontSize: 14, color: '#e57373' }} />
+                                <span>Thank You</span>
+                              </button>
+                            </div>
+                          </td>
+                          <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                            <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'flex-end' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEdit(g)}
+                                className={styles.editBtn}
+                                title="Edit guest"
+                              >
+                                <EditIcon sx={{ fontSize: 16 }} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setGuestToDelete(g)}
+                                className={styles.actionBtn}
+                                title="Delete guest"
+                              >
+                                <DeleteOutlineIcon sx={{ fontSize: 17 }} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
-
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div>
@@ -4021,139 +4462,403 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Section 5: RSVP Management */}
+        {/* Section 5: RSVP Management - 100% Full Width Themed Redesign */}
         {activeTab === '5' && (
-          <div>
-            <div className={styles.sectionHeader}>
-              <HowToRegIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>RSVP Tracking &amp; Attendance</span>
+          <div style={{ width: '100%' }}>
+            {/* Themed Hero Banner - 100% Width */}
+            <div
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #183321 0%, #294B35 55%, #3c6e4a 100%)',
+                borderRadius: '20px',
+                padding: '28px 32px',
+                marginBottom: '24px',
+                color: '#ffffff',
+                boxShadow: '0 8px 24px rgba(41, 75, 53, 0.12)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '20px',
+                boxSizing: 'border-box',
+              }}
+            >
+              <div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)', padding: '5px 14px', borderRadius: '30px', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.5px', marginBottom: '10px', color: '#f0fdf4' }}>
+                  <ParkIcon sx={{ fontSize: 16, color: '#a3e635' }} />
+                  <span>BAMBOO GROVE • LIVE ATTENDANCE &amp; MEAL PREFERENCES</span>
+                </div>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 6px 0', color: '#ffffff', letterSpacing: '-0.3px' }}>
+                  RSVP Management
+                </h2>
+                <p style={{ margin: 0, fontSize: '0.92rem', color: '#d1e7d6', maxWidth: '620px', lineHeight: 1.5 }}>
+                  Real-time database records of guest confirmations, headcount, party size, dietary requirements, and personal birthday notes submitted via the website RSVP page.
+                </p>
+              </div>
+
+              {/* Action Buttons in Banner */}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={handleDownloadRsvpCsv}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 18px',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    background: 'rgba(255,255,255,0.15)',
+                    backdropFilter: 'blur(10px)',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  title="Export all RSVP data as CSV spreadsheet"
+                >
+                  <FileDownloadIcon sx={{ fontSize: 18, color: '#a3e635' }} />
+                  <span>Download CSV</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadRsvpPdf}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 18px',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    background: 'rgba(255,255,255,0.15)',
+                    backdropFilter: 'blur(10px)',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  title="Download official branded A4 PDF report"
+                >
+                  <PictureAsPdfIcon sx={{ fontSize: 18, color: '#ff8a80' }} />
+                  <span>Download PDF Report</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={fetchRsvps}
+                  disabled={rsvpsLoading}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 18px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: '#25D366',
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(37, 211, 102, 0.3)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <RefreshIcon sx={{ fontSize: 18 }} />
+                  <span>{rsvpsLoading ? 'Syncing...' : 'Sync Database'}</span>
+                </button>
+              </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #dce8d2' }}>
-                <span style={{ fontSize: '0.85rem', color: '#6e7e73', fontWeight: 600 }}>Total Invited</span>
-                <h3 style={{ fontSize: '1.8rem', color: '#294B35', marginTop: '4px' }}>{stats.totalGuests}</h3>
-              </div>
-              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #dce8d2' }}>
-                <span style={{ fontSize: '0.85rem', color: '#6e7e73', fontWeight: 600 }}>Attending Confirmed</span>
-                <h3 style={{ fontSize: '1.8rem', color: '#3C8D40', marginTop: '4px' }}>{stats.attending}</h3>
-              </div>
-              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #dce8d2' }}>
-                <span style={{ fontSize: '0.85rem', color: '#6e7e73', fontWeight: 600 }}>Awaiting Response</span>
-                <h3 style={{ fontSize: '1.8rem', color: '#B58422', marginTop: '4px' }}>{stats.pending}</h3>
-              </div>
-              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #dce8d2' }}>
-                <span style={{ fontSize: '0.85rem', color: '#6e7e73', fontWeight: 600 }}>Declined</span>
-                <h3 style={{ fontSize: '1.8rem', color: '#D32F2F', marginTop: '4px' }}>{stats.declined}</h3>
-              </div>
-            </div>
-
-            {/* Direct Website RSVP Submissions from Database */}
-            <div style={{ background: '#ffffff', border: '1px solid #dce8d2', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
+            {/* 4 Themed Metric Cards - 100% Width Grid */}
+            <div
+              style={{
+                width: '100%',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '16px',
+                marginBottom: '24px',
+                boxSizing: 'border-box',
+              }}
+            >
+              {/* Card 1: Total Invited */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  padding: '22px 24px',
+                  borderRadius: '16px',
+                  border: '1.5px solid #dce8d2',
+                  boxShadow: '0 4px 14px rgba(41, 75, 53, 0.03)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                }}
+              >
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#eef6ec', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <PeopleIcon sx={{ color: '#294B35', fontSize: 26 }} />
+                </div>
                 <div>
-                  <h3 style={{ margin: '0 0 4px 0', fontSize: '1.2rem', color: '#294B35', fontWeight: 800 }}>
-                    Website RSVP Submissions ({rsvpsList.length} Records)
+                  <span style={{ fontSize: '0.8rem', color: '#6e7e73', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Registered</span>
+                  <h3 style={{ fontSize: '1.85rem', color: '#294B35', margin: '2px 0 0', fontWeight: 800, lineHeight: 1 }}>{stats.totalGuests}</h3>
+                </div>
+              </div>
+
+              {/* Card 2: Attending Confirmed */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  padding: '22px 24px',
+                  borderRadius: '16px',
+                  border: '1.5px solid #dce8d2',
+                  boxShadow: '0 4px 14px rgba(41, 75, 53, 0.03)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                }}
+              >
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#edf7ed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckCircleIcon sx={{ color: '#2e7d32', fontSize: 26 }} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: '#2e7d32', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Attending Confirmed</span>
+                  <h3 style={{ fontSize: '1.85rem', color: '#2e7d32', margin: '2px 0 0', fontWeight: 800, lineHeight: 1 }}>
+                    {rsvpsList.filter((r) => r.attending === 'yes').length}
+                  </h3>
+                </div>
+              </div>
+
+              {/* Card 3: Headcount Expected */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  padding: '22px 24px',
+                  borderRadius: '16px',
+                  border: '1.5px solid #dce8d2',
+                  boxShadow: '0 4px 14px rgba(41, 75, 53, 0.03)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                }}
+              >
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fdf7ea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FamilyRestroomIcon sx={{ color: '#b58422', fontSize: 26 }} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: '#b58422', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Guest Headcount</span>
+                  <h3 style={{ fontSize: '1.85rem', color: '#b58422', margin: '2px 0 0', fontWeight: 800, lineHeight: 1 }}>
+                    {rsvpsList.filter((r) => r.attending === 'yes').reduce((sum, r) => sum + (r.guests_count || 1), 0)}
+                  </h3>
+                </div>
+              </div>
+
+              {/* Card 4: Declined RSVPs */}
+              <div
+                style={{
+                  background: '#ffffff',
+                  padding: '22px 24px',
+                  borderRadius: '16px',
+                  border: '1.5px solid #dce8d2',
+                  boxShadow: '0 4px 14px rgba(41, 75, 53, 0.03)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '16px',
+                }}
+              >
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fde8e8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CloseIcon sx={{ color: '#d32f2f', fontSize: 26 }} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: '#d32f2f', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Declined / Sending Love</span>
+                  <h3 style={{ fontSize: '1.85rem', color: '#d32f2f', margin: '2px 0 0', fontWeight: 800, lineHeight: 1 }}>
+                    {rsvpsList.filter((r) => r.attending === 'no').length}
+                  </h3>
+                </div>
+              </div>
+            </div>
+
+            {/* 100% Full Width Direct Website RSVP Submissions Table */}
+            <div
+              style={{
+                width: '100%',
+                background: '#ffffff',
+                border: '1.5px solid #dce8d2',
+                borderRadius: '18px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)',
+                boxSizing: 'border-box',
+              }}
+            >
+              <div
+                style={{
+                  padding: '20px 24px',
+                  background: '#fafcfa',
+                  borderBottom: '1.5px solid #dce8d2',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                }}
+              >
+                <div>
+                  <h3 style={{ margin: '0 0 4px 0', fontSize: '1.25rem', color: '#294B35', fontWeight: 800 }}>
+                    Live Website Submissions ({rsvpsList.length} Entries)
                   </h3>
                   <p style={{ margin: 0, color: '#6e7e73', fontSize: '0.88rem' }}>
-                    Real-time RSVPs submitted by guests via the public birthday invitation form and stored in the database.
+                    Guests who opened the invitation and submitted their response directly into the database.
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    onClick={handleDownloadRsvpCsv}
-                    className={styles.refreshBtn}
-                    style={{ background: '#ffffff', color: '#294B35', borderColor: '#c4d7be' }}
-                    title="Download RSVP data in CSV / Excel format"
-                  >
-                    <FileDownloadIcon sx={{ fontSize: 18, color: '#3c8d40' }} />
-                    <span>Download CSV</span>
-                  </button>
 
-                  <button
-                    type="button"
-                    onClick={handleDownloadRsvpPdf}
-                    className={styles.refreshBtn}
-                    style={{ background: '#ffffff', color: '#294B35', borderColor: '#c4d7be' }}
-                    title="Download official RSVP PDF Report"
-                  >
-                    <PictureAsPdfIcon sx={{ fontSize: 18, color: '#d32f2f' }} />
-                    <span>Download PDF</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={fetchRsvps}
-                    className={styles.refreshBtn}
-                    disabled={rsvpsLoading}
-                  >
-                    <RefreshIcon sx={{ fontSize: 18 }} />
-                    <span>{rsvpsLoading ? 'Refreshing...' : 'Refresh Database RSVPs'}</span>
-                  </button>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#eef6ec', color: '#294B35', padding: '6px 14px', borderRadius: '20px', fontSize: '0.84rem', fontWeight: 700 }}>
+                  <StorageIcon sx={{ fontSize: 16, color: '#3c8d40' }} />
+                  <span>Neon PostgreSQL Active</span>
                 </div>
               </div>
 
-              <div className={styles.tableResponsive}>
-                <table className={styles.guestTable}>
+              <div className={styles.tableResponsive} style={{ width: '100%', overflowX: 'auto' }}>
+                <table className={styles.guestTable} style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr>
-                      <th>Full Name</th>
-                      <th>Contact Info</th>
-                      <th>Attendance</th>
-                      <th>Guests</th>
-                      <th>Dietary / Allergies</th>
-                      <th>Personal Message</th>
-                      <th>Submitted At</th>
-                      <th>Action</th>
+                    <tr style={{ background: '#f5faf3', borderBottom: '1.5px solid #dce8d2' }}>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px', textAlign: 'left', whiteSpace: 'nowrap' }}>GUEST NAME</th>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px', textAlign: 'left', whiteSpace: 'nowrap' }}>CONTACT INFO</th>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px', textAlign: 'center', whiteSpace: 'nowrap' }}>ATTENDANCE</th>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px', textAlign: 'center', whiteSpace: 'nowrap' }}>PARTY SIZE</th>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px', textAlign: 'left', whiteSpace: 'nowrap' }}>DIET &amp; ALLERGIES</th>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px', textAlign: 'left' }}>PERSONAL NOTE</th>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px', textAlign: 'left', whiteSpace: 'nowrap' }}>SUBMITTED AT</th>
+                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px', textAlign: 'right', whiteSpace: 'nowrap' }}>ACTION</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rsvpsList.length === 0 ? (
                       <tr>
-                        <td colSpan={8} style={{ textAlign: 'center', padding: '32px', color: '#7b8e7e' }}>
-                          No website RSVP responses submitted yet.
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '60px 20px' }}>
+                          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#eef6ec', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <SentimentSatisfiedAltIcon sx={{ fontSize: 32, color: '#3c8d40' }} />
+                          </div>
+                          <h4 style={{ margin: '0 0 6px', color: '#294B35', fontSize: '1.1rem' }}>No RSVP responses yet</h4>
+                          <p style={{ margin: 0, color: '#7a8c7e', fontSize: '0.88rem' }}>
+                            Share your invitation link via WhatsApp from the Guest List tab to start receiving RSVPs!
+                          </p>
                         </td>
                       </tr>
                     ) : (
                       rsvpsList.map((r) => (
-                        <tr key={r.id}>
-                          <td>
-                            <strong>{r.full_name}</strong>
-                          </td>
-                          <td>
-                            <div>{r.phone}</div>
-                            {r.email && <div style={{ fontSize: '0.8rem', color: '#7b8e7e' }}>{r.email}</div>}
-                          </td>
-                          <td>
-                            <span className={`${styles.statusBadge} ${r.attending === 'yes' ? styles.attending : styles.declined}`}>
-                              {r.attending === 'yes' ? 'Attending (Yes)' : 'Not Attending (No)'}
-                            </span>
-                          </td>
-                          <td>
-                            <span style={{ fontWeight: 700, color: '#294B35' }}>{r.guests_count || 1}</span>
-                          </td>
-                          <td>
-                            <div style={{ fontSize: '0.86rem' }}>
-                              {r.dietary ? <div><strong>Diet:</strong> {r.dietary}</div> : null}
-                              {r.allergies ? <div style={{ color: '#d32f2f' }}><strong>Allergies:</strong> {r.allergies}</div> : null}
-                              {!r.dietary && !r.allergies && <span style={{ color: '#9e9e9e' }}>None</span>}
+                        <tr key={r.id} style={{ borderBottom: '1px solid #edf4ea', transition: 'background 0.15s' }}>
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#eef6ec', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#294B35', fontWeight: 800, fontSize: '0.85rem' }}>
+                                {(r.full_name || 'G')[0].toUpperCase()}
+                              </div>
+                              <div>
+                                <strong style={{ color: '#203325', fontSize: '0.94rem' }}>{r.full_name}</strong>
+                              </div>
                             </div>
                           </td>
-                          <td style={{ maxWidth: '240px', wordBreak: 'break-word', fontSize: '0.86rem', color: '#4a5b4e' }}>
-                            {r.message ? `"${r.message}"` : <span style={{ color: '#9e9e9e' }}>—</span>}
+
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#294B35', fontWeight: 600, fontSize: '0.88rem' }}>
+                              <PhoneIcon sx={{ fontSize: 14, color: '#3c8d40' }} />
+                              <span>{r.phone}</span>
+                            </div>
+                            {r.email && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#7b8e7e', marginTop: '3px' }}>
+                                <EmailOutlinedIcon sx={{ fontSize: 13, color: '#8e9e93' }} />
+                                <span>{r.email}</span>
+                              </div>
+                            )}
                           </td>
-                          <td style={{ fontSize: '0.8rem', color: '#7b8e7e', whiteSpace: 'nowrap' }}>
+
+                          <td style={{ padding: '14px 18px', textAlign: 'center' }}>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '5px 12px',
+                                borderRadius: '20px',
+                                fontWeight: 700,
+                                fontSize: '0.82rem',
+                                background: r.attending === 'yes' ? '#edf7ed' : '#fde8e8',
+                                color: r.attending === 'yes' ? '#1e4620' : '#9b1c1c',
+                                border: `1px solid ${r.attending === 'yes' ? '#c8e6c9' : '#f8b4b4'}`,
+                              }}
+                            >
+                              {r.attending === 'yes' ? (
+                                <>
+                                  <CheckCircleIcon sx={{ fontSize: 14, color: '#2e7d32' }} />
+                                  <span>Attending</span>
+                                </>
+                              ) : (
+                                <>
+                                  <CloseIcon sx={{ fontSize: 14, color: '#d32f2f' }} />
+                                  <span>Declined</span>
+                                </>
+                              )}
+                            </span>
+                          </td>
+
+                          <td style={{ padding: '14px 18px', textAlign: 'center' }}>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '50%',
+                                background: '#f3f8f1',
+                                color: '#294B35',
+                                fontWeight: 800,
+                                fontSize: '0.9rem',
+                                border: '1px solid #dce8d2',
+                              }}
+                            >
+                              {r.guests_count || 1}
+                            </span>
+                          </td>
+
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ fontSize: '0.86rem' }}>
+                              {r.dietary && (
+                                <div style={{ color: '#294B35', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <SpaIcon sx={{ fontSize: 13, color: '#3c8d40' }} />
+                                  <span>{r.dietary}</span>
+                                </div>
+                              )}
+                              {r.allergies && (
+                                <div style={{ color: '#d32f2f', fontSize: '0.82rem', marginTop: '2px' }}>
+                                  <strong>Allergy:</strong> {r.allergies}
+                                </div>
+                              )}
+                              {!r.dietary && !r.allergies && <span style={{ color: '#a0b1a4' }}>Standard / None</span>}
+                            </div>
+                          </td>
+
+                          <td style={{ padding: '14px 18px', maxWidth: '280px', wordBreak: 'break-word', fontSize: '0.86rem', color: '#4a5b4e' }}>
+                            {r.message ? (
+                              <div style={{ background: '#fafcfa', padding: '6px 10px', borderRadius: '8px', border: '1px solid #edf4ea', fontStyle: 'italic' }}>
+                                &ldquo;{r.message}&rdquo;
+                              </div>
+                            ) : (
+                              <span style={{ color: '#a0b1a4' }}>—</span>
+                            )}
+                          </td>
+
+                          <td style={{ padding: '14px 18px', fontSize: '0.82rem', color: '#6e7e73', whiteSpace: 'nowrap' }}>
                             {r.created_at ? new Date(r.created_at).toLocaleString() : '—'}
                           </td>
-                          <td>
+
+                          <td style={{ padding: '14px 18px', textAlign: 'right' }}>
                             <button
                               type="button"
                               onClick={() => handleDeleteRsvp(r.id)}
                               className={styles.actionBtn}
                               title="Delete RSVP record"
                             >
-                              <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                              <DeleteOutlineIcon sx={{ fontSize: 17 }} />
                             </button>
                           </td>
                         </tr>
@@ -4772,6 +5477,471 @@ export default function AdminDashboardPage() {
               >
                 <ImageIcon sx={{ fontSize: 18 }} />
                 <span>{isDownloading ? 'Generating...' : 'Download PNG'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp RSVP Modal - Redesigned WhatsApp Chat Preview UI */}
+      {whatsappGuest && (
+        <div className={styles.modalOverlay} onClick={() => setWhatsappGuest(null)}>
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '680px',
+              borderRadius: '24px',
+              background: '#ffffff',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              animation: 'modalSlideUp 0.25s ease-out',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* WhatsApp App-style Top Bar */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #075E54 0%, #128C7E 100%)',
+                padding: '16px 24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                color: '#ffffff',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '50%',
+                    background: '#25D366',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  }}
+                >
+                  <WhatsAppIcon sx={{ fontSize: 26, color: '#ffffff' }} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.2px' }}>
+                    Send RSVP Invite • {whatsappGuest.title} {whatsappGuest.name}
+                  </h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '2px', fontSize: '0.82rem', color: '#d8f4e2' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <SmartphoneIcon sx={{ fontSize: 15, color: '#ffffff' }} />
+                      <span>{whatsappGuest.mobile}</span>
+                    </span>
+                    {whatsappGuest.email && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <EmailOutlinedIcon sx={{ fontSize: 15, color: '#ffffff' }} />
+                        <span>{whatsappGuest.email}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setWhatsappGuest(null)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  border: 'none',
+                  color: '#ffffff',
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)')}
+              >
+                <CloseIcon sx={{ fontSize: 20, color: '#ffffff' }} />
+              </button>
+            </div>
+
+            {/* Content Body: Chat Bubble Preview + Custom Editor */}
+            <div style={{ padding: '24px 28px', background: '#F0F2F5', maxHeight: '78vh', overflowY: 'auto' }}>
+              
+              {/* Message Editor Section */}
+              <div style={{ background: '#ffffff', borderRadius: '16px', padding: '18px 20px', marginBottom: '20px', border: '1px solid #e1e7de', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ fontSize: '0.88rem', fontWeight: 700, color: '#294B35', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <EditIcon sx={{ fontSize: 16, color: '#3c8d40' }} />
+                    <span>Customize Invitation Message</span>
+                  </label>
+                  <span style={{ fontSize: '0.75rem', color: '#7a8c7e', background: '#eef6ec', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                    RSVP link will auto-attach
+                  </span>
+                </div>
+                <textarea
+                  value={whatsappCustomMessage}
+                  onChange={(e) => setWhatsappCustomMessage(e.target.value)}
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    border: '1.5px solid #d2e2cd',
+                    fontFamily: 'inherit',
+                    fontSize: '0.92rem',
+                    lineHeight: 1.5,
+                    color: '#203325',
+                    background: '#fcfdfb',
+                    resize: 'vertical',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                    transition: 'border 0.2s',
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = '#25D366')}
+                  onBlur={(e) => (e.target.style.borderColor = '#d2e2cd')}
+                  placeholder="Type your personalized invitation note here..."
+                />
+              </div>
+
+              {/* Realistic WhatsApp Chat Preview */}
+              <div>
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#68796c', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '8px' }}>
+                  Live Recipient Message Preview
+                </span>
+                
+                {/* Chat bubble */}
+                <div
+                  style={{
+                    background: '#E7FCE3',
+                    border: '1px solid #D1F4CA',
+                    borderRadius: '16px 16px 4px 16px',
+                    padding: '16px 18px',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                    position: 'relative',
+                  }}
+                >
+                  <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.92rem', color: '#111b21', lineHeight: 1.55 }}>
+                    {whatsappCustomMessage || 'Loading message...'}
+                  </div>
+
+                  {/* Attached Rich RSVP Link Box */}
+                  <div
+                    style={{
+                      marginTop: '12px',
+                      background: '#ffffff',
+                      border: '1.5px solid #25D366',
+                      borderRadius: '12px',
+                      padding: '12px 14px',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <ParkIcon sx={{ fontSize: 18, color: '#075E54' }} />
+                      <strong style={{ fontSize: '0.88rem', color: '#075E54' }}>
+                        Ditvi&apos;s 1st Birthday RSVP • Bamboo Grove
+                      </strong>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#54656f', margin: '4px 0 8px 0', lineHeight: 1.4 }}>
+                      Pre-filled for: <strong>{whatsappGuest.name}</strong> • Phone: <strong>{whatsappGuest.mobile}</strong>
+                      {whatsappGuest.email ? ` • Email: ${whatsappGuest.email}` : ''}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f5faf3', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e1efe0' }}>
+                      <LinkIcon sx={{ fontSize: 16, color: '#25D366' }} />
+                      <span style={{ fontSize: '0.76rem', color: '#128C7E', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                        {typeof window !== 'undefined' ? window.location.origin : ''}/rsvp?name={encodeURIComponent(whatsappGuest.name || '')}&amp;phone={encodeURIComponent(whatsappGuest.mobile || '')}&amp;email={encodeURIComponent(whatsappGuest.email || '')}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '4px', marginTop: '6px', fontSize: '0.7rem', color: '#667781' }}>
+                    <span>Just now</span>
+                    <DoneAllIcon sx={{ fontSize: 15, color: '#53bdeb' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Controls */}
+            <div
+              style={{
+                padding: '16px 28px',
+                background: '#ffffff',
+                borderTop: '1px solid #e3ebe0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '12px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: '#576b5c' }}>
+                <CheckCircleOutlineIcon sx={{ fontSize: 18, color: '#25D366' }} />
+                <span>One-click opens WhatsApp with everything pre-filled</span>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setWhatsappGuest(null)}
+                  style={{
+                    padding: '10px 18px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #d2ded0',
+                    background: '#ffffff',
+                    color: '#495a4d',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#f5f8f3')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={sendWhatsappRsvp}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 24px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #25D366 0%, #1EBE5D 100%)',
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    fontSize: '0.94rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(37, 211, 102, 0.35)',
+                    transition: 'transform 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 6px 18px rgba(37, 211, 102, 0.45)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 14px rgba(37, 211, 102, 0.35)';
+                  }}
+                >
+                  <WhatsAppIcon sx={{ fontSize: 22 }} />
+                  <span>Send on WhatsApp</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Guest Delete Confirmation Modal */}
+      {guestToDelete && (
+        <div className={styles.modalOverlay} onClick={() => !isDeletingGuest && setGuestToDelete(null)}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '460px',
+              padding: '0',
+              overflow: 'hidden',
+              borderRadius: '20px',
+              boxShadow: '0 24px 60px rgba(0, 0, 0, 0.3)',
+              border: '1.5px solid rgba(220, 38, 38, 0.18)',
+              background: '#ffffff',
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '20px 24px 16px',
+                borderBottom: '1px solid #f1f5f2',
+                background: 'linear-gradient(135deg, #FFF5F5 0%, #FFFFFF 100%)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '12px',
+                    background: '#FEE2E2',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#DC2626',
+                  }}
+                >
+                  <DeleteOutlineIcon sx={{ fontSize: 24 }} />
+                </div>
+                <div>
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: '1.15rem',
+                      fontWeight: 800,
+                      color: '#1B3824',
+                      fontFamily: "'Playfair Display', Georgia, serif",
+                    }}
+                  >
+                    Delete Guest
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#6A7D70' }}>
+                    Confirm removal from guest list
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isDeletingGuest && setGuestToDelete(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#6A7D70',
+                  cursor: 'pointer',
+                  padding: '6px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                disabled={isDeletingGuest}
+              >
+                <CloseIcon sx={{ fontSize: 20 }} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '22px 24px' }}>
+              <p style={{ margin: '0 0 16px', fontSize: '0.92rem', color: '#3A4D40', lineHeight: 1.5 }}>
+                Are you sure you want to remove{' '}
+                <strong style={{ color: '#1B3824', fontWeight: 800 }}>
+                  {guestToDelete.title ? `${guestToDelete.title} ` : ''}
+                  {guestToDelete.name}
+                </strong>{' '}
+                from the guest registry?
+              </p>
+
+              <div
+                style={{
+                  background: '#F7F9F6',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  border: '1px solid #E5EBE3',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  fontSize: '0.85rem',
+                  color: '#55695C',
+                }}
+              >
+                {guestToDelete.mobile && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <PhoneIcon sx={{ fontSize: 16, color: '#1B3824' }} />
+                    <span style={{ fontWeight: 600, color: '#1B3824' }}>Phone:</span>
+                    <span>{guestToDelete.mobile}</span>
+                  </div>
+                )}
+                {guestToDelete.email && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <EmailOutlinedIcon sx={{ fontSize: 16, color: '#1B3824' }} />
+                    <span style={{ fontWeight: 600, color: '#1B3824' }}>Email:</span>
+                    <span>{guestToDelete.email}</span>
+                  </div>
+                )}
+              </div>
+
+              <div
+                style={{
+                  marginTop: '14px',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  background: '#FEF2F2',
+                  border: '1px solid #FEE2E2',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '8px',
+                  fontSize: '0.8rem',
+                  color: '#991B1B',
+                }}
+              >
+                <InfoOutlinedIcon sx={{ fontSize: 16, marginTop: '2px', flexShrink: 0 }} />
+                <span>This action cannot be undone. Any personalized invitation link created for this guest will also be disconnected.</span>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '16px 24px',
+                background: '#FBFDFB',
+                borderTop: '1px solid #EAEFE9',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setGuestToDelete(null)}
+                disabled={isDeletingGuest}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '10px',
+                  border: '1.5px solid #d2ded0',
+                  background: '#ffffff',
+                  color: '#495a4d',
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  cursor: isDeletingGuest ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isDeletingGuest) e.currentTarget.style.background = '#f5f8f3';
+                }}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteGuest}
+                disabled={isDeletingGuest}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 22px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  fontSize: '0.92rem',
+                  cursor: isDeletingGuest ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 14px rgba(220, 38, 38, 0.35)',
+                  transition: 'transform 0.15s, box-shadow 0.15s',
+                  opacity: isDeletingGuest ? 0.7 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isDeletingGuest) {
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 6px 18px rgba(220, 38, 38, 0.45)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(220, 38, 38, 0.35)';
+                }}
+              >
+                <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                <span>{isDeletingGuest ? 'Deleting...' : 'Delete Guest'}</span>
               </button>
             </div>
           </div>
