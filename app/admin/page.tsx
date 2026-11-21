@@ -31,7 +31,6 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
-import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import MenuIcon from '@mui/icons-material/Menu';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
@@ -2231,20 +2230,6 @@ export default function AdminDashboardPage() {
               <span className={styles.navItemText}>11. Media &amp; Albums</span>
             </div>
           </button>
-
-          <button
-            type="button"
-            className={`${styles.navItem} ${activeTab === '12' ? styles.active : ''}`}
-            onClick={() => {
-              setActiveTab('12');
-              setIsMobileSidebarOpen(false);
-            }}
-          >
-            <div className={styles.navItemLeft}>
-              <span className={styles.navIcon}><VolunteerActivismIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>12. Thank You Cards</span>
-            </div>
-          </button>
         </nav>
       </aside>
 
@@ -4228,75 +4213,6 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
-
-        {/* Section 12: Thank You Cards */}
-        {activeTab === '12' && (
-          <div>
-            <div className={styles.sectionHeader}>
-              <VolunteerActivismIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>12. Personalized Thank You Cards</span>
-            </div>
-
-            <div style={{ background: 'linear-gradient(135deg, #f7faf5 0%, #edf5eb 100%)', border: '1.5px solid #dce8d2', borderRadius: '16px', padding: '24px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                <div>
-                  <h3 style={{ fontSize: '1.25rem', color: '#294B35', fontWeight: 800, margin: '0 0 6px 0' }}>Post-Event Guest Appreciation</h3>
-                  <p style={{ color: '#576b5c', fontSize: '0.9rem', margin: 0 }}>
-                    Generate bespoke thank-you notes with custom bamboo illustrations and Ditvi&apos;s party panda for each attending family.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Guests Thank You Card list */}
-            <div className={styles.tableResponsive}>
-              <table className={styles.guestTable}>
-                <thead>
-                  <tr>
-                    <th>Guest Name</th>
-                    <th>Mobile</th>
-                    <th>RSVP Status</th>
-                    <th>Thank You Card Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {guests.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', padding: '32px', color: '#7b8e7e' }}>
-                        No guests found.
-                      </td>
-                    </tr>
-                  ) : (
-                    guests.map((g) => (
-                      <tr key={g.id}>
-                        <td>
-                          <strong>{g.title} {g.name}</strong>
-                        </td>
-                        <td>{g.mobile}</td>
-                        <td>
-                          <span className={`${styles.statusBadge} ${styles[g.rsvp_status]}`}>
-                            {g.rsvp_status}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedThankYouGuest(g)}
-                            className={styles.thankYouBtn}
-                            title="Generate & View Thank You Card"
-                          >
-                            <FavoriteIcon sx={{ fontSize: 15 }} />
-                            <span>Generate Thank You Card</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
       </main>
 
       {/* eCard Preview & Download Modal */}
@@ -4803,131 +4719,16 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 disabled={isDownloading}
-                className={styles.topBtn}
+                className={styles.downloadBtn}
                 onClick={() => handleDownloadWishImage(selectedWishCard)}
               >
                 <ImageIcon sx={{ fontSize: 18 }} />
-                <span>Download PNG</span>
-              </button>
-              <button
-                type="button"
-                disabled={isDownloading}
-                className={styles.downloadBtn}
-                onClick={() => handleDownloadSingleWishA4Pdf(selectedWishCard)}
-              >
-                <PictureAsPdfIcon sx={{ fontSize: 18 }} />
-                <span>{isDownloading ? 'Generating...' : 'Download A4 Size PDF'}</span>
+                <span>{isDownloading ? 'Generating...' : 'Download PNG'}</span>
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Hidden Offscreen DOM Container for Generating 100% Exact Matching 4-Card A4 PDF */}
-      <div
-        ref={printCardsContainerRef}
-        aria-hidden="true"
-        style={{
-          position: 'fixed',
-          top: '-99999px',
-          left: '-99999px',
-          width: '500px',
-          visibility: 'hidden',
-          pointerEvents: 'none',
-          zIndex: -9999,
-        }}
-      >
-        {wishesList.map((wish, wIdx) => (
-          <div
-            key={wish.id}
-            data-wish-card-index={wIdx}
-            className={styles.ecardFrame}
-            style={{
-              width: '440px',
-              maxWidth: '440px',
-              marginBottom: '40px',
-              backgroundColor: '#FFFFFF',
-              boxSizing: 'border-box',
-            }}
-          >
-            {/* Bamboo Trees on sides */}
-            <div className={styles.ecardBambooTreeLeft} aria-hidden="true">
-              <BambooStalkDecoration height={360} />
-            </div>
-            <div className={styles.ecardBambooTreeRight} aria-hidden="true">
-              <BambooStalkDecoration height={360} />
-            </div>
-
-            {/* Background Panda Paws */}
-            <span className={`${styles.ecardBgPaw} ${styles.ecardPawTopLeft}`} aria-hidden="true">
-              <PetsIcon sx={{ fontSize: 28, color: 'rgba(217, 182, 111, 0.45)' }} />
-            </span>
-            <span className={`${styles.ecardBgPaw} ${styles.ecardPawTopRight}`} aria-hidden="true">
-              <PetsIcon sx={{ fontSize: 28, color: 'rgba(217, 182, 111, 0.45)' }} />
-            </span>
-            <span className={`${styles.ecardBgPaw} ${styles.ecardPawBottomLeft}`} aria-hidden="true">
-              <PetsIcon sx={{ fontSize: 28, color: 'rgba(217, 182, 111, 0.45)' }} />
-            </span>
-            <span className={`${styles.ecardBgPaw} ${styles.ecardPawBottomRight}`} aria-hidden="true">
-              <PetsIcon sx={{ fontSize: 28, color: 'rgba(217, 182, 111, 0.45)' }} />
-            </span>
-
-            {/* Friendly Panda Mascot */}
-            <div className={styles.ecardMascotWrap}>
-              <PartyPanda size={120} />
-            </div>
-
-            {/* Heading */}
-            <div className={styles.ecardInviteLead}>A Heartfelt Birthday Wish for Ditvi</div>
-            <h2 className={styles.ecardEventTitle}>
-              Ditvi&apos;s 1st Birthday <span>Keepsake</span>
-            </h2>
-
-            {/* Author Info */}
-            <div className={styles.ecardGuestSection}>
-              <span className={styles.ecardGuestGreeting}>
-                {wish.relation ? `${wish.relation} • ` : ''}Wish From
-              </span>
-              <h3 className={styles.ecardGuestName}>{wish.name}</h3>
-              {wish.phone && (
-                <div style={{ fontSize: '0.82rem', color: '#6e7e73', marginTop: '2px' }}>
-                  Phone: {wish.phone}
-                </div>
-              )}
-            </div>
-
-            {/* Message Quote */}
-            <div
-              style={{
-                background: '#f8faf7',
-                border: '1.5px dashed #dce8d2',
-                borderRadius: '14px',
-                padding: '18px 22px',
-                margin: '16px 20px',
-                fontSize: '1.05rem',
-                lineHeight: '1.6',
-                color: '#294b35',
-                fontStyle: 'italic',
-                boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.02)',
-              }}
-            >
-              &ldquo;{wish.message}&rdquo;
-            </div>
-
-            {/* Date and love footer */}
-            <div className={styles.ecardFooterLove}>With Love &amp; Giant Panda Hugs</div>
-            <div className={styles.ecardFootnote}>
-              Recorded on{' '}
-              {new Date(wish.created_at).toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-              })}{' '}
-              • Ditvi&apos;s Memory Wall
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
