@@ -37,6 +37,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import { PartyPanda, BambooStalkDecoration } from '@/components/PandaIllustrations';
 import styles from './dashboard.module.css';
 
@@ -90,6 +91,7 @@ export default function AdminDashboardPage() {
   const [isUploadingCsv, setIsUploadingCsv] = useState(false);
   const [csvUploadSuccess, setCsvUploadSuccess] = useState<string | null>(null);
   const [csvUploadError, setCsvUploadError] = useState<string | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Selected guest for eCard preview modal
@@ -288,6 +290,127 @@ export default function AdminDashboardPage() {
       setCsvUploadError('Network error while importing guests');
     } finally {
       setIsUploadingCsv(false);
+    }
+  };
+
+  // Download Guest List in PDF format
+  const handleDownloadPdf = async () => {
+    if (guests.length === 0) return;
+
+    try {
+      setIsGeneratingPdf(true);
+      const { default: jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: 'a4',
+      });
+
+      // Header Banner - Forest Green
+      doc.setFillColor(41, 75, 53); // #294B35
+      doc.rect(0, 0, 595.28, 70, 'F');
+
+      // Gold Accent Line
+      doc.setFillColor(217, 182, 111); // #D9B66F
+      doc.rect(0, 70, 595.28, 4, 'F');
+
+      // Title & Event Info
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.text("Ditvi's 1st Birthday Celebration", 40, 36);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10.5);
+      doc.text('Official Guest List & RSVP Status Report', 40, 54);
+
+      // Event Details
+      doc.setTextColor(41, 75, 53);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('Event Date:', 40, 95);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Saturday, December 12, 2026 (3:30 PM - 7:30 PM CST)', 105, 95);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Venue:', 40, 110);
+      doc.setFont('helvetica', 'normal');
+      doc.text('The Bamboo Pavilion, Austin, TX', 80, 110);
+
+      // Stats Pill summary box
+      doc.setFillColor(248, 250, 247);
+      doc.setDrawColor(220, 232, 210);
+      doc.roundedRect(40, 122, 515, 34, 4, 4, 'FD');
+
+      doc.setFontSize(9.5);
+      doc.setTextColor(41, 75, 53);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total Guests: ${stats.totalGuests}`, 55, 143);
+      doc.text(`Attending: ${stats.attending}`, 180, 143);
+      doc.text(`Pending: ${stats.pending}`, 300, 143);
+      doc.text(`Declined: ${stats.declined}`, 420, 143);
+
+      // Table rows
+      const tableData = guests.map((g, index) => [
+        (index + 1).toString(),
+        `${g.title || 'Mr.'} ${g.name}`,
+        g.mobile || '—',
+        g.email || '—',
+        g.invite_code || '—',
+        g.rsvp_status ? g.rsvp_status.toUpperCase() : 'PENDING',
+      ]);
+
+      autoTable(doc, {
+        startY: 168,
+        head: [['#', 'Guest Name', 'Mobile', 'Email', 'Invite Code', 'RSVP Status']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [41, 75, 53],
+          textColor: [255, 255, 255],
+          fontSize: 9,
+          fontStyle: 'bold',
+          halign: 'left',
+        },
+        bodyStyles: {
+          fontSize: 8.5,
+          textColor: [50, 50, 50],
+          cellPadding: 5,
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 247],
+        },
+        columnStyles: {
+          0: { cellWidth: 26, halign: 'center' },
+          1: { cellWidth: 130, fontStyle: 'bold' },
+          2: { cellWidth: 95 },
+          3: { cellWidth: 120 },
+          4: { cellWidth: 70, halign: 'center' },
+          5: { cellWidth: 74, halign: 'center' },
+        },
+        margin: { left: 40, right: 40, bottom: 40 },
+        didDrawPage: (data) => {
+          // Footer
+          const pageCount = (doc.internal as any).getNumberOfPages ? (doc.internal as any).getNumberOfPages() : (doc as any).internal.pages.length - 1;
+          const currentPage = (data as any).pageNumber || 1;
+          doc.setFontSize(8);
+          doc.setTextColor(140, 140, 140);
+          doc.text(
+            `Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} | Page ${currentPage} of ${pageCount}`,
+            40,
+            doc.internal.pageSize.height - 20
+          );
+        },
+      });
+
+      doc.save(`Ditvi_Birthday_Guest_List_${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+      alert('Could not generate PDF. Please try again.');
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -945,7 +1068,7 @@ export default function AdminDashboardPage() {
       </aside>
 
       {/* Main Console Content */}
-      <main className={styles.mainContent}>
+      <main className={`${styles.mainContent} ${isSidebarCollapsed ? styles.mainContentShiftCollapsed : ''}`}>
         {/* Top Header Row */}
         <div className={styles.topBar}>
           <div className={styles.topBarLeft}>
@@ -1226,6 +1349,17 @@ export default function AdminDashboardPage() {
                 <option value="confirmed">Confirmed / Attending</option>
                 <option value="declined">Declined</option>
               </select>
+
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                className={styles.pdfDownloadBtn}
+                title="Download complete guest list report as PDF"
+                disabled={isGeneratingPdf || guests.length === 0}
+              >
+                <PictureAsPdfIcon sx={{ fontSize: 18 }} />
+                <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download PDF'}</span>
+              </button>
             </div>
 
             {/* Guest Table */}
