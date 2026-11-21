@@ -3,36 +3,38 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toPng } from 'html-to-image';
-import {
-  Shield,
-  RefreshCw,
-  X,
-  Users,
-  Search,
-  Plus,
-  Trash2,
-  Calendar,
-  Sparkles,
-  Heart,
-  Video,
-  Hash,
-  MessageSquare,
-  Gamepad2,
-  Image as ImageIcon,
-  Send,
-  FileText,
-  LogOut,
-  Gift,
-  Download,
-  PartyPopper,
-  Clock,
-  MapPin,
-  KeyRound,
-  Edit2,
-  Check,
-  Mail
-  
-} from 'lucide-react';
+import ShieldIcon from '@mui/icons-material/Shield';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import CloseIcon from '@mui/icons-material/Close';
+import PeopleIcon from '@mui/icons-material/People';
+import SearchIcon from '@mui/icons-material/Search';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import VideocamIcon from '@mui/icons-material/Videocam';
+import TagIcon from '@mui/icons-material/Tag';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
+import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
+import LogoutIcon from '@mui/icons-material/Logout';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import CelebrationIcon from '@mui/icons-material/Celebration';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import PlaceIcon from '@mui/icons-material/Place';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import EditIcon from '@mui/icons-material/Edit';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import HowToRegIcon from '@mui/icons-material/HowToReg';
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import MenuIcon from '@mui/icons-material/Menu';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import { PartyPanda, BambooStalkDecoration } from '@/components/PandaIllustrations';
 import styles from './dashboard.module.css';
 
@@ -62,6 +64,8 @@ export default function AdminDashboardPage() {
 
   // Navigation tabs matching the screenshot
   const [activeTab, setActiveTab] = useState<string>('3');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Guest list state
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -597,131 +601,238 @@ export default function AdminDashboardPage() {
 
   return (
     <div className={styles.dashboardContainer}>
+      {/* Mobile Drawer Backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          className={styles.mobileSidebarBackdrop}
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar with 12 sections matching the screenshot */}
-      <aside className={styles.sidebar}>
+      <aside className={`${styles.sidebar} ${isSidebarCollapsed ? styles.collapsed : ''} ${isMobileSidebarOpen ? styles.mobileOpen : ''}`}>
         <div className={styles.sidebarHeader}>
-          <div className={styles.sidebarLogoShield}>
-            <Shield size={18} />
+          <div className={styles.sidebarBrand}>
+            <div className={styles.sidebarLogoShield}>
+              <ShieldIcon sx={{ fontSize: 22 }} />
+            </div>
+            <div className={styles.sidebarBrandText}>
+              <span className={styles.sidebarTitle}>Event Admin</span>
+              <span className={styles.sidebarSubtitle}>Birthday Console</span>
+            </div>
           </div>
-          <span className={styles.sidebarTitle}>Event Admin</span>
+          <div className={styles.sidebarHeaderRight}>
+            <span className={styles.sidebarPandaBadge}>🐼</span>
+            <button
+              type="button"
+              className={styles.sidebarToggleBtn}
+              onClick={() => {
+                if (isMobileSidebarOpen) {
+                  setIsMobileSidebarOpen(false);
+                } else {
+                  setIsSidebarCollapsed(!isSidebarCollapsed);
+                }
+              }}
+              title={isMobileSidebarOpen ? 'Close sidebar' : isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label="Toggle Sidebar"
+            >
+              {isMobileSidebarOpen ? (
+                <CloseIcon sx={{ fontSize: 20 }} />
+              ) : isSidebarCollapsed ? (
+                <MenuIcon sx={{ fontSize: 18 }} />
+              ) : (
+                <ChevronLeftIcon sx={{ fontSize: 20 }} />
+              )}
+            </button>
+          </div>
         </div>
 
         <nav className={styles.sidebarNav}>
+          <div className={styles.navSectionTitle}>Analytics &amp; Main</div>
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === 'overview' ? styles.active : ''}`}
-            onClick={() => setActiveTab('overview')}
+            onClick={() => {
+              setActiveTab('overview');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>📊</span>
-            <span>Overview Dashboard</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><DashboardIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>Overview Dashboard</span>
+            </div>
+            <span className={styles.navChevron}><ChevronRightIcon sx={{ fontSize: 16, opacity: 0.5 }} /></span>
           </button>
 
+          <div className={styles.navSectionTitle}>Planning &amp; Guests</div>
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === '1' ? styles.active : ''}`}
-            onClick={() => setActiveTab('1')}
+            onClick={() => {
+              setActiveTab('1');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>⚙️</span>
-            <span>1. Event Details</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><EventNoteIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>1. Event Details</span>
+            </div>
           </button>
 
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === '2' ? styles.active : ''}`}
-            onClick={() => setActiveTab('2')}
+            onClick={() => {
+              setActiveTab('2');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>💌</span>
-            <span>2. Invitations</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><MarkEmailReadIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>2. Invitations</span>
+            </div>
           </button>
 
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === '3' ? styles.active : ''}`}
-            onClick={() => setActiveTab('3')}
+            onClick={() => {
+              setActiveTab('3');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>👥</span>
-            <span>3. Guest List</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><PeopleIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>3. Guest List</span>
+            </div>
+            <span className={styles.navBadge}>{stats.totalGuests}</span>
           </button>
 
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === '4' ? styles.active : ''}`}
-            onClick={() => setActiveTab('4')}
+            onClick={() => {
+              setActiveTab('4');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>📥</span>
-            <span>4. CSV Import</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><UploadFileIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>4. CSV Import</span>
+            </div>
           </button>
 
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === '5' ? styles.active : ''}`}
-            onClick={() => setActiveTab('5')}
+            onClick={() => {
+              setActiveTab('5');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>📋</span>
-            <span>5. RSVP Management</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><HowToRegIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>5. RSVP Management</span>
+            </div>
           </button>
 
+          <div className={styles.navSectionTitle}>Celebration &amp; Media</div>
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === '6' ? styles.active : ''}`}
-            onClick={() => setActiveTab('6')}
+            onClick={() => {
+              setActiveTab('6');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>🎁</span>
-            <span>6. Gift Registry</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><CardGiftcardIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>6. Gift Registry</span>
+            </div>
           </button>
 
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === '7' ? styles.active : ''}`}
-            onClick={() => setActiveTab('7')}
+            onClick={() => {
+              setActiveTab('7');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>📺</span>
-            <span>7. Live Streaming</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><VideocamIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>7. Live Streaming</span>
+            </div>
           </button>
 
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === '8' ? styles.active : ''}`}
-            onClick={() => setActiveTab('8')}
+            onClick={() => {
+              setActiveTab('8');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>🏷️</span>
-            <span>8. Hashtag</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><TagIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>8. Hashtag</span>
+            </div>
           </button>
 
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === '9' ? styles.active : ''}`}
-            onClick={() => setActiveTab('9')}
+            onClick={() => {
+              setActiveTab('9');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>💬</span>
-            <span>9. Wish Moderation</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><ChatBubbleOutlineIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>9. Wish Moderation</span>
+            </div>
           </button>
 
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === '10' ? styles.active : ''}`}
-            onClick={() => setActiveTab('10')}
+            onClick={() => {
+              setActiveTab('10');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>🎮</span>
-            <span>10. Birthday Quiz</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><SportsEsportsIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>10. Birthday Quiz</span>
+            </div>
           </button>
 
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === '11' ? styles.active : ''}`}
-            onClick={() => setActiveTab('11')}
+            onClick={() => {
+              setActiveTab('11');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>📷</span>
-            <span>11. Media &amp; Albums</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><PhotoLibraryIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>11. Media &amp; Albums</span>
+            </div>
           </button>
 
           <button
             type="button"
             className={`${styles.navItem} ${activeTab === '12' ? styles.active : ''}`}
-            onClick={() => setActiveTab('12')}
+            onClick={() => {
+              setActiveTab('12');
+              setIsMobileSidebarOpen(false);
+            }}
           >
-            <span className={styles.navIcon}>💖</span>
-            <span>12. Thank You Cards</span>
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><VolunteerActivismIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>12. Thank You Cards</span>
+            </div>
           </button>
         </nav>
       </aside>
@@ -730,14 +841,31 @@ export default function AdminDashboardPage() {
       <main className={styles.mainContent}>
         {/* Top Header Row */}
         <div className={styles.topBar}>
-          <div>
-            <h1 className={styles.consoleHeaderTitle}>Birthday Event Management Console</h1>
-            <p className={styles.consoleSubtext}>Celebrating Ditvi&apos;s 1st Birthday Celebration</p>
+          <div className={styles.topBarLeft}>
+            <button
+              type="button"
+              className={styles.menuHamburgerBtn}
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.innerWidth <= 900) {
+                  setIsMobileSidebarOpen(!isMobileSidebarOpen);
+                } else {
+                  setIsSidebarCollapsed(!isSidebarCollapsed);
+                }
+              }}
+              title="Toggle Menu"
+              aria-label="Toggle Navigation Menu"
+            >
+              <MenuIcon sx={{ fontSize: 22 }} />
+            </button>
+            <div>
+              <h1 className={styles.consoleHeaderTitle}>Birthday Event Management Console</h1>
+              <p className={styles.consoleSubtext}>Celebrating Ditvi&apos;s 1st Birthday Celebration</p>
+            </div>
           </div>
 
           <div className={styles.topActions}>
             <button type="button" onClick={fetchGuests} className={styles.topBtn}>
-              <RefreshCw size={14} />
+              <RefreshIcon sx={{ fontSize: 16 }} />
               <span>Refresh</span>
             </button>
             <button
@@ -746,7 +874,7 @@ export default function AdminDashboardPage() {
               className={`${styles.topBtn} ${styles.closeBtn}`}
               title="Sign Out"
             >
-              <LogOut size={14} />
+              <LogoutIcon sx={{ fontSize: 16 }} />
               <span>Sign Out</span>
             </button>
           </div>
@@ -756,14 +884,14 @@ export default function AdminDashboardPage() {
         {activeTab === '3' && (
           <div>
             <div className={styles.sectionHeader}>
-              <Users size={22} color="#3b2a59" />
+              <PeopleIcon sx={{ fontSize: 26, color: '#294B35' }} />
               <span>Guest List Management ({stats.totalGuests} Guests)</span>
             </div>
 
             {/* Single Entry Add Form */}
             <div className={styles.addGuestBox}>
               <div className={styles.addGuestTitle}>
-                <Plus size={16} />
+                <AddIcon sx={{ fontSize: 18 }} />
                 <span>Add Guest (Single Entry)</span>
               </div>
 
@@ -809,7 +937,7 @@ export default function AdminDashboardPage() {
             {/* Filter and Search Bar */}
             <div className={styles.filterBar}>
               <div className={styles.searchBox}>
-                <Search size={16} className={styles.searchIcon} />
+                <SearchIcon sx={{ fontSize: 18, color: '#6e7e73' }} className={styles.searchIcon} />
                 <input
                   type="text"
                   placeholder="Search by name, mobile, email, or code..."
@@ -887,8 +1015,8 @@ export default function AdminDashboardPage() {
                               className={styles.ecardBtn}
                               title="Generate & View eCard"
                             >
-                              <Mail size={13} />
-                              <span>Invitation</span>
+                              <AutoAwesomeIcon sx={{ fontSize: 15 }} />
+                              <span>eCard</span>
                             </button>
                             <button
                               type="button"
@@ -896,7 +1024,7 @@ export default function AdminDashboardPage() {
                               className={styles.thankYouBtn}
                               title="Generate & View Thank You Card"
                             >
-                              <Heart size={13} />
+                              <FavoriteIcon sx={{ fontSize: 15 }} />
                               <span>Thank You</span>
                             </button>
                           </div>
@@ -909,7 +1037,7 @@ export default function AdminDashboardPage() {
                               className={styles.editBtn}
                               title="Edit guest"
                             >
-                              <Edit2 size={15} />
+                              <EditIcon sx={{ fontSize: 16 }} />
                             </button>
                             <button
                               type="button"
@@ -917,7 +1045,7 @@ export default function AdminDashboardPage() {
                               className={styles.actionBtn}
                               title="Delete guest"
                             >
-                              <Trash2 size={16} />
+                              <DeleteOutlineIcon sx={{ fontSize: 18 }} />
                             </button>
                           </div>
                         </td>
@@ -973,7 +1101,7 @@ export default function AdminDashboardPage() {
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <div className={styles.modalTitle}>
-                <Sparkles size={18} color="var(--accent-gold)" />
+                <AutoAwesomeIcon sx={{ fontSize: 20, color: 'var(--accent-gold)' }} />
                 <span>Personalized Invitation eCard</span>
               </div>
               <button
@@ -982,7 +1110,7 @@ export default function AdminDashboardPage() {
                 onClick={() => setSelectedEcardGuest(null)}
                 aria-label="Close"
               >
-                <X size={20} />
+                <CloseIcon sx={{ fontSize: 20 }} />
               </button>
             </div>
 
@@ -1001,9 +1129,6 @@ export default function AdminDashboardPage() {
                 <span className={`${styles.ecardBgPaw} ${styles.ecardPawTopRight}`} aria-hidden="true">🐾</span>
                 <span className={`${styles.ecardBgPaw} ${styles.ecardPawBottomLeft}`} aria-hidden="true">🐾</span>
                 <span className={`${styles.ecardBgPaw} ${styles.ecardPawBottomRight}`} aria-hidden="true">🐾</span>
-
-                {/* Clean Top Tag */}
-           
 
                 {/* Friendly Panda Mascot flanked by Balloon & Birthday Cake */}
                 <div className={styles.ecardMascotWrap}>
@@ -1031,15 +1156,15 @@ export default function AdminDashboardPage() {
                 {/* Clean Modern Event Details Card */}
                 <div className={styles.ecardDetailsBox}>
                   <div className={styles.ecardDetailRow}>
-                    <Calendar size={18} />
+                    <CalendarMonthIcon sx={{ fontSize: 20, color: '#789B63' }} />
                     <span>Saturday, December 12, 2026</span>
                   </div>
                   <div className={styles.ecardDetailRow}>
-                    <Clock size={18} />
+                    <AccessTimeIcon sx={{ fontSize: 20, color: '#789B63' }} />
                     <span>3:30 PM &ndash; 7:30 PM CST</span>
                   </div>
                   <div className={styles.ecardDetailRow}>
-                    <MapPin size={18} />
+                    <PlaceIcon sx={{ fontSize: 20, color: '#789B63' }} />
                     <span>The Bamboo Pavilion &bull; Austin, TX</span>
                   </div>
                 </div>
@@ -1067,7 +1192,7 @@ export default function AdminDashboardPage() {
                 className={styles.downloadBtn}
                 onClick={() => handleDownloadEcard(selectedEcardGuest)}
               >
-                <Download size={16} />
+                <FileDownloadIcon sx={{ fontSize: 18 }} />
                 <span>{isDownloading ? 'Generating Image...' : 'Download eCard (PNG)'}</span>
               </button>
             </div>
@@ -1081,7 +1206,7 @@ export default function AdminDashboardPage() {
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <div className={styles.modalTitle}>
-                <Heart size={18} color="#D9B66F" />
+                <FavoriteIcon sx={{ fontSize: 20, color: '#D9B66F' }} />
                 <span>Personalized Thank You Card</span>
               </div>
               <button
@@ -1090,7 +1215,7 @@ export default function AdminDashboardPage() {
                 onClick={() => setSelectedThankYouGuest(null)}
                 aria-label="Close"
               >
-                <X size={20} />
+                <CloseIcon sx={{ fontSize: 20 }} />
               </button>
             </div>
 
@@ -1110,11 +1235,9 @@ export default function AdminDashboardPage() {
                 <span className={`${styles.ecardBgPaw} ${styles.ecardPawBottomLeft}`} aria-hidden="true">🐾</span>
                 <span className={`${styles.ecardBgPaw} ${styles.ecardPawBottomRight}`} aria-hidden="true">🐾</span>
 
-                {/* Friendly Panda Mascot flanked by Heart & Birthday Cake */}
+                {/* Friendly Panda Mascot */}
                 <div className={styles.ecardMascotWrap}>
-                
                   <PartyPanda size={125} />
-               
                 </div>
 
                 {/* Thank You Heading */}
@@ -1134,9 +1257,6 @@ export default function AdminDashboardPage() {
                 <p className={styles.ecardInvitationText}>
                   Thank you so much for joining us and making <strong>Ditvi&apos;s 1st Birthday</strong> so incredibly memorable, full of giggles, and joyous smiles! Your warm presence, sweet wishes, and love made the celebration complete.
                 </p>
-
-                {/* Clean Memory Card Box */}
-            
 
                 <div className={styles.ecardFooterLove}>
                   Forever Grateful, Ditvi &amp; Family 🌿
@@ -1162,7 +1282,7 @@ export default function AdminDashboardPage() {
                 style={{ background: '#8C6A1E' }}
                 onClick={() => handleDownloadThankYouCard(selectedThankYouGuest)}
               >
-                <Download size={16} />
+                <FileDownloadIcon sx={{ fontSize: 18 }} />
                 <span>{isDownloading ? 'Generating Image...' : 'Download Thank You Card (PNG)'}</span>
               </button>
             </div>
@@ -1176,7 +1296,7 @@ export default function AdminDashboardPage() {
           <div className={styles.editModalCard} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <div className={styles.modalTitle}>
-                <Edit2 size={18} color="#294B35" />
+                <EditIcon sx={{ fontSize: 20, color: '#294B35' }} />
                 <span>Edit Guest Details</span>
               </div>
               <button
@@ -1185,7 +1305,7 @@ export default function AdminDashboardPage() {
                 onClick={() => setEditingGuest(null)}
                 aria-label="Close"
               >
-                <X size={20} />
+                <CloseIcon sx={{ fontSize: 20 }} />
               </button>
             </div>
 

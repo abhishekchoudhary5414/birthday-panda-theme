@@ -2,7 +2,12 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, AlertCircle } from 'lucide-react';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import Link from 'next/link';
 import styles from './login.module.css';
 
@@ -52,7 +57,7 @@ export default function AdminLoginPage() {
 
         {error && (
           <div className={styles.errorBanner} role="alert">
-            <AlertCircle size={18} />
+            <ErrorOutlineOutlinedIcon sx={{ fontSize: 18 }} />
             <span>{error}</span>
           </div>
         )}
@@ -63,7 +68,7 @@ export default function AdminLoginPage() {
               Admin Username / Email
             </label>
             <div className={styles.inputWrapper}>
-              <Mail size={18} className={styles.inputIcon} />
+              <EmailOutlinedIcon sx={{ fontSize: 18 }} className={styles.inputIcon} />
               <input
                 id="email"
                 type="email"
@@ -81,7 +86,7 @@ export default function AdminLoginPage() {
               Password
             </label>
             <div className={styles.inputWrapper}>
-              <Lock size={18} className={styles.inputIcon} />
+              <LockOutlinedIcon sx={{ fontSize: 18 }} className={styles.inputIcon} />
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -97,13 +102,13 @@ export default function AdminLoginPage() {
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} /> : <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />}
               </button>
             </div>
           </div>
 
           <button type="submit" disabled={loading} className={styles.submitBtn}>
-            <ShieldCheck size={18} />
+            <VerifiedUserOutlinedIcon sx={{ fontSize: 18 }} />
             <span>{loading ? 'Authenticating...' : 'Sign In to Console'}</span>
           </button>
         </form>
