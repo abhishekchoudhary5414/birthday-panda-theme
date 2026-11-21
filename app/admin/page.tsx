@@ -28,7 +28,6 @@ import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import EditIcon from '@mui/icons-material/Edit';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import EventNoteIcon from '@mui/icons-material/EventNote';
-import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -2062,21 +2061,7 @@ export default function AdminDashboardPage() {
           >
             <div className={styles.navItemLeft}>
               <span className={styles.navIcon}><EventNoteIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>1. Event Details</span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.navItem} ${activeTab === '2' ? styles.active : ''}`}
-            onClick={() => {
-              setActiveTab('2');
-              setIsMobileSidebarOpen(false);
-            }}
-          >
-            <div className={styles.navItemLeft}>
-              <span className={styles.navIcon}><MarkEmailReadIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>2. Invitations</span>
+              <span className={styles.navItemText}>Event Details</span>
             </div>
           </button>
 
@@ -2090,7 +2075,7 @@ export default function AdminDashboardPage() {
           >
             <div className={styles.navItemLeft}>
               <span className={styles.navIcon}><PeopleIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>3. Guest List</span>
+              <span className={styles.navItemText}>Guest List</span>
             </div>
             <span className={styles.navBadge}>{stats.totalGuests}</span>
           </button>
@@ -2105,7 +2090,7 @@ export default function AdminDashboardPage() {
           >
             <div className={styles.navItemLeft}>
               <span className={styles.navIcon}><HowToRegIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>5. RSVP Management</span>
+              <span className={styles.navItemText}>RSVP Management</span>
             </div>
           </button>
 
@@ -2120,7 +2105,7 @@ export default function AdminDashboardPage() {
           >
             <div className={styles.navItemLeft}>
               <span className={styles.navIcon}><CardGiftcardIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>6. Gift Registry</span>
+              <span className={styles.navItemText}>Gift Registry</span>
             </div>
           </button>
 
@@ -2134,7 +2119,7 @@ export default function AdminDashboardPage() {
           >
             <div className={styles.navItemLeft}>
               <span className={styles.navIcon}><VideocamIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>7. Live Streaming</span>
+              <span className={styles.navItemText}>Live Streaming</span>
             </div>
           </button>
 
@@ -2148,7 +2133,7 @@ export default function AdminDashboardPage() {
           >
             <div className={styles.navItemLeft}>
               <span className={styles.navIcon}><TagIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>8. Hashtag</span>
+              <span className={styles.navItemText}>Hashtag</span>
             </div>
           </button>
 
@@ -2162,7 +2147,7 @@ export default function AdminDashboardPage() {
           >
             <div className={styles.navItemLeft}>
               <span className={styles.navIcon}><ChatBubbleOutlineIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>9. Wish Wall</span>
+              <span className={styles.navItemText}>Wish Wall</span>
             </div>
             {wishesList.length > 0 && <span className={styles.navBadge}>{wishesList.length}</span>}
           </button>
@@ -2177,7 +2162,7 @@ export default function AdminDashboardPage() {
           >
             <div className={styles.navItemLeft}>
               <span className={styles.navIcon}><SportsEsportsIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>10. Birthday Quiz</span>
+              <span className={styles.navItemText}>Birthday Quiz</span>
             </div>
             {quizList.length > 0 && <span className={styles.navBadge}>{quizList.length}</span>}
           </button>
@@ -2192,7 +2177,7 @@ export default function AdminDashboardPage() {
           >
             <div className={styles.navItemLeft}>
               <span className={styles.navIcon}><PhotoLibraryIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>11. Media &amp; Albums</span>
+              <span className={styles.navItemText}>Media &amp; Albums</span>
             </div>
           </button>
         </nav>
@@ -2607,22 +2592,22 @@ export default function AdminDashboardPage() {
               <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #dce8d2', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
                 <span style={{ fontSize: '0.82rem', color: '#6e7e73', fontWeight: 600 }}>Total Invited Guests</span>
                 <h3 style={{ fontSize: '1.8rem', color: '#294B35', marginTop: '4px' }}>{stats.totalGuests}</h3>
-                <span style={{ fontSize: '0.75rem', color: '#8e9e93' }}>Section 3: Guest List</span>
+                <span style={{ fontSize: '0.75rem', color: '#8e9e93' }}>Guest List</span>
               </div>
               <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #dce8d2', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
                 <span style={{ fontSize: '0.82rem', color: '#6e7e73', fontWeight: 600 }}>Confirmed RSVPs</span>
                 <h3 style={{ fontSize: '1.8rem', color: '#3C8D40', marginTop: '4px' }}>{stats.attending}</h3>
-                <span style={{ fontSize: '0.75rem', color: '#8e9e93' }}>Section 5: RSVP Management</span>
+                <span style={{ fontSize: '0.75rem', color: '#8e9e93' }}>RSVP Management</span>
               </div>
               <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #dce8d2', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
                 <span style={{ fontSize: '0.82rem', color: '#6e7e73', fontWeight: 600 }}>Birthday Wishes Received</span>
                 <h3 style={{ fontSize: '1.8rem', color: '#D9B66F', marginTop: '4px' }}>{wishesList.length}</h3>
-                <span style={{ fontSize: '0.75rem', color: '#8e9e93' }}>Section 9: Wish Wall</span>
+                <span style={{ fontSize: '0.75rem', color: '#8e9e93' }}>Wish Wall</span>
               </div>
               <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #dce8d2', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
                 <span style={{ fontSize: '0.82rem', color: '#6e7e73', fontWeight: 600 }}>Quiz Submissions</span>
                 <h3 style={{ fontSize: '1.8rem', color: '#2b5b84', marginTop: '4px' }}>{quizSubmissions.length}</h3>
-                <span style={{ fontSize: '0.75rem', color: '#8e9e93' }}>Section 10: Quiz Responses</span>
+                <span style={{ fontSize: '0.75rem', color: '#8e9e93' }}>Quiz Responses</span>
               </div>
             </div>
 
@@ -2663,22 +2648,9 @@ export default function AdminDashboardPage() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                   <EventNoteIcon sx={{ color: '#3c8d40' }} />
-                  <span style={{ fontWeight: 700, color: '#294b35' }}>1. Event Details</span>
+                  <span style={{ fontWeight: 700, color: '#294b35' }}>Event Details</span>
                 </div>
                 <p style={{ fontSize: '0.84rem', color: '#6e7e73', margin: 0 }}>Update event title, dates, venue location, and contact numbers.</p>
-              </div>
-
-              <div
-                onClick={() => setActiveTab('2')}
-                style={{ background: '#ffffff', border: '1px solid #e3ece0', borderRadius: '12px', padding: '18px', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3c8d40')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e3ece0')}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                  <MarkEmailReadIcon sx={{ color: '#3c8d40' }} />
-                  <span style={{ fontWeight: 700, color: '#294b35' }}>2. Invitations &amp; eCards</span>
-                </div>
-                <p style={{ fontSize: '0.84rem', color: '#6e7e73', margin: 0 }}>Generate personalized panda invitation eCards for all guests.</p>
               </div>
 
               <div
@@ -2689,7 +2661,7 @@ export default function AdminDashboardPage() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                   <PeopleIcon sx={{ color: '#3c8d40' }} />
-                  <span style={{ fontWeight: 700, color: '#294b35' }}>3. Guest List</span>
+                  <span style={{ fontWeight: 700, color: '#294b35' }}>Guest List</span>
                 </div>
                 <p style={{ fontSize: '0.84rem', color: '#6e7e73', margin: 0 }}>Add individual guests, bulk upload via CSV, edit and export.</p>
               </div>
@@ -2702,7 +2674,7 @@ export default function AdminDashboardPage() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                   <HowToRegIcon sx={{ color: '#3c8d40' }} />
-                  <span style={{ fontWeight: 700, color: '#294b35' }}>5. RSVP Tracking</span>
+                  <span style={{ fontWeight: 700, color: '#294b35' }}>RSVP Tracking</span>
                 </div>
                 <p style={{ fontSize: '0.84rem', color: '#6e7e73', margin: 0 }}>Filter and review attending vs pending vs declined RSVPs.</p>
               </div>
@@ -2715,7 +2687,7 @@ export default function AdminDashboardPage() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                   <ChatBubbleOutlineIcon sx={{ color: '#3c8d40' }} />
-                  <span style={{ fontWeight: 700, color: '#294b35' }}>9. Wish Wall</span>
+                  <span style={{ fontWeight: 700, color: '#294b35' }}>Wish Wall</span>
                 </div>
                 <p style={{ fontSize: '0.84rem', color: '#6e7e73', margin: 0 }}>View real guestbook wishes, download CSV/PDF, export cards.</p>
               </div>
@@ -2728,7 +2700,7 @@ export default function AdminDashboardPage() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                   <SportsEsportsIcon sx={{ color: '#3c8d40' }} />
-                  <span style={{ fontWeight: 700, color: '#294b35' }}>10. Birthday Quiz</span>
+                  <span style={{ fontWeight: 700, color: '#294b35' }}>Birthday Quiz</span>
                 </div>
                 <p style={{ fontSize: '0.84rem', color: '#6e7e73', margin: 0 }}>Add trivia questions, view guest scores, export PDF reports.</p>
               </div>
@@ -3905,91 +3877,12 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Section 2: Invitations & eCards Management */}
-        {activeTab === '2' && (
-          <div>
-            <div className={styles.sectionHeader}>
-              <MarkEmailReadIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>2. Invitations &amp; eCard Distribution</span>
-            </div>
-
-            <div style={{ background: 'linear-gradient(135deg, #f7faf5 0%, #edf5eb 100%)', border: '1.5px solid #dce8d2', borderRadius: '16px', padding: '24px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                <div>
-                  <h3 style={{ fontSize: '1.25rem', color: '#294B35', fontWeight: 800, margin: '0 0 6px 0' }}>Personalized Digital Panda eCards</h3>
-                  <p style={{ color: '#576b5c', fontSize: '0.9rem', margin: 0 }}>
-                    Every registered guest has a custom illustrated panda invitation eCard rendered with gold flourishes and event details.
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('3')}
-                    className={styles.addGuestBtn}
-                  >
-                    <PeopleIcon sx={{ fontSize: 18 }} />
-                    <span>Manage Guest List</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Guests eCard list */}
-            <div className={styles.tableResponsive}>
-              <table className={styles.guestTable}>
-                <thead>
-                  <tr>
-                    <th>Guest Name</th>
-                    <th>Mobile</th>
-                    <th>RSVP Status</th>
-                    <th>eCard Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {guests.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', padding: '32px', color: '#7b8e7e' }}>
-                        No guests found. Go to section 3 (Guest List) to add guests.
-                      </td>
-                    </tr>
-                  ) : (
-                    guests.map((g) => (
-                      <tr key={g.id}>
-                        <td>
-                          <strong>{g.title} {g.name}</strong>
-                        </td>
-                        <td>{g.mobile}</td>
-                        <td>
-                          <span className={`${styles.statusBadge} ${styles[g.rsvp_status]}`}>
-                            {g.rsvp_status}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedEcardGuest(g)}
-                            className={styles.ecardBtn}
-                            title="Preview and download personalized eCard"
-                          >
-                            <AutoAwesomeIcon sx={{ fontSize: 15 }} />
-                            <span>Preview &amp; Download eCard</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
         {/* Section 5: RSVP Management */}
         {activeTab === '5' && (
           <div>
             <div className={styles.sectionHeader}>
               <HowToRegIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>5. RSVP Tracking &amp; Attendance</span>
+              <span>RSVP Tracking &amp; Attendance</span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
@@ -4075,7 +3968,7 @@ export default function AdminDashboardPage() {
           <div>
             <div className={styles.sectionHeader}>
               <CardGiftcardIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>6. Gift Registry &amp; Blessings Preference</span>
+              <span>Gift Registry &amp; Blessings Preference</span>
             </div>
             <div style={{ background: '#ffffff', padding: '32px', borderRadius: '14px', border: '1px solid #e1e7de' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
@@ -4099,7 +3992,7 @@ export default function AdminDashboardPage() {
           <div>
             <div className={styles.sectionHeader}>
               <VideocamIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>7. Live Streaming Broadcast</span>
+              <span>Live Streaming Broadcast</span>
             </div>
             <div style={{ background: '#ffffff', padding: '32px', borderRadius: '14px', border: '1px solid #e1e7de' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
@@ -4125,7 +4018,7 @@ export default function AdminDashboardPage() {
           <div>
             <div className={styles.sectionHeader}>
               <TagIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>8. Social Media &amp; Hashtag Campaign</span>
+              <span>Social Media &amp; Hashtag Campaign</span>
             </div>
             <div style={{ background: '#ffffff', padding: '32px', borderRadius: '14px', border: '1px solid #e1e7de' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
@@ -4160,7 +4053,7 @@ export default function AdminDashboardPage() {
           <div>
             <div className={styles.sectionHeader}>
               <PhotoLibraryIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>11. Media &amp; Photo Albums</span>
+              <span>Media &amp; Photo Albums</span>
             </div>
             <div style={{ background: '#ffffff', padding: '32px', borderRadius: '14px', border: '1px solid #e1e7de' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
