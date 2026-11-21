@@ -407,10 +407,122 @@
   box-shadow: 0 3px 8px rgba(41, 75, 53, 0.15);
 }
 
+.thankYouBtn {
+  background: #fff4dc;
+  color: #8c6a1e;
+  border: 1px solid rgba(217, 182, 111, 0.4);
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.thankYouBtn:hover {
+  background: #d9b66f;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(217, 182, 111, 0.25);
+}
+
 .actionsGroup {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.cardButtonGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editBtn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  color: #5d8049;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editBtn:hover {
+  background: #eaf3e5;
+  color: #294b35;
+}
+
+.editModalCard {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 480px;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.editForm {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formLabel {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #4a5b4e;
+}
+
+.editInput {
+  padding: 10px 14px;
+  border: 1.5px solid #dce8d2;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: #252525;
+  background: #fbfdfa;
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.editInput:focus {
+  border-color: #789b63;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(120, 155, 99, 0.15);
+}
+
+.editSelect {
+  padding: 10px 14px;
+  border: 1.5px solid #dce8d2;
+  border-radius: 8px;
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+  color: #294b35;
+  background: #fbfdfa;
+  outline: none;
+  cursor: pointer;
+}
+
+.editSelect:focus {
+  border-color: #789b63;
 }
 
 /* Modal styles for eCard preview */

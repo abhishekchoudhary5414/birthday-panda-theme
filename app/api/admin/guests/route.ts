@@ -128,7 +128,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    const { id, rsvp_status, invited, name, mobile, email } = await req.json();
+    const { id, rsvp_status, invited, name, mobile, email, title } = await req.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Guest ID is required' }, { status: 400 });
@@ -139,6 +139,7 @@ export async function PATCH(req: NextRequest) {
       SET 
         rsvp_status = COALESCE(${rsvp_status}, rsvp_status),
         invited = COALESCE(${invited}, invited),
+        title = COALESCE(${title}, title),
         name = COALESCE(${name}, name),
         mobile = COALESCE(${mobile}, mobile),
         email = COALESCE(${email}, email)

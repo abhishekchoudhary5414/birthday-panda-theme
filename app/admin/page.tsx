@@ -28,9 +28,15 @@ import {
   Clock,
   MapPin,
   KeyRound,
+  Edit2,
+  Check,
+  Mail
+  
 } from 'lucide-react';
 import { PartyPanda, BambooStalkDecoration } from '@/components/PandaIllustrations';
 import styles from './dashboard.module.css';
+
+
 
 interface Guest {
   id: number;
@@ -73,8 +79,20 @@ export default function AdminDashboardPage() {
 
   // Selected guest for eCard preview modal
   const [selectedEcardGuest, setSelectedEcardGuest] = useState<Guest | null>(null);
+  // Selected guest for Thank You Card preview modal
+  const [selectedThankYouGuest, setSelectedThankYouGuest] = useState<Guest | null>(null);
+  // Guest being edited in edit modal
+  const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
+  const [editTitle, setEditTitle] = useState('Mr.');
+  const [editName, setEditName] = useState('');
+  const [editMobile, setEditMobile] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editRsvpStatus, setEditRsvpStatus] = useState('pending');
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const [isDownloading, setIsDownloading] = useState(false);
   const ecardRef = useRef<HTMLDivElement>(null);
+  const thankYouCardRef = useRef<HTMLDivElement>(null);
 
   // Load guests and stats
   const fetchGuests = useCallback(async () => {
@@ -143,6 +161,51 @@ export default function AdminDashboardPage() {
       console.error('Add guest error:', err);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Handle start guest edit
+  const handleOpenEdit = (guest: Guest) => {
+    setEditingGuest(guest);
+    setEditTitle(guest.title || 'Mr.');
+    setEditName(guest.name || '');
+    setEditMobile(guest.mobile || '');
+    setEditEmail(guest.email || '');
+    setEditRsvpStatus(guest.rsvp_status || 'pending');
+  };
+
+  // Handle save guest edit
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGuest || !editName.trim() || !editMobile.trim()) return;
+
+    try {
+      setIsUpdating(true);
+      const res = await fetch('/api/admin/guests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingGuest.id,
+          title: editTitle,
+          name: editName.trim(),
+          mobile: editMobile.trim(),
+          email: editEmail.trim() || null,
+          rsvp_status: editRsvpStatus,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || 'Failed to update guest');
+        return;
+      }
+
+      setEditingGuest(null);
+      fetchGuests();
+    } catch (err) {
+      console.error('Update guest error:', err);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -507,6 +570,31 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Direct DOM-to-PNG download for Thank You Card
+  const handleDownloadThankYouCard = async (guest: Guest) => {
+    if (!thankYouCardRef.current || isDownloading) return;
+
+    try {
+      setIsDownloading(true);
+      const dataUrl = await toPng(thankYouCardRef.current, {
+        pixelRatio: 2.5,
+        cacheBust: true,
+        backgroundColor: '#FFFFFF',
+      });
+
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `Ditvi-Thank-You-Card-${guest.name.replace(/\s+/g, '_')}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Failed to export Thank You card image:', err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className={styles.dashboardContainer}>
       {/* Sidebar with 12 sections matching the screenshot */}
@@ -754,13 +842,14 @@ export default function AdminDashboardPage() {
                     <th className={styles.th}>INVITE CODE</th>
                     <th className={styles.th}>RSVP STATUS</th>
                     <th className={styles.th}>INVITED</th>
+                    <th className={styles.th}>GENERATE ECARD</th>
                     <th className={styles.th}>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {guests.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className={styles.emptyState}>
+                      <td colSpan={8} className={styles.emptyState}>
                         <div className={styles.emptyIcon}>🐼</div>
                         <p>{loading ? 'Loading guests...' : 'No guests found yet. Add your first guest above!'}</p>
                       </td>
@@ -791,21 +880,42 @@ export default function AdminDashboardPage() {
                         </td>
                         <td className={styles.td}>{g.invited ? 'Yes' : 'No'}</td>
                         <td className={styles.td}>
-                          <div className={styles.actionsGroup}>
+                          <div className={styles.cardButtonGroup}>
                             <button
                               type="button"
                               onClick={() => setSelectedEcardGuest(g)}
                               className={styles.ecardBtn}
                               title="Generate & View eCard"
                             >
-                              <Sparkles size={14} />
-                              <span>eCard</span>
+                              <Mail size={13} />
+                              <span>Invitation</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedThankYouGuest(g)}
+                              className={styles.thankYouBtn}
+                              title="Generate & View Thank You Card"
+                            >
+                              <Heart size={13} />
+                              <span>Thank You</span>
+                            </button>
+                          </div>
+                        </td>
+                        <td className={styles.td}>
+                          <div className={styles.actionsGroup}>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(g)}
+                              className={styles.editBtn}
+                              title="Edit guest"
+                            >
+                              <Edit2 size={15} />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDeleteGuest(g.id)}
                               className={styles.actionBtn}
-                              title="Remove guest"
+                              title="Delete guest"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -897,13 +1007,7 @@ export default function AdminDashboardPage() {
 
                 {/* Friendly Panda Mascot flanked by Balloon & Birthday Cake */}
                 <div className={styles.ecardMascotWrap}>
-                  <div className={styles.ecardCelebrationBadge} title="Balloons">
-                    🎈
-                  </div>
                   <PartyPanda size={125} />
-                  <div className={styles.ecardCelebrationBadge} title="Birthday Cake">
-                    🎂
-                  </div>
                 </div>
 
                 {/* Event Heading - Requested Wording & Styling */}
@@ -967,6 +1071,200 @@ export default function AdminDashboardPage() {
                 <span>{isDownloading ? 'Generating Image...' : 'Download eCard (PNG)'}</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Thank You Card Preview & Download Modal */}
+      {selectedThankYouGuest && (
+        <div className={styles.modalOverlay} onClick={() => setSelectedThankYouGuest(null)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitle}>
+                <Heart size={18} color="#D9B66F" />
+                <span>Personalized Thank You Card</span>
+              </div>
+              <button
+                type="button"
+                className={styles.modalCloseBtn}
+                onClick={() => setSelectedThankYouGuest(null)}
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <div ref={thankYouCardRef} className={styles.ecardFrame}>
+                {/* Bamboo Trees on sides */}
+                <div className={styles.ecardBambooTreeLeft} aria-hidden="true">
+                  <BambooStalkDecoration height={360} />
+                </div>
+                <div className={styles.ecardBambooTreeRight} aria-hidden="true">
+                  <BambooStalkDecoration height={360} />
+                </div>
+
+                {/* Background Panda Paws */}
+                <span className={`${styles.ecardBgPaw} ${styles.ecardPawTopLeft}`} aria-hidden="true">🐾</span>
+                <span className={`${styles.ecardBgPaw} ${styles.ecardPawTopRight}`} aria-hidden="true">🐾</span>
+                <span className={`${styles.ecardBgPaw} ${styles.ecardPawBottomLeft}`} aria-hidden="true">🐾</span>
+                <span className={`${styles.ecardBgPaw} ${styles.ecardPawBottomRight}`} aria-hidden="true">🐾</span>
+
+                {/* Friendly Panda Mascot flanked by Heart & Birthday Cake */}
+                <div className={styles.ecardMascotWrap}>
+                
+                  <PartyPanda size={125} />
+               
+                </div>
+
+                {/* Thank You Heading */}
+                <div className={styles.ecardInviteLead}>With Sincere Gratitude</div>
+                <h2 className={styles.ecardEventTitle}>
+                  Thank You for <span>Celebrating!</span>
+                </h2>
+
+                {/* Guest Personalization */}
+                <div className={styles.ecardGuestSection}>
+                  <span className={styles.ecardGuestGreeting}>Dearest Guest</span>
+                  <h3 className={styles.ecardGuestName}>
+                    {selectedThankYouGuest.title ? `${selectedThankYouGuest.title} ` : ''}{selectedThankYouGuest.name}
+                  </h3>
+                </div>
+
+                <p className={styles.ecardInvitationText}>
+                  Thank you so much for joining us and making <strong>Ditvi&apos;s 1st Birthday</strong> so incredibly memorable, full of giggles, and joyous smiles! Your warm presence, sweet wishes, and love made the celebration complete.
+                </p>
+
+                {/* Clean Memory Card Box */}
+            
+
+                <div className={styles.ecardFooterLove}>
+                  Forever Grateful, Ditvi &amp; Family 🌿
+                </div>
+                <div className={styles.ecardFootnote}>
+                  Thank you for being part of our special journey
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button
+                type="button"
+                className={styles.topBtn}
+                onClick={() => setSelectedThankYouGuest(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDownloading}
+                className={styles.downloadBtn}
+                style={{ background: '#8C6A1E' }}
+                onClick={() => handleDownloadThankYouCard(selectedThankYouGuest)}
+              >
+                <Download size={16} />
+                <span>{isDownloading ? 'Generating Image...' : 'Download Thank You Card (PNG)'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Guest Modal */}
+      {editingGuest && (
+        <div className={styles.modalOverlay} onClick={() => setEditingGuest(null)}>
+          <div className={styles.editModalCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitle}>
+                <Edit2 size={18} color="#294B35" />
+                <span>Edit Guest Details</span>
+              </div>
+              <button
+                type="button"
+                className={styles.modalCloseBtn}
+                onClick={() => setEditingGuest(null)}
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className={styles.editForm}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Title</label>
+                <select
+                  className={styles.editSelect}
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                >
+                  <option value="Mr.">Mr.</option>
+                  <option value="Miss">Miss</option>
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Guest Name</label>
+                <input
+                  type="text"
+                  className={styles.editInput}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Mobile Number</label>
+                <input
+                  type="text"
+                  className={styles.editInput}
+                  value={editMobile}
+                  onChange={(e) => setEditMobile(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Email Address (Optional)</label>
+                <input
+                  type="email"
+                  className={styles.editInput}
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>RSVP Status</label>
+                <select
+                  className={styles.editSelect}
+                  value={editRsvpStatus}
+                  onChange={(e) => setEditRsvpStatus(e.target.value)}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed / Attending</option>
+                  <option value="declined">Declined</option>
+                </select>
+              </div>
+
+              <div className={styles.modalFooter} style={{ padding: '16px 0 0', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  className={styles.topBtn}
+                  onClick={() => setEditingGuest(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className={styles.btnAdd}
+                  style={{ minWidth: '120px' }}
+                >
+                  <span>{isUpdating ? 'Saving...' : 'Save Changes'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
