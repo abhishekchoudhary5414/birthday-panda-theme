@@ -2,161 +2,198 @@
 
 import styles from './WishWall.module.css';
 
-
 import React, { useState, useEffect } from 'react';
-import { Send, Heart, MessageCircle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Send, Heart, MessageCircle, AlertCircle, ChevronLeft, ChevronRight, User, Phone, Sparkles } from 'lucide-react';
 import { PeekingPanda } from './PandaIllustrations';
 import confetti from 'canvas-confetti';
 
 interface Wish {
-  id: string;
+  id: string | number;
   name: string;
+  relation?: string;
+  phone?: string;
   message: string;
   avatar: string;
-  date: string;
+  date?: string;
+  created_at?: string;
   likes: number;
-  isUserAdded?: boolean;
 }
-
-const defaultWishes: Wish[] = [
-  {
-    id: 'w-1',
-    name: 'Grandma Mei & Grandpa Bo',
-    message: 'Happy 1st Birthday to our sweetest little panda grandson Liam! May your days always be filled with joy, peace, and giant bear hugs.',
-    avatar: '🐼',
-    date: 'Just now',
-    likes: 8,
-  },
-  {
-    id: 'w-2',
-    name: 'Auntie Clara & Uncle Kevin',
-    message: 'We can’t believe a whole year has passed! Keep flashing those cute four teeth and exploring the world. We love you so much!',
-    avatar: '🎋',
-    date: '2 hours ago',
-    likes: 5,
-  },
-  {
-    id: 'w-3',
-    name: 'The Robinson Family',
-    message: 'Wishing Liam the happiest 1st birthday! Excited for the bamboo cake smash and panda party games this weekend!',
-    avatar: '🎂',
-    date: '5 hours ago',
-    likes: 3,
-  },
-  {
-    id: 'w-4',
-    name: 'Cousin Maya (Age 5)',
-    message: 'I drew a picture of three pandas eating ice cream for you Liam! Happy birthday baby cousin!',
-    avatar: '🎈',
-    date: '1 day ago',
-    likes: 6,
-  },
-  {
-    id: 'w-5',
-    name: 'Dr. Evelyn & Lucas',
-    message: 'May Liam grow as strong, resilient, and graceful as green bamboo. Sending all our warmest blessings to Sarah and Eric!',
-    avatar: '🌿',
-    date: '1 day ago',
-    likes: 4,
-  },
-];
 
 const avatarStickers = ['🐼', '🎋', '🎂', '🎈', '🥑', '🌟', '🍼', '🌿'];
 
+const relationOptions = [
+  'Grandparent',
+  'Aunt / Uncle',
+  'Cousin',
+  'Family Friend',
+  'Friend',
+  'Neighbor',
+  'Godparent',
+  'Well-Wisher',
+];
+
 export const WishWall: React.FC = () => {
-  const [wishes, setWishes] = useState<Wish[]>(defaultWishes);
+  const [wishes, setWishes] = useState<Wish[]>([]);
+  const [loadingWishes, setLoadingWishes] = useState(true);
+
+  // Form states
   const [name, setName] = useState('');
+  const [relation, setRelation] = useState('');
+  const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState('🐼');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittedNotice, setIsSubmittedNotice] = useState(false);
-  const [likedIds, setLikedIds] = useState<string[]>([]);
+  const [likedIds, setLikedIds] = useState<(string | number)[]>([]);
   const [activeWishIndex, setActiveWishIndex] = useState(0);
-  const carouselWishes = wishes.slice(0, 5);
 
-  // Load user added wishes from localStorage
-  useEffect(() => {
+  // Fetch live wishes from database
+  const fetchWishes = async () => {
     try {
-      const stored = localStorage.getItem('panda_birthday_wishes');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setWishes([...parsed, ...defaultWishes]);
+      setLoadingWishes(true);
+      const res = await fetch('/api/wishes');
+      if (res.ok) {
+        const data = await res.json();
+        setWishes(data.wishes || []);
+      }
+    } catch (err) {
+      console.error('Failed to load wishes from database:', err);
+    } finally {
+      setLoadingWishes(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWishes();
+    try {
+      const savedLikes = localStorage.getItem('ditvi_liked_wishes');
+      if (savedLikes) {
+        setLikedIds(JSON.parse(savedLikes));
       }
     } catch {
       // ignore
     }
   }, []);
 
+  const carouselWishes = wishes.slice(0, 10);
+
   useEffect(() => {
     if (carouselWishes.length < 2) return;
 
     const carouselTimer = window.setInterval(() => {
       setActiveWishIndex((current) => (current + 1) % carouselWishes.length);
-    }, 4500);
+    }, 4800);
 
     return () => window.clearInterval(carouselTimer);
   }, [carouselWishes.length]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('Please enter your name.');
+      setError('Please enter your full name or family name.');
       return;
     }
     if (!message.trim()) {
-      setError('Please write a birthday message.');
+      setError('Please write a heartfelt birthday message for Ditvi.');
       return;
     }
 
-    const newWish: Wish = {
-      id: `user-${Date.now()}`,
-      name: name.trim(),
-      message: message.trim(),
-      avatar: selectedAvatar,
-      date: 'Just now',
-      likes: 1,
-      isUserAdded: true,
-    };
-
-    const updated = [newWish, ...wishes];
-    setWishes(updated);
-    setActiveWishIndex(0);
-
-    // Save only user-added wishes to localStorage
     try {
-      const existingStored = localStorage.getItem('panda_birthday_wishes');
-      const prev = existingStored ? JSON.parse(existingStored) : [];
-      localStorage.setItem('panda_birthday_wishes', JSON.stringify([newWish, ...prev]));
-    } catch {
-      // ignore
+      setIsSubmitting(true);
+      setError('');
+
+      const res = await fetch('/api/wishes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          relation: relation.trim() || undefined,
+          phone: phone.trim() || undefined,
+          message: message.trim(),
+          avatar: selectedAvatar,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.wish) {
+        setWishes((prev) => [data.wish, ...prev]);
+        setActiveWishIndex(0);
+        setName('');
+        setRelation('');
+        setPhone('');
+        setMessage('');
+        setIsSubmittedNotice(true);
+        setTimeout(() => setIsSubmittedNotice(false), 4500);
+
+        confetti({
+          particleCount: 65,
+          spread: 70,
+          origin: { y: 0.7 },
+          colors: ['#789B63', '#D9B66F', '#FFB8B8', '#DCE8D2'],
+        });
+      } else {
+        setError(data.error || 'Failed to submit wish. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error submitting wish:', err);
+      setError('A network error occurred. Please check connection and try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setName('');
-    setMessage('');
-    setError('');
-    setIsSubmittedNotice(true);
-    setTimeout(() => setIsSubmittedNotice(false), 4000);
-
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.7 },
-      colors: ['#789B63', '#D9B66F', '#FFB8B8'],
-    });
   };
 
-  const handleToggleLike = (id: string) => {
+  const handleToggleLike = async (id: string | number) => {
     const isLiked = likedIds.includes(id);
     const newLiked = isLiked ? likedIds.filter((x) => x !== id) : [...likedIds, id];
     setLikedIds(newLiked);
 
+    try {
+      localStorage.setItem('ditvi_liked_wishes', JSON.stringify(newLiked));
+    } catch {
+      // ignore
+    }
+
     setWishes((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, likes: w.likes + (isLiked ? -1 : 1) } : w))
+      prev.map((w) => (w.id === id ? { ...w, likes: Math.max(0, w.likes + (isLiked ? -1 : 1)) } : w))
     );
+
+    try {
+      const res = await fetch('/api/wishes/like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: isLiked ? 'unlike' : 'like' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (typeof data.likes === 'number') {
+          setWishes((prev) =>
+            prev.map((w) => (w.id === id ? { ...w, likes: data.likes } : w))
+          );
+        }
+      }
+    } catch (err) {
+      console.error('Error updating like in database:', err);
+    }
   };
 
   const activeWish = carouselWishes[activeWishIndex % carouselWishes.length];
   const isActiveWishLiked = activeWish ? likedIds.includes(activeWish.id) : false;
+
+  const formatWishDate = (dateStr?: string) => {
+    if (!dateStr) return 'Just now';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
 
   return (
     <section id="wishes" className={`section-wrapper ${styles['wishwall-section'] || 'wishwall-section'}`}>
@@ -170,9 +207,9 @@ export const WishWall: React.FC = () => {
             <MessageCircle size={16} />
             <span>Guestbook of Love</span>
           </div>
-          <h2 className="section-title">Liam&apos;s Birthday Wish Wall</h2>
+          <h2 className="section-title">Ditvi&apos;s Birthday Wish Wall</h2>
           <p className="section-subtitle">
-            Leave a digital birthday blessing, heartfelt prayer, or funny note for Liam&apos;s first birthday memory keepsake!
+            Leave a digital birthday blessing, heartfelt prayer, or funny note for Ditvi&apos;s first birthday memory keepsake! Saved directly to our family memory book.
           </p>
         </div>
 
@@ -180,14 +217,14 @@ export const WishWall: React.FC = () => {
           {/* Left Column: Form */}
           <div className={`${styles['wish-form-card'] || 'wish-form-card'} card-bamboo`}>
             <h3 className={styles['form-card-title']}>Send a Warm Birthday Wish 🎋</h3>
-            <p className={styles['form-card-subtitle']}>Choose a panda avatar sticker and leave your note below!</p>
+            <p className={styles['form-card-subtitle']}>Pick a panda sticker, share your blessings, and sign the digital guestbook!</p>
 
             <form onSubmit={handleSubmit} className={styles['wish-form']} noValidate>
               {error && <div className={styles['wish-error-pill']}>{error}</div>}
 
               {isSubmittedNotice && (
                 <div className={styles['wish-success-pill']}>
-                  🎉 Your sweet wish has been posted to the wall!
+                  🎉 Your sweet wish has been saved to Ditvi&apos;s memory book!
                 </div>
               )}
 
@@ -199,7 +236,7 @@ export const WishWall: React.FC = () => {
                     <button
                       key={stk}
                       type="button"
-                      className={`${styles['sticker-btn'] || 'sticker-btn'} ${styles['stk'] || 'stk'} ${styles['selected'] || 'selected'}`}
+                      className={`${styles['sticker-btn'] || 'sticker-btn'} ${selectedAvatar === stk ? (styles['selected'] || 'selected') : ''}`}
                       onClick={() => setSelectedAvatar(stk)}
                     >
                       {stk}
@@ -211,7 +248,7 @@ export const WishWall: React.FC = () => {
               {/* Name Input */}
               <div className={styles['form-group']}>
                 <label htmlFor="wishName" className={styles['field-label']}>
-                  Your Name / Family
+                  Your Name / Family <span style={{ color: '#c62828' }}>*</span>
                 </label>
                 <input
                   id="wishName"
@@ -220,36 +257,81 @@ export const WishWall: React.FC = () => {
                   placeholder="e.g. Auntie Emma & Uncle Leo"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  required
                 />
+              </div>
+
+              {/* Relation & Phone Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                <div className={styles['form-group']} style={{ marginBottom: 0 }}>
+                  <label htmlFor="wishRelation" className={styles['field-label']}>
+                    Relationship <span style={{ fontSize: '0.75rem', color: '#789B63' }}>(Optional)</span>
+                  </label>
+                  <select
+                    id="wishRelation"
+                    className={styles['form-input']}
+                    value={relation}
+                    onChange={(e) => setRelation(e.target.value)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <option value="">Select relation...</option>
+                    {relationOptions.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className={styles['form-group']} style={{ marginBottom: 0 }}>
+                  <label htmlFor="wishPhone" className={styles['field-label']}>
+                    Phone Number <span style={{ fontSize: '0.75rem', color: '#789B63' }}>(Optional)</span>
+                  </label>
+                  <input
+                    id="wishPhone"
+                    type="tel"
+                    className={styles['form-input']}
+                    placeholder="+1 (555) 000-0000"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
               </div>
 
               {/* Message */}
               <div className={styles['form-group']}>
                 <label htmlFor="wishMsg" className={styles['field-label']}>
-                  Your Birthday Message
+                  Your Birthday Message <span style={{ color: '#c62828' }}>*</span>
                 </label>
                 <textarea
                   id="wishMsg"
                   rows={4}
                   className={`${styles['form-input'] || 'form-input'} ${styles['form-textarea'] || 'form-textarea'}`}
-                  placeholder="Dear Liam, happy 1st birthday! May you always smile as bright as the sun..."
+                  placeholder="Dear Ditvi, happy 1st birthday! May you always smile as bright as the sun..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
+                  required
                 />
               </div>
 
-              {/* Notice */}
+              {/* Cloud Database Notice */}
               <div className={styles['wish-demo-notice']}>
-                <AlertCircle size={15} />
+                <Sparkles size={15} color="var(--bamboo-green)" />
                 <span>
-                  Demo Mode: Wishes are saved to your local browser storage for interactive demonstration.
+                  Permanent Keepsake: Wishes are saved directly to our database memory wall.
                 </span>
               </div>
 
               {/* Submit Button */}
-              <button type="submit" className={`btn-primary ${styles['w-full'] || 'w-full'}`} style={{ width: '100%' }}>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`btn-primary ${styles['w-full'] || 'w-full'}`}
+                style={{ width: '100%' }}
+              >
                 <Send size={18} />
-                <span>Post Birthday Wish</span>
+                <span>{isSubmitting ? 'Posting Wish...' : 'Post Birthday Wish'}</span>
               </button>
             </form>
           </div>
@@ -258,15 +340,17 @@ export const WishWall: React.FC = () => {
           <div className={styles['wishes-display-column']} role="region" aria-label="Birthday wishes carousel" aria-roledescription="carousel">
             <div className={styles['wishes-meta-bar']}>
               <span className={styles['wishes-counter']}>
-                {carouselWishes.length} Warm Wishes
+                {loadingWishes ? 'Loading Wishes...' : `${wishes.length} Warm Wishes`}
               </span>
-              <span className={styles['carousel-position']}>
-                Wish {activeWishIndex + 1} of {carouselWishes.length}
-              </span>
+              {carouselWishes.length > 0 && (
+                <span className={styles['carousel-position']}>
+                  Wish {activeWishIndex + 1} of {carouselWishes.length}
+                </span>
+              )}
             </div>
 
             <div className={styles['wishes-cards-masonry']}>
-              {activeWish && (
+              {activeWish ? (
                 <div
                   key={activeWish.id}
                   className={styles['wish-bubble-card'] || 'wish-bubble-card'}
@@ -276,10 +360,28 @@ export const WishWall: React.FC = () => {
                 >
                   <div className={styles['wish-bubble-header']}>
                     <div className={styles['wish-author-info']}>
-                      <span className={styles['wish-avatar-badge']}>{activeWish.avatar}</span>
+                      <span className={styles['wish-avatar-badge']}>{activeWish.avatar || '🐼'}</span>
                       <div>
                         <h4 className={styles['wish-author-name']}>{activeWish.name}</h4>
-                        <span className={styles['wish-time']}>{activeWish.date}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                          {activeWish.relation && (
+                            <span
+                              style={{
+                                fontSize: '0.72rem',
+                                color: '#294B35',
+                                background: '#E8F5E9',
+                                padding: '2px 7px',
+                                borderRadius: '10px',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {activeWish.relation}
+                            </span>
+                          )}
+                          <span className={styles['wish-time']}>
+                            {formatWishDate(activeWish.created_at || activeWish.date)}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -300,39 +402,48 @@ export const WishWall: React.FC = () => {
 
                   <p className={styles['wish-message-body']}>&ldquo;{activeWish.message}&rdquo;</p>
                 </div>
+              ) : (
+                <div style={{ padding: '36px 20px', textAlign: 'center', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #DCE8D2' }}>
+                  <span style={{ fontSize: '2.5rem' }}>🐼</span>
+                  <p style={{ marginTop: '8px', color: '#555', fontWeight: 600 }}>
+                    {loadingWishes ? 'Loading wishes from memory wall...' : 'Be the first to leave a sweet birthday wish for Ditvi!'}
+                  </p>
+                </div>
               )}
             </div>
 
-            <div className={styles['carousel-controls']} role="group" aria-label="Wish carousel controls">
-              <button
-                type="button"
-                className={styles['carousel-arrow']}
-                onClick={() => setActiveWishIndex((current) => (current - 1 + carouselWishes.length) % carouselWishes.length)}
-                aria-label="Previous wish"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <div className={styles['carousel-dots']}>
-                {carouselWishes.map((wish, index) => (
-                  <button
-                    key={wish.id}
-                    type="button"
-                    className={`${styles['carousel-dot'] || 'carousel-dot'} ${styles['activeWishIndex'] || 'activeWishIndex'} ${styles['active'] || 'active'}`}
-                    onClick={() => setActiveWishIndex(index)}
-                    aria-label={`Show wish ${index + 1}`}
-                    aria-current={index === activeWishIndex ? 'true' : undefined}
-                  />
-                ))}
+            {carouselWishes.length > 1 && (
+              <div className={styles['carousel-controls']} role="group" aria-label="Wish carousel controls">
+                <button
+                  type="button"
+                  className={styles['carousel-arrow']}
+                  onClick={() => setActiveWishIndex((current) => (current - 1 + carouselWishes.length) % carouselWishes.length)}
+                  aria-label="Previous wish"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <div className={styles['carousel-dots']}>
+                  {carouselWishes.map((wish, index) => (
+                    <button
+                      key={wish.id}
+                      type="button"
+                      className={`${styles['carousel-dot'] || 'carousel-dot'} ${index === activeWishIndex ? (styles['active'] || 'active') : ''}`}
+                      onClick={() => setActiveWishIndex(index)}
+                      aria-label={`Show wish ${index + 1}`}
+                      aria-current={index === activeWishIndex ? 'true' : undefined}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className={styles['carousel-arrow']}
+                  onClick={() => setActiveWishIndex((current) => (current + 1) % carouselWishes.length)}
+                  aria-label="Next wish"
+                >
+                  <ChevronRight size={18} />
+                </button>
               </div>
-              <button
-                type="button"
-                className={styles['carousel-arrow']}
-                onClick={() => setActiveWishIndex((current) => (current + 1) % carouselWishes.length)}
-                aria-label="Next wish"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
+            )}
           </div>
         </div>
       </div>

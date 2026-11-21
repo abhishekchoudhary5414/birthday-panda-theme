@@ -92,7 +92,7 @@ export const Navbar: React.FC = () => {
               </svg>
             </div>
             <div className={styles['logo-text-wrap']}>
-              <span className={styles['logo-name']}>Liam&apos;s 1st Birthday</span>
+              <span className={styles['logo-name']}>Ditvi&apos;s 1st Birthday</span>
               <span className={styles['logo-tagline']}>Panda &amp; Bamboo Bash</span>
             </div>
           </a>

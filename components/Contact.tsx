@@ -2,13 +2,55 @@
 
 import styles from './Contact.module.css';
 
+import React, { useState, useEffect } from 'react';
+import { MapPin, Navigation, Phone, Mail, Clock, Car, Sparkles } from 'lucide-react';
 
-import React from 'react';
-import { MapPin, Navigation, Phone, Mail, Clock, Car, Sparkles, AlertCircle } from 'lucide-react';
+interface EventData {
+  eventTitle?: string;
+  childName?: string;
+  turningAge?: string;
+  eventDate?: string;
+  eventTime?: string;
+  venueName?: string;
+  venueAddress?: string;
+  venueCity?: string;
+  venueMapUrl?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  dressCode?: string;
+}
 
 export const Contact: React.FC = () => {
-  const venueAddress = "The Bamboo Pavilion at Whispering Pines Gardens, 4280 Forest View Way, Austin, TX 78704";
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+  const [eventData, setEventData] = useState<EventData>({
+    eventTitle: "Ditvi's 1st Birthday Party",
+    childName: 'Ditvi',
+    turningAge: '1',
+    eventDate: 'Saturday, December 12, 2026',
+    eventTime: '3:30 PM – 7:30 PM CST',
+    venueName: '',
+    venueAddress: '',
+    venueCity: '',
+    venueMapUrl: '',
+    contactPhone: '+1 (555) 019-2831',
+    contactEmail: 'family@ditvibirthday.com',
+  });
+
+  useEffect(() => {
+    fetch('/api/event')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.event) {
+          setEventData(data.event);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load event details in Contact component:', err);
+      });
+  }, []);
+
+  const hasVenue = Boolean(eventData.venueName && eventData.venueName.trim());
+  const fullAddress = [eventData.venueName, eventData.venueAddress, eventData.venueCity].filter(Boolean).join(', ');
+  const googleMapsUrl = eventData.venueMapUrl || (fullAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}` : '#');
 
   return (
     <section id="contact" className={`section-wrapper ${styles['contact-section'] || 'contact-section'}`}>
@@ -21,7 +63,7 @@ export const Contact: React.FC = () => {
           </div>
           <h2 className="section-title">Party Venue &amp; Contact Info</h2>
           <p className="section-subtitle">
-            Everything you need to find the venue, park conveniently, and reach Liam&apos;s parents on party day.
+            Everything you need to find the venue, park conveniently, and reach {eventData.childName || 'Ditvi'}&apos;s parents on party day.
           </p>
         </div>
 
@@ -35,8 +77,12 @@ export const Contact: React.FC = () => {
                 </div>
                 <div>
                   <span className={styles['venue-badge']}>Party Venue</span>
-                  <h3 className={styles['venue-name']}>The Bamboo Pavilion</h3>
-                  <p className={styles['venue-sub']}>Whispering Pines Botanical Gardens</p>
+                  <h3 className={styles['venue-name']}>
+                    {hasVenue ? eventData.venueName : 'Venue to be Announced Soon'}
+                  </h3>
+                  <p className={styles['venue-sub']}>
+                    {hasVenue ? (eventData.venueCity || 'Official Celebration Location') : 'Our hosts will update the venue details shortly'}
+                  </p>
                 </div>
               </div>
 
@@ -45,7 +91,11 @@ export const Contact: React.FC = () => {
                   <MapPin className={styles['item-icon']} size={20} />
                   <div>
                     <h4 className={styles['info-title']}>Address</h4>
-                    <p className={styles['info-desc']}>4280 Forest View Way, Austin, TX 78704</p>
+                    <p className={styles['info-desc']}>
+                      {hasVenue
+                        ? [eventData.venueAddress, eventData.venueCity].filter(Boolean).join(', ')
+                        : "Venue location details will be announced soon by Ditvi's family!"}
+                    </p>
                   </div>
                 </div>
 
@@ -53,7 +103,9 @@ export const Contact: React.FC = () => {
                   <Clock className={styles['item-icon']} size={20} />
                   <div>
                     <h4 className={styles['info-title']}>Celebration Hours</h4>
-                    <p className={styles['info-desc']}>3:30 PM &ndash; 7:30 PM (Cake cutting at 5:00 PM)</p>
+                    <p className={styles['info-desc']}>
+                      {eventData.eventTime || '3:30 PM – 7:30 PM CST (Cake cutting at 5:00 PM)'}
+                    </p>
                   </div>
                 </div>
 
@@ -62,66 +114,102 @@ export const Contact: React.FC = () => {
                   <div>
                     <h4 className={styles['info-title']}>Parking &amp; Strollers</h4>
                     <p className={styles['info-desc']}>
-                      Complimentary valet and guest parking in Lot B. Fully paved stroller-friendly ramps to the pavilion.
+                      Complimentary guest parking and fully paved stroller-friendly ramps to the celebration area.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className={styles['venue-actions']}>
-                <a
-                  href={googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-primary"
-                >
-                  <Navigation size={18} />
-                  <span>Get Directions on Google Maps</span>
-                </a>
-              </div>
+              {hasVenue && (
+                <div className={styles['venue-actions']}>
+                  <a
+                    href={googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary"
+                  >
+                    <Navigation size={18} />
+                    <span>Get Directions on Google Maps</span>
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* Host Emergency Contacts */}
             <div className={`${styles['hosts-contact-card'] || 'hosts-contact-card'} card-bamboo`}>
               <h4 className={styles['hosts-card-title']}>Host Family Contacts</h4>
-              <p className={styles['hosts-card-desc']}>Have questions or running late? Call or text anytime!</p>
+              <p className={styles['hosts-card-desc']}>Have questions or running late? Call, text, or email anytime!</p>
 
               <div className={styles['hosts-contacts-grid']}>
-                <a href="tel:+15550192831" className={styles['host-phone-pill']}>
+                <a href={`tel:${(eventData.contactPhone || '+15550192831').replace(/[^0-9+]/g, '')}`} className={styles['host-phone-pill']}>
                   <Phone size={16} />
                   <div>
-                    <span className={styles['host-name']}>Sarah Chen (Mommy)</span>
-                    <span className={styles['host-number']}>+1 (555) 019-2831</span>
+                    <span className={styles['host-name']}>{eventData.childName || 'Ditvi'}&apos;s Family</span>
+                    <span className={styles['host-number']}>{eventData.contactPhone || '+1 (555) 019-2831'}</span>
                   </div>
                 </a>
 
-                <a href="tel:+15550192832" className={styles['host-phone-pill']}>
-                  <Phone size={16} />
-                  <div>
-                    <span className={styles['host-name']}>Eric Chen (Daddy)</span>
-                    <span className={styles['host-number']}>+1 (555) 019-2832</span>
-                  </div>
-                </a>
+                {eventData.contactEmail && (
+                  <a href={`mailto:${eventData.contactEmail}`} className={styles['host-phone-pill']}>
+                    <Mail size={16} />
+                    <div>
+                      <span className={styles['host-name']}>RSVP &amp; Event Email</span>
+                      <span className={styles['host-number']}>{eventData.contactEmail}</span>
+                    </div>
+                  </a>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Right Column: Google Maps Embed Card with Bamboo Frame */}
+          {/* Right Column: Google Maps or Announcement Card */}
           <div className={`${styles['map-card-container'] || 'map-card-container'} card-bamboo`}>
-            <div className={styles['map-bamboo-frame']}>
-              <iframe
-                title="Bamboo Pavilion Location Map"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d110292.83696582455!2d-97.82287236531393!3d30.267153018282124!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8644b599a0cc032f%3A0x5d9b464bd469d57a!2sAustin%2C%20TX!5e0!3m2!1sen!2sus!4v1715000000000!5m2!1sen!2sus"
-                className={styles['map-iframe']}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </div>
+            {hasVenue && eventData.venueMapUrl && eventData.venueMapUrl.includes('google.com/maps/embed') ? (
+              <div className={styles['map-bamboo-frame']}>
+                <iframe
+                  title="Party Venue Map"
+                  src={eventData.venueMapUrl}
+                  className={styles['map-iframe']}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            ) : hasVenue ? (
+              <div style={{ padding: '36px 24px', textAlign: 'center', background: '#F8FAF7', borderRadius: '14px', border: '1px solid #DCE8D2', minHeight: '320px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <span style={{ fontSize: '3rem', marginBottom: '12px' }}>📍</span>
+                <h3 style={{ color: '#294B35', fontSize: '1.25rem', fontWeight: 700, marginBottom: '8px' }}>
+                  {eventData.venueName}
+                </h3>
+                <p style={{ color: '#4A6B52', maxWidth: '340px', fontSize: '0.92rem', marginBottom: '20px' }}>
+                  {[eventData.venueAddress, eventData.venueCity].filter(Boolean).join(', ')}
+                </p>
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <Navigation size={18} />
+                  <span>Open in Google Maps</span>
+                </a>
+              </div>
+            ) : (
+              <div style={{ padding: '40px 24px', textAlign: 'center', background: '#F8FAF7', borderRadius: '14px', border: '1.5px dashed #DCE8D2', minHeight: '320px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <span style={{ fontSize: '3.2rem', marginBottom: '12px' }}>🎋🐼</span>
+                <h3 style={{ color: '#294B35', fontSize: '1.3rem', fontWeight: 700, marginBottom: '8px' }}>
+                  Venue to be Announced
+                </h3>
+                <p style={{ color: '#5D7963', maxWidth: '340px', fontSize: '0.92rem', lineHeight: '1.5' }}>
+                  The celebration venue is being finalized by Ditvi&apos;s parents and will be updated here soon! Stay tuned!
+                </p>
+              </div>
+            )}
 
             <div className={styles['map-caption-bar']}>
               <div className={styles['map-badge']}>
                 <Sparkles size={16} color="var(--accent-gold)" />
-                <span>Follow the green panda balloons from the main garden gate!</span>
+                <span>Follow the green panda balloons at the entrance on party day!</span>
               </div>
             </div>
           </div>

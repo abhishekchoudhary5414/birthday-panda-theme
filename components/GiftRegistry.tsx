@@ -150,7 +150,7 @@ export const GiftRegistry: React.FC = () => {
           </div>
           <h2 className="section-title">Little Panda Gift Registry</h2>
           <p className="section-subtitle">
-            Your presence at Liam&apos;s party is truly the greatest gift of all! If you wish to bless him with a keepsake, here are some toys and essentials he will love.
+            Your presence at Ditvi&apos;s party is truly the greatest gift of all! If you wish to bless him with a keepsake, here are some toys and essentials he will love.
           </p>
         </div>
 

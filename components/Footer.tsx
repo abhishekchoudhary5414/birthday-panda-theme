@@ -40,7 +40,7 @@ export const Footer: React.FC = () => {
 
   const handleShareWhatsApp = () => {
     if (typeof window === 'undefined') return;
-    const text = encodeURIComponent("You're invited to Liam's 1st Birthday Panda Celebration! 🐼🎋 Check out the website & RSVP here: " + window.location.href);
+    const text = encodeURIComponent("You're invited to Ditvi's 1st Birthday Panda Celebration! 🐼🎋 Check out the website & RSVP here: " + window.location.href);
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -48,8 +48,8 @@ export const Footer: React.FC = () => {
     if (typeof window === 'undefined') return;
     if (navigator?.share) {
       navigator.share({
-        title: "Liam's 1st Birthday - Panda & Bamboo Celebration",
-        text: "Celebrate Liam's 1st Birthday with us! 🐼🎋",
+        title: "Ditvi's 1st Birthday - Panda & Bamboo Celebration",
+        text: "Celebrate Ditvi's 1st Birthday with us! 🐼🎋",
         url: window.location.href,
       }).catch(() => {});
     } else {
@@ -65,7 +65,7 @@ export const Footer: React.FC = () => {
           <div className={styles['footer-brand']}>
             <span className={styles['footer-panda-logo']}>🐼</span>
             <div className={styles['footer-brand-text']}>
-              <h3 className={styles['footer-title']}>Liam&apos;s 1st Birthday</h3>
+              <h3 className={styles['footer-title']}>Ditvi&apos;s 1st Birthday</h3>
               <p className={styles['footer-date']}>Saturday, December 12, 2026 &bull; Austin, Texas</p>
             </div>
           </div>
@@ -109,7 +109,7 @@ export const Footer: React.FC = () => {
         <div className={styles['footer-middle-row']}>
           <nav className={styles['footer-nav']} aria-label="Footer Navigation">
             <a href="#home" className={styles['footer-link']}>Home</a>
-            <a href="#about" className={styles['footer-link']}>About Liam</a>
+            <a href="#about" className={styles['footer-link']}>About Ditvi</a>
             <a href="#timeline" className={styles['footer-link']}>Milestones</a>
             <a href="#gallery" className={styles['footer-link']}>Gallery</a>
             <a href="#rsvp" className={styles['footer-link']}>RSVP</a>
@@ -125,7 +125,7 @@ export const Footer: React.FC = () => {
           </nav>
 
           <div className={styles['footer-hashtags']}>
-            <span className={styles['hashtag-chip']}>#LiamTurnsOne</span>
+            <span className={styles['hashtag-chip']}>#DitviTurnsOne</span>
             <span className={styles['hashtag-chip']}>#PandaParty2026</span>
             <span className={styles['hashtag-chip']}>#BambooGroveCelebration</span>
           </div>

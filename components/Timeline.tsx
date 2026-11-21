@@ -22,7 +22,7 @@ const moments: TimelineMoment[] = [
     month: 'Month 1',
     date: 'December 2025',
     title: 'Hello World, Little Panda!',
-    description: 'Liam arrived on a serene winter morning, weighing 7 lbs 4 oz. Wrapped in his very first fluffy panda swaddle, he immediately stole our hearts.',
+    description: 'Ditvi arrived on a serene winter morning, weighing 7 lbs 4 oz. Wrapped in his very first fluffy panda swaddle, he immediately stole our hearts.',
     imageUrl: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?auto=format&fit=crop&w=500&q=80',
     tag: 'Arrival Day',
   },
@@ -31,7 +31,7 @@ const moments: TimelineMoment[] = [
     month: 'Month 3',
     date: 'March 2026',
     title: 'The First Real Giggle',
-    description: 'While Daddy was playing peek-a-boo behind a green bamboo towel, Liam burst into an irresistible baby laugh that echoed through the whole house.',
+    description: 'While Daddy was playing peek-a-boo behind a green bamboo towel, Ditvi burst into an irresistible baby laugh that echoed through the whole house.',
     imageUrl: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?auto=format&fit=crop&w=500&q=80',
     tag: 'Pure Giggles',
   },
@@ -40,7 +40,7 @@ const moments: TimelineMoment[] = [
     month: 'Month 6',
     date: 'June 2026',
     title: 'First Taste of Solid Treats',
-    description: 'Liam tasted mashed avocado and sweet potato with his mini bamboo spoon. More went on his cheeks and nose than his tummy, but he approved with joyful clapping!',
+    description: 'Ditvi tasted mashed avocado and sweet potato with his mini bamboo spoon. More went on his cheeks and nose than his tummy, but he approved with joyful clapping!',
     imageUrl: 'https://images.unsplash.com/photo-1566004100631-35d015d4799c?auto=format&fit=crop&w=500&q=80',
     tag: 'Yummy Milestones',
   },
@@ -49,7 +49,7 @@ const moments: TimelineMoment[] = [
     month: 'Month 9',
     date: 'September 2026',
     title: 'Panda Crawling Champion',
-    description: 'Suddenly no toy basket was safe! Liam mastered the speedy crawl, zooming across the living room rug chasing his rolling panda ball.',
+    description: 'Suddenly no toy basket was safe! Ditvi mastered the speedy crawl, zooming across the living room rug chasing his rolling panda ball.',
     imageUrl: 'https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&w=500&q=80',
     tag: 'On The Move',
   },
@@ -74,7 +74,7 @@ export const Timeline: React.FC = () => {
             <Sparkles size={16} />
             <span>Growth Journey</span>
           </div>
-          <h2 className="section-title">Liam&apos;s 5 Precious Milestones</h2>
+          <h2 className="section-title">Ditvi&apos;s 5 Precious Milestones</h2>
           <p className="section-subtitle">
             A delightful walk down memory lane tracing our little panda&apos;s most magical moments over his first 365 days.
           </p>

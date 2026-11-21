@@ -24,7 +24,7 @@ export const LiveStreaming: React.FC = () => {
           </div>
           <h2 className="section-title">Birthday Live Stream</h2>
           <p className="section-subtitle">
-            Can&apos;t make it to Austin in person? Join Liam&apos;s cake cutting and birthday songs from anywhere across the globe!
+            Can&apos;t make it to Austin in person? Join Ditvi&apos;s cake cutting and birthday songs from anywhere across the globe!
           </p>
         </div>
 
@@ -35,7 +35,7 @@ export const LiveStreaming: React.FC = () => {
               <span className={`${styles['status-dot'] || 'status-dot'} ${streamState}`} />
               <span className={styles['status-label']}>
                 {streamState === 'standby' && 'Stream Scheduled &bull; Saturday Dec 12 @ 4:00 PM CST'}
-                {streamState === 'live' && 'LIVE NOW &bull; Liam’s 1st Birthday Celebration'}
+                {streamState === 'live' && 'LIVE NOW &bull; Ditvi’s 1st Birthday Celebration'}
                 {streamState === 'ended' && 'Broadcast Ended &bull; Replay Available'}
               </span>
             </div>
@@ -78,7 +78,7 @@ export const LiveStreaming: React.FC = () => {
             {streamState === 'live' || isPlayingPlaceholder ? (
               <iframe
                 src={youtubeEmbedUrl}
-                title="Liam’s Birthday Celebration Stream"
+                title="Ditvi’s Birthday Celebration Stream"
                 className={styles['stream-iframe']}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
@@ -89,7 +89,7 @@ export const LiveStreaming: React.FC = () => {
                   <div className={styles['placeholder-panda-icon']}>🐼</div>
                   <h3 className={styles['placeholder-title']}>Live Broadcast Starting Soon!</h3>
                   <p className={styles['placeholder-text']}>
-                    The ceremony will begin Saturday, December 12 at <strong>4:00 PM CST</strong> with Liam&apos;s big entrance, musical games, and bamboo cake smashing!
+                    The ceremony will begin Saturday, December 12 at <strong>4:00 PM CST</strong> with Ditvi&apos;s big entrance, musical games, and bamboo cake smashing!
                   </p>
 
                   <div className={styles['placeholder-time-pill']}>
@@ -116,7 +116,7 @@ export const LiveStreaming: React.FC = () => {
                   <CheckCircle size={48} color="var(--bamboo-green)" />
                   <h3 className={styles['placeholder-title']}>Thank You For Watching!</h3>
                   <p className={styles['placeholder-text']}>
-                    Liam&apos;s 1st Birthday live stream has concluded. Full recorded highlights and ceremony photos are saved in the gallery above!
+                    Ditvi&apos;s 1st Birthday live stream has concluded. Full recorded highlights and ceremony photos are saved in the gallery above!
                   </p>
                   <a href="#gallery" className={`btn-secondary ${styles['mt-2'] || 'mt-2'}`}>
                     Browse Gallery Highlights

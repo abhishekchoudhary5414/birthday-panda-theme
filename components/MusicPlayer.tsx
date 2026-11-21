@@ -29,7 +29,7 @@ const tracks: Track[] = [
     ],
   },
   {
-    title: 'Happy 1st Birthday Liam',
+    title: 'Happy 1st Birthday Ditvi',
     artist: 'Panda Forest Kalimba',
     tempo: 420,
     melody: [

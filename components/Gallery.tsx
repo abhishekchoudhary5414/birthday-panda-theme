@@ -23,7 +23,7 @@ const galleryData: GalleryItem[] = [
     id: 1,
     type: 'photo',
     album: 'photoshoot',
-    title: 'Liam in his Fluffy Panda Suit',
+    title: 'Ditvi in his Fluffy Panda Suit',
     caption: 'Looking cozy, cute, and ready to feast on bamboo cookies!',
     thumbnail: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?auto=format&fit=crop&w=700&q=80',
     mediaUrl: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?auto=format&fit=crop&w=1200&q=85',
@@ -33,7 +33,7 @@ const galleryData: GalleryItem[] = [
     type: 'photo',
     album: 'milestones',
     title: 'First Autumn In The Forest',
-    caption: 'Liam marveling at golden leaves and gentle breezes.',
+    caption: 'Ditvi marveling at golden leaves and gentle breezes.',
     thumbnail: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=700&q=80',
     mediaUrl: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=1200&q=85',
   },
@@ -41,7 +41,7 @@ const galleryData: GalleryItem[] = [
     id: 3,
     type: 'video',
     album: 'celebration',
-    title: 'Liam’s First Birthday Cake Smash Teaser',
+    title: 'Ditvi’s First Birthday Cake Smash Teaser',
     caption: 'Tasting the bamboo-topped cream cupcake for the very first time!',
     thumbnail: 'https://images.unsplash.com/photo-1558636508-e0db3814bd1d?auto=format&fit=crop&w=700&q=80',
     mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
@@ -145,7 +145,7 @@ export const Gallery: React.FC = () => {
           </div>
           <h2 className="section-title">Photo &amp; Video Gallery</h2>
           <p className="section-subtitle">
-            Explore precious snapshots and captured laughter from Liam&apos;s first incredible year.
+            Explore precious snapshots and captured laughter from Ditvi&apos;s first incredible year.
           </p>
         </div>
 

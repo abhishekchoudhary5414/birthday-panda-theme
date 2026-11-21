@@ -41,6 +41,42 @@ export const RSVP: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submittedRSVP, setSubmittedRSVP] = useState<RSVPFormData | null>(null);
 
+  const [eventData, setEventData] = useState<{
+    eventTitle?: string;
+    childName?: string;
+    turningAge?: string;
+    eventDate?: string;
+    eventTime?: string;
+    venueName?: string;
+    venueAddress?: string;
+    venueCity?: string;
+    dressCode?: string;
+  }>({
+    eventTitle: "Ditvi's 1st Birthday Party",
+    childName: 'Ditvi',
+    turningAge: '1',
+    eventDate: 'Saturday, December 12, 2026',
+    eventTime: '3:30 PM – 7:30 PM (Cake cutting at 5:00 PM)',
+    venueName: '',
+    venueAddress: '',
+    venueCity: '',
+    dressCode: 'Pastel forest tones, sage, cream, or your cutest panda-inspired accents!',
+  });
+
+  // Fetch dynamic event settings
+  useEffect(() => {
+    fetch('/api/event')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.event) {
+          setEventData(data.event);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load event details in RSVP component:', err);
+      });
+  }, []);
+
   // Check if previously submitted locally
   useEffect(() => {
     try {
@@ -136,7 +172,7 @@ export const RSVP: React.FC = () => {
           </div>
           <h2 className="section-title">Birthday Invitation &amp; RSVP</h2>
           <p className="section-subtitle">
-            We would be so honored to have you share this special milestone with Liam and our family!
+            We would be so honored to have you share this special milestone with {eventData.childName || 'Ditvi'} and our family!
           </p>
         </div>
 
@@ -149,7 +185,7 @@ export const RSVP: React.FC = () => {
               <span className={styles['invitation-ornament']}>🌿</span>
             </div>
 
-            <h3 className={styles['invitation-headline']}>Liam Chen&apos;s 1st Birthday</h3>
+            <h3 className={styles['invitation-headline']}>{eventData.childName || 'Ditvi'}&apos;s {eventData.turningAge || '1'}st Birthday</h3>
             <p className={styles['invitation-intro']}>
               &ldquo;Join our panda party in the bamboo grove for cake, cheerful laughter, and unforgettable celebration!&rdquo;
             </p>
@@ -159,7 +195,7 @@ export const RSVP: React.FC = () => {
                 <Calendar className={styles['inv-icon']} size={22} />
                 <div>
                   <h4 className={styles['inv-title']}>Date</h4>
-                  <p className={styles['inv-val']}>Saturday, December 12, 2026</p>
+                  <p className={styles['inv-val']}>{eventData.eventDate || 'Saturday, December 12, 2026'}</p>
                 </div>
               </div>
 
@@ -167,7 +203,7 @@ export const RSVP: React.FC = () => {
                 <Clock className={styles['inv-icon']} size={22} />
                 <div>
                   <h4 className={styles['inv-title']}>Event Timing</h4>
-                  <p className={styles['inv-val']}>3:30 PM &ndash; 7:30 PM (Cake cutting at 5:00 PM)</p>
+                  <p className={styles['inv-val']}>{eventData.eventTime || '3:30 PM – 7:30 PM (Cake cutting at 5:00 PM)'}</p>
                 </div>
               </div>
 
@@ -175,8 +211,12 @@ export const RSVP: React.FC = () => {
                 <MapPin className={styles['inv-icon']} size={22} />
                 <div>
                   <h4 className={styles['inv-title']}>Party Venue</h4>
-                  <p className={styles['inv-val']}>The Bamboo Pavilion at Whispering Pines</p>
-                  <p className={styles['inv-sub']}>4280 Forest View Way, Austin, TX 78704</p>
+                  <p className={styles['inv-val']}>
+                    {eventData.venueName || 'To Be Announced Soon'}
+                  </p>
+                  <p className={styles['inv-sub']}>
+                    {[eventData.venueAddress, eventData.venueCity].filter(Boolean).join(', ') || 'Hosts will confirm venue location shortly'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -185,7 +225,7 @@ export const RSVP: React.FC = () => {
             <div className={styles['invitation-dress-code']}>
               <span className={styles['dress-code-title']}>Theme &amp; Dress Code:</span>
               <p className={styles['dress-code-text']}>
-                Pastel forest tones, sage, cream, or your cutest panda-inspired accents!
+                {eventData.dressCode || 'Pastel forest tones, sage, cream, or your cutest panda-inspired accents!'}
               </p>
             </div>
           </div>
@@ -371,13 +411,13 @@ export const RSVP: React.FC = () => {
                 {/* Personal Wish / Message */}
                 <div className={styles['form-group']}>
                   <label htmlFor="message" className={styles['form-label']}>
-                    Optional Birthday Wish for Liam
+                    Optional Birthday Wish for {eventData.childName || 'Ditvi'}
                   </label>
                   <textarea
                     id="message"
                     rows={3}
                     className={`${styles['form-input'] || 'form-input'} ${styles['form-textarea'] || 'form-textarea'}`}
-                    placeholder="Write a sweet note or birthday blessing..."
+                    placeholder={`Write a sweet note or birthday blessing for ${eventData.childName || 'Ditvi'}...`}
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   />

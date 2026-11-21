@@ -358,7 +358,7 @@ const BambooCatchGame: React.FC = () => {
           <div className={styles['catch-overlay']}>
             <Trophy size={36} color="var(--accent-gold)" />
             <h3>Game Over!</h3>
-            <p>You gathered <strong>{score}</strong> bamboo points for Liam&apos;s feast!</p>
+            <p>You gathered <strong>{score}</strong> bamboo points for Ditvi&apos;s feast!</p>
             <button type="button" onClick={startGame} className={`btn-primary ${styles['mt-2'] || 'mt-2'}`}>
               <span>Play Again</span>
             </button>
@@ -423,10 +423,10 @@ interface QuizQuestion {
 const quizQuestions: QuizQuestion[] = [
   {
     id: 1,
-    question: 'How many teeth does our birthday star Liam currently have?',
+    question: 'How many cute teeth does our birthday star Ditvi currently have?',
     options: ['None yet', '2 bottom teeth', '4 cute teeth (2 top, 2 bottom)', '8 teeth'],
     correctIndex: 2,
-    explanation: 'Liam proudly shows off his 4 little front teeth whenever he giggles!',
+    explanation: 'Ditvi proudly shows off her 4 little front teeth whenever she giggles!',
   },
   {
     id: 2,
@@ -437,10 +437,10 @@ const quizQuestions: QuizQuestion[] = [
   },
   {
     id: 3,
-    question: 'What is Liam’s all-time favorite afternoon treat?',
+    question: 'What is Ditvi’s all-time favorite afternoon treat?',
     options: ['Spicy noodles', 'Mashed avocado & sweet potato', 'Raw broccoli', 'Chocolate cake'],
     correctIndex: 1,
-    explanation: 'Liam could eat sweet potato and avocado mash for breakfast, lunch, and dinner!',
+    explanation: 'Ditvi could eat sweet potato and avocado mash for breakfast, lunch, and dinner!',
   },
   {
     id: 4,
@@ -459,23 +459,54 @@ const quizQuestions: QuizQuestion[] = [
 ];
 
 const PandaQuizGame: React.FC = () => {
+  const [questions, setQuestions] = useState<QuizQuestion[]>(quizQuestions);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
+  const [playerName, setPlayerName] = useState('');
+  const [isSubmittingScore, setIsSubmittingScore] = useState(false);
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [userAnswers, setUserAnswers] = useState<{
+    question: string;
+    selectedOption: string;
+    correctOption: string;
+    isCorrect: boolean;
+  }[]>([]);
 
-  const q = quizQuestions[currentIdx];
+  useEffect(() => {
+    fetch('/api/quiz')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
+          setQuestions(data.questions);
+        }
+      })
+      .catch((err) => console.error('Failed to load dynamic quiz questions:', err));
+  }, []);
+
+  const q = questions[currentIdx] || questions[0] || quizQuestions[0];
 
   const handleSelectOption = (idx: number) => {
-    if (selectedAnswer !== null) return;
+    if (selectedAnswer !== null || !q) return;
     setSelectedAnswer(idx);
-    if (idx === q.correctIndex) {
+    const isCorrect = idx === q.correctIndex;
+    if (isCorrect) {
       setScore((s) => s + 1);
     }
+    setUserAnswers((prev) => [
+      ...prev,
+      {
+        question: q.question,
+        selectedOption: q.options[idx] || '',
+        correctOption: q.options[q.correctIndex] || '',
+        isCorrect,
+      },
+    ]);
   };
 
   const handleNext = () => {
-    if (currentIdx < quizQuestions.length - 1) {
+    if (currentIdx < questions.length - 1) {
       setCurrentIdx((c) => c + 1);
       setSelectedAnswer(null);
     } else {
@@ -489,11 +520,41 @@ const PandaQuizGame: React.FC = () => {
     }
   };
 
+  const handleSubmitScore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!playerName.trim() || isSubmittingScore) return;
+
+    try {
+      setIsSubmittingScore(true);
+      const res = await fetch('/api/quiz/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          playerName: playerName.trim(),
+          score,
+          totalQuestions: questions.length,
+          answers: userAnswers,
+        }),
+      });
+
+      if (res.ok) {
+        setScoreSubmitted(true);
+      }
+    } catch (err) {
+      console.error('Failed to submit score to database:', err);
+    } finally {
+      setIsSubmittingScore(false);
+    }
+  };
+
   const handleRestart = () => {
     setCurrentIdx(0);
     setSelectedAnswer(null);
     setScore(0);
     setShowResult(false);
+    setScoreSubmitted(false);
+    setPlayerName('');
+    setUserAnswers([]);
   };
 
   return (
@@ -503,25 +564,65 @@ const PandaQuizGame: React.FC = () => {
           <Trophy size={48} color="var(--accent-gold)" />
           <h3 className={styles['result-title']}>Quiz Completed!</h3>
           <p className={styles['result-score']}>
-            You scored <strong>{score}</strong> out of {quizQuestions.length}!
+            You scored <strong>{score}</strong> out of {questions.length}!
           </p>
           <p className={styles['result-comment']}>
-            {score === 5
-              ? '🌟 Perfect score! You are a certified Panda Master and Liam’s best friend!'
-              : score >= 3
-              ? '🎋 Great job! You know your pandas and baby Liam super well!'
-              : '💚 Sweet effort! Liam thanks you for playing his birthday quiz!'}
+            {score === questions.length
+              ? '🌟 Perfect score! You are a certified Panda Master and Ditvi’s best friend!'
+              : score >= Math.ceil(questions.length / 2)
+              ? '🎋 Great job! You know your pandas and baby Ditvi super well!'
+              : '💚 Sweet effort! Ditvi thanks you for playing her birthday quiz!'}
           </p>
+
+          {/* Store Quiz Score to Database */}
+          {!scoreSubmitted ? (
+            <form onSubmit={handleSubmitScore} style={{ margin: '14px auto 0', maxWidth: '320px', width: '100%' }}>
+              <p style={{ fontSize: '0.84rem', fontWeight: 600, color: '#294B35', marginBottom: '6px' }}>
+                Save your score to the birthday leaderboard:
+              </p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  placeholder="Your Name (e.g. Auntie Neha)"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  required
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1.5px solid #dce8d2',
+                    fontSize: '0.88rem',
+                    outline: 'none',
+                    background: '#ffffff',
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={isSubmittingScore}
+                  className="btn-primary"
+                  style={{ padding: '8px 14px', whiteSpace: 'nowrap', fontSize: '0.85rem' }}
+                >
+                  {isSubmittingScore ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div style={{ marginTop: '12px', padding: '8px 14px', background: '#eaf5e6', color: '#1e5a26', borderRadius: '8px', fontSize: '0.88rem', fontWeight: 700 }}>
+              ✓ Saved to the database leaderboard!
+            </div>
+          )}
+
           <button type="button" onClick={handleRestart} className={`btn-primary ${styles['mt-3'] || 'mt-3'}`}>
             <RotateCcw size={18} />
             <span>Try Again</span>
           </button>
         </div>
-      ) : (
+      ) : q ? (
         <div className={`${styles['quiz-card'] || 'quiz-card'} card-bamboo`}>
           <div className={styles['quiz-top-info']}>
             <span className={styles['quiz-step-badge']}>
-              Question {currentIdx + 1} of {quizQuestions.length}
+              Question {currentIdx + 1} of {questions.length}
             </span>
             <span className={styles['quiz-score-badge']}>Score: {score}</span>
           </div>
@@ -567,12 +668,12 @@ const PandaQuizGame: React.FC = () => {
                 {q.explanation}
               </p>
               <button type="button" onClick={handleNext} className={`btn-primary ${styles['mt-2'] || 'mt-2'}`}>
-                <span>{currentIdx < quizQuestions.length - 1 ? 'Next Question' : 'See Results'}</span>
+                <span>{currentIdx < questions.length - 1 ? 'Next Question' : 'See Results'}</span>
               </button>
             </div>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

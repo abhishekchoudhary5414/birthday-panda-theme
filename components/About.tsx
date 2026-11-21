@@ -17,7 +17,7 @@ export const About: React.FC = () => {
             <Sparkles size={16} />
             <span>Meet the Birthday Star</span>
           </div>
-          <h2 className="section-title">Our Little Panda Cub Liam</h2>
+          <h2 className="section-title">Our Little Panda Cub Ditvi</h2>
           <p className="section-subtitle">
             365 days of endless cuddles, cheerful giggles, bamboo toy stacks, and pure unconditional joy.
           </p>
@@ -34,7 +34,7 @@ export const About: React.FC = () => {
             <div className={styles['portrait-frame']}>
               <img
                 src="https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=600&q=80"
-                alt="Liam laughing with his panda toy"
+                alt="Ditvi laughing with his panda toy"
                 className={styles['portrait-image']}
               />
               <div className={styles['portrait-badge']}>
@@ -79,17 +79,17 @@ export const About: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Column: Liam's Story & Parents' Message */}
+          {/* Right Column: Ditvi's Story & Parents' Message */}
           <div className={styles['about-story-col']}>
             <div className={`card-bamboo ${styles['story-card'] || 'story-card'}`}>
               <h3 className={styles['story-title']}>
                 Growing Up in Our Cozy Bamboo Grove 🌿
               </h3>
               <p className={styles['story-paragraph']}>
-                From the moment Liam opened his bright curious eyes, our entire world transformed into a wondrous playground. He has the sweetest contagious laugh, loves soft panda plushies more than anything, and waves enthusiastically at everyone he meets.
+                From the moment Ditvi opened his bright curious eyes, our entire world transformed into a wondrous playground. He has the sweetest contagious laugh, loves soft panda plushies more than anything, and waves enthusiastically at everyone he meets.
               </p>
               <p className={styles['story-paragraph']}>
-                Whether he is discovering how to roll, stacking bamboo-colored rings, or tasting mashed banana with messy panda-level enthusiasm, Liam turns ordinary moments into heartwarming adventures.
+                Whether he is discovering how to roll, stacking bamboo-colored rings, or tasting mashed banana with messy panda-level enthusiasm, Ditvi turns ordinary moments into heartwarming adventures.
               </p>
 
               {/* Parents' Section */}
@@ -111,7 +111,7 @@ export const About: React.FC = () => {
                 <div className={styles['parents-text']}>
                   <h4 className={styles['parents-label']}>A Letter From Mommy &amp; Daddy</h4>
                   <p className={styles['parents-quote']}>
-                    &ldquo;Liam, you are our greatest blessing, our joyful little bear cub, and the brightest sunshine in our home. Thank you for filling this first year with infinite laughter and pure warmth. We love you always.&rdquo;
+                    &ldquo;Ditvi, you are our greatest blessing, our joyful little bear cub, and the brightest sunshine in our home. Thank you for filling this first year with infinite laughter and pure warmth. We love you always.&rdquo;
                   </p>
                   <span className={styles['parents-signature']}>&mdash; Sarah &amp; Eric Chen</span>
                 </div>

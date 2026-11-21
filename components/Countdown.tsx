@@ -106,7 +106,7 @@ export const Countdown: React.FC<CountdownProps> = ({
         </div>
         <h4 className={styles['state-title']}>Thank You For Making It Magical!</h4>
         <p className={styles['state-subtitle']}>
-          Liam&apos;s 1st Panda Birthday celebration was filled with love, laughter, and bamboo memories!
+          {targetDate ? new Date(targetDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Our'} Panda Birthday celebration was filled with love, laughter, and bamboo memories!
         </p>
       </div>
     );
