@@ -1065,7 +1065,11 @@
 .ecardFrame {
   width: 100%;
   max-width: 440px;
-  background: #FFFFFF;
+  background-color: #FAF7F0;
+  background-image: url('/images/card-bg-paws.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: 20px;
   border: 1px solid #DCE8D2;
   box-shadow: 0 12px 32px rgba(41, 75, 53, 0.08);

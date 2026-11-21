@@ -59,6 +59,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import ChildCareIcon from '@mui/icons-material/ChildCare';
 import PetsIcon from '@mui/icons-material/Pets';
+import { CARD_BG_BASE64 } from './cardBgBase64';
 import { PartyPanda, BambooStalkDecoration } from '@/components/PandaIllustrations';
 import styles from './dashboard.module.css';
 
@@ -587,55 +588,19 @@ export default function AdminDashboardPage() {
         const centerX = x + cardWidth / 2;
 
         // ==========================================
-        // 1. CARD CONTAINER (Personal card frame style)
+        // 1. CARD CONTAINER (Personal card frame style with custom panda paws background)
         // ==========================================
-        doc.setFillColor(255, 255, 255);
+        doc.setFillColor(250, 247, 240);
         doc.setDrawColor(220, 232, 210);
         doc.setLineWidth(1.4);
         doc.roundedRect(x, y, cardWidth, cardHeight, 14, 14, 'FD');
 
-        // Draw bamboo tree stalks on left & right margins
-        const drawStalk = (bx: number) => {
-          const stalkHeight = cardHeight - 36;
-          const stalkY = y + 18;
-          const segments = 10;
-          const segH = stalkHeight / segments;
-
-          for (let s = 0; s < segments; s++) {
-            const sy = stalkY + s * segH;
-            // Stem
-            doc.setFillColor(145, 178, 128); // #91b280
-            doc.roundedRect(bx, sy + 1.5, 3.5, segH - 3, 1, 1, 'F');
-            // Joint node
-            doc.setFillColor(80, 115, 68);
-            doc.roundedRect(bx - 1, sy, 5.5, 2, 0.8, 0.8, 'F');
-            // Little leaf alternating
-            doc.setFillColor(120, 155, 99);
-            if (s % 2 === 0) {
-              doc.ellipse(bx - 3.5, sy + 4, 4, 1.6, 'F');
-            } else {
-              doc.ellipse(bx + 7, sy + 4, 4, 1.6, 'F');
-            }
-          }
-        };
-
-        drawStalk(x + 7);
-        drawStalk(x + cardWidth - 11);
-
-        // Draw 4 corner gold paw prints
-        const drawPawPrint = (px: number, py: number) => {
-          doc.setFillColor(217, 182, 111);
-          doc.ellipse(px, py, 3.2, 2.4, 'F');
-          doc.circle(px - 2.8, py - 3.2, 1.1, 'F');
-          doc.circle(px - 1, py - 4.2, 1.1, 'F');
-          doc.circle(px + 1.2, py - 4.2, 1.1, 'F');
-          doc.circle(px + 3, py - 3.2, 1.1, 'F');
-        };
-
-        drawPawPrint(x + 22, y + 22);
-        drawPawPrint(x + cardWidth - 22, y + 22);
-        drawPawPrint(x + 22, y + cardHeight - 22);
-        drawPawPrint(x + cardWidth - 22, y + cardHeight - 22);
+        // Render card background pattern matching ecard & thank you card
+        try {
+          doc.addImage(CARD_BG_BASE64, 'JPEG', x + 1, y + 1, cardWidth - 2, cardHeight - 2, undefined, 'FAST');
+        } catch {
+          // graceful fallback if image decoding fails in pdf
+        }
 
         // ==========================================
         // 2. PARTY PANDA MASCOT (Exact matching illustration)
