@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST: Add single guest
+// POST: Add single guest or bulk guests via CSV
 export async function POST(req: NextRequest) {
   const admin = checkAuth(req);
   if (!admin) {
@@ -66,7 +66,48 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { title = 'Mr.', name, mobile, email } = await req.json();
+    const body = await req.json();
+
+    // Support bulk insertion for CSV upload
+    const guestList = Array.isArray(body) ? body : Array.isArray(body?.guests) ? body.guests : null;
+
+    if (guestList) {
+      if (guestList.length === 0) {
+        return NextResponse.json({ error: 'No guests found in upload' }, { status: 400 });
+      }
+
+      let insertedCount = 0;
+      const insertedGuests = [];
+
+      for (const g of guestList) {
+        const name = g.name?.trim();
+        const mobile = g.mobile?.trim();
+        if (!name || !mobile) continue;
+
+        const title = g.title?.trim() || 'Mr.';
+        const email = g.email?.trim() || null;
+        const randomCode = 'DITVI-' + Math.floor(1000 + Math.random() * 9000);
+
+        const res = await sql`
+          INSERT INTO guests (title, name, mobile, email, invite_code, rsvp_status, invited)
+          VALUES (${title}, ${name}, ${mobile}, ${email}, ${randomCode}, 'pending', true)
+          RETURNING *
+        `;
+        if (res.length > 0) {
+          insertedCount++;
+          insertedGuests.push(res[0]);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        count: insertedCount,
+        guests: insertedGuests
+      });
+    }
+
+    // Single guest addition
+    const { title = 'Mr.', name, mobile, email } = body;
 
     if (!name?.trim() || !mobile?.trim()) {
       return NextResponse.json({ error: 'Name and mobile number are required' }, { status: 400 });

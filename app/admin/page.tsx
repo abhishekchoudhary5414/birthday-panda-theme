@@ -34,7 +34,9 @@ import HowToRegIcon from '@mui/icons-material/HowToReg';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import MenuIcon from '@mui/icons-material/Menu';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
 import { PartyPanda, BambooStalkDecoration } from '@/components/PandaIllustrations';
 import styles from './dashboard.module.css';
 
@@ -80,6 +82,15 @@ export default function AdminDashboardPage() {
   const [newMobile, setNewMobile] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // CSV Bulk Import State
+  const [guestAddMode, setGuestAddMode] = useState<'single' | 'csv'>('single');
+  const [csvParsedGuests, setCsvParsedGuests] = useState<{ title: string; name: string; mobile: string; email: string }[]>([]);
+  const [csvFileName, setCsvFileName] = useState('');
+  const [isUploadingCsv, setIsUploadingCsv] = useState(false);
+  const [csvUploadSuccess, setCsvUploadSuccess] = useState<string | null>(null);
+  const [csvUploadError, setCsvUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Selected guest for eCard preview modal
   const [selectedEcardGuest, setSelectedEcardGuest] = useState<Guest | null>(null);
@@ -165,6 +176,118 @@ export default function AdminDashboardPage() {
       console.error('Add guest error:', err);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Download CSV Template
+  const handleDownloadCsvTemplate = () => {
+    const csvContent = 'Title,Name,Mobile,Email\nMr.,John Doe,9876543210,john@example.com\nMiss,Priya Sharma,9876543211,priya@example.com\nMr.,Ajay Verma,9876543212,ajay@example.com\n';
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'ditvi_guest_list_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Parse CSV File
+  const handleCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setCsvUploadSuccess(null);
+    setCsvUploadError(null);
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setCsvUploadError('Please select a valid .csv file');
+      return;
+    }
+
+    setCsvFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        if (!text) {
+          setCsvUploadError('CSV file is empty');
+          return;
+        }
+
+        const lines = text.split(/\r\n|\n/).filter((line) => line.trim().length > 0);
+        if (lines.length < 2) {
+          setCsvUploadError('CSV must include header row and at least one guest row');
+          return;
+        }
+
+        // Parse header
+        const header = lines[0].split(',').map((h) => h.trim().toLowerCase().replace(/['"]/g, ''));
+        const titleIdx = header.findIndex((h) => h.includes('title'));
+        const nameIdx = header.findIndex((h) => h.includes('name'));
+        const mobileIdx = header.findIndex((h) => h.includes('mobile') || h.includes('phone') || h.includes('contact'));
+        const emailIdx = header.findIndex((h) => h.includes('email') || h.includes('mail'));
+
+        const parsed: { title: string; name: string; mobile: string; email: string }[] = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const row = lines[i].split(',').map((cell) => cell.trim().replace(/^["']|["']$/g, ''));
+          if (row.length === 0 || row.every((c) => c === '')) continue;
+
+          const title = titleIdx !== -1 && row[titleIdx] ? row[titleIdx] : 'Mr.';
+          const name = nameIdx !== -1 && row[nameIdx] ? row[nameIdx] : row[1] || row[0] || '';
+          const mobile = mobileIdx !== -1 && row[mobileIdx] ? row[mobileIdx] : row[2] || '';
+          const email = emailIdx !== -1 && row[emailIdx] ? row[emailIdx] : row[3] || '';
+
+          if (name && mobile) {
+            parsed.push({ title, name, mobile, email });
+          }
+        }
+
+        if (parsed.length === 0) {
+          setCsvUploadError('No valid rows found. Please ensure "Name" and "Mobile" columns are provided.');
+        } else {
+          setCsvParsedGuests(parsed);
+        }
+      } catch (err) {
+        console.error('Error parsing CSV:', err);
+        setCsvUploadError('Failed to parse CSV file. Please check format.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Submit CSV Bulk Upload
+  const handleCsvUploadSubmit = async () => {
+    if (csvParsedGuests.length === 0) return;
+
+    try {
+      setIsUploadingCsv(true);
+      setCsvUploadError(null);
+      setCsvUploadSuccess(null);
+
+      const res = await fetch('/api/admin/guests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guests: csvParsedGuests }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setCsvUploadError(data.error || 'Failed to upload CSV');
+        return;
+      }
+
+      setCsvUploadSuccess(`Successfully imported ${data.count || csvParsedGuests.length} guests!`);
+      setCsvParsedGuests([]);
+      setCsvFileName('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      fetchGuests();
+    } catch (err) {
+      console.error('CSV upload submit error:', err);
+      setCsvUploadError('Network error while importing guests');
+    } finally {
+      setIsUploadingCsv(false);
     }
   };
 
@@ -633,15 +756,13 @@ export default function AdminDashboardPage() {
                   setIsSidebarCollapsed(!isSidebarCollapsed);
                 }
               }}
-              title={isMobileSidebarOpen ? 'Close sidebar' : isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               aria-label="Toggle Sidebar"
             >
-              {isMobileSidebarOpen ? (
-                <CloseIcon sx={{ fontSize: 20 }} />
-              ) : isSidebarCollapsed ? (
-                <MenuIcon sx={{ fontSize: 18 }} />
+              {isSidebarCollapsed ? (
+                <MenuIcon sx={{ fontSize: 20 }} />
               ) : (
-                <ChevronLeftIcon sx={{ fontSize: 20 }} />
+                <CloseIcon sx={{ fontSize: 20 }} />
               )}
             </button>
           </div>
@@ -706,20 +827,6 @@ export default function AdminDashboardPage() {
               <span className={styles.navItemText}>3. Guest List</span>
             </div>
             <span className={styles.navBadge}>{stats.totalGuests}</span>
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.navItem} ${activeTab === '4' ? styles.active : ''}`}
-            onClick={() => {
-              setActiveTab('4');
-              setIsMobileSidebarOpen(false);
-            }}
-          >
-            <div className={styles.navItemLeft}>
-              <span className={styles.navIcon}><UploadFileIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>4. CSV Import</span>
-            </div>
           </button>
 
           <button
@@ -845,17 +952,11 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               className={styles.menuHamburgerBtn}
-              onClick={() => {
-                if (typeof window !== 'undefined' && window.innerWidth <= 900) {
-                  setIsMobileSidebarOpen(!isMobileSidebarOpen);
-                } else {
-                  setIsSidebarCollapsed(!isSidebarCollapsed);
-                }
-              }}
-              title="Toggle Menu"
-              aria-label="Toggle Navigation Menu"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              title="Open Navigation Menu"
+              aria-label="Open Navigation Menu"
             >
-              <MenuIcon sx={{ fontSize: 22 }} />
+              <MenuIcon sx={{ fontSize: 24 }} />
             </button>
             <div>
               <h1 className={styles.consoleHeaderTitle}>Birthday Event Management Console</h1>
@@ -888,50 +989,218 @@ export default function AdminDashboardPage() {
               <span>Guest List Management ({stats.totalGuests} Guests)</span>
             </div>
 
-            {/* Single Entry Add Form */}
+            {/* Guest Entry Box (Single & Bulk CSV) */}
             <div className={styles.addGuestBox}>
-              <div className={styles.addGuestTitle}>
-                <AddIcon sx={{ fontSize: 18 }} />
-                <span>Add Guest (Single Entry)</span>
+              <div className={styles.guestAddTabs}>
+                <button
+                  type="button"
+                  className={`${styles.guestAddTabBtn} ${guestAddMode === 'single' ? styles.activeTab : ''}`}
+                  onClick={() => setGuestAddMode('single')}
+                >
+                  <AddIcon sx={{ fontSize: 18 }} />
+                  <span>Add Single Guest</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.guestAddTabBtn} ${guestAddMode === 'csv' ? styles.activeTab : ''}`}
+                  onClick={() => setGuestAddMode('csv')}
+                >
+                  <UploadFileIcon sx={{ fontSize: 18 }} />
+                  <span>Bulk CSV Upload</span>
+                </button>
               </div>
 
-              <form onSubmit={handleAddGuest} className={styles.addGuestForm}>
-                <select
-                  className={styles.titleSelect}
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  aria-label="Title"
-                >
-                  <option value="Mr.">Mr.</option>
-                  <option value="Miss">Miss</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Guest Name (e.g. jaya)"
-                  className={styles.inputField}
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Mobile (e.g. 9691089759)"
-                  className={styles.inputField}
-                  value={newMobile}
-                  onChange={(e) => setNewMobile(e.target.value)}
-                  required
-                />
-                <input
-                  type="email"
-                  placeholder="Email Address (Optional)"
-                  className={styles.inputField}
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                />
-                <button type="submit" disabled={isSubmitting} className={styles.btnAdd}>
-                  <span>Add</span>
-                </button>
-              </form>
+              {guestAddMode === 'single' ? (
+                <>
+                  <div className={styles.addGuestTitle}>
+                    <AddIcon sx={{ fontSize: 18 }} />
+                    <span>Add Guest (Single Entry)</span>
+                  </div>
+
+                  <form onSubmit={handleAddGuest} className={styles.addGuestForm}>
+                    <select
+                      className={styles.titleSelect}
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      aria-label="Title"
+                    >
+                      <option value="Mr.">Mr.</option>
+                      <option value="Miss">Miss</option>
+                      <option value="Mrs.">Mrs.</option>
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Guest Name (e.g. jaya)"
+                      className={styles.inputField}
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="Mobile (e.g. 9691089759)"
+                      className={styles.inputField}
+                      value={newMobile}
+                      onChange={(e) => setNewMobile(e.target.value)}
+                      required
+                    />
+                    <input
+                      type="email"
+                      placeholder="Email Address (Optional)"
+                      className={styles.inputField}
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                    />
+                    <button type="submit" disabled={isSubmitting} className={styles.btnAdd}>
+                      <span>Add</span>
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div className={styles.csvUploadContainer}>
+                  {/* CSV Format Card */}
+                  <div className={styles.csvFormatCard}>
+                    <div className={styles.csvFormatHeader}>
+                      <div className={styles.csvFormatTitle}>
+                        <TableChartOutlinedIcon sx={{ fontSize: 20, color: '#3c8d40' }} />
+                        <span>CSV Format &amp; Column Guidelines</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleDownloadCsvTemplate}
+                        className={styles.csvDownloadTemplateBtn}
+                        title="Download sample template"
+                      >
+                        <FileDownloadIcon sx={{ fontSize: 16 }} />
+                        <span>Download Sample CSV Format</span>
+                      </button>
+                    </div>
+
+                    <table className={styles.csvTableGuide}>
+                      <thead>
+                        <tr>
+                          <th>Title</th>
+                          <th>Name (Required)</th>
+                          <th>Mobile (Required)</th>
+                          <th>Email (Optional)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Mr.</td>
+                          <td>John Doe</td>
+                          <td>9876543210</td>
+                          <td>john@example.com</td>
+                        </tr>
+                        <tr>
+                          <td>Miss</td>
+                          <td>Priya Sharma</td>
+                          <td>9876543211</td>
+                          <td>priya@example.com</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* CSV DropZone */}
+                  <div
+                    className={styles.csvDropZone}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <UploadFileIcon sx={{ fontSize: 38, color: '#3c8d40' }} />
+                    <div className={styles.csvDropTitle}>
+                      {csvFileName ? `Selected File: ${csvFileName}` : 'Click here to upload CSV file'}
+                    </div>
+                    <div className={styles.csvDropSubtext}>
+                      Select a .CSV file matching the format above (Title, Name, Mobile, Email)
+                    </div>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept=".csv,text/csv"
+                      className={styles.csvFileInputHidden}
+                      onChange={handleCsvFileChange}
+                    />
+                  </div>
+
+                  {/* Success / Error Messages */}
+                  {csvUploadSuccess && (
+                    <div style={{ padding: '10px 14px', background: '#edf7ed', color: '#1e4620', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', border: '1px solid #c8e6c9' }}>
+                      <CheckCircleOutlineIcon sx={{ fontSize: 18, color: '#2e7d32' }} />
+                      <span>{csvUploadSuccess}</span>
+                    </div>
+                  )}
+                  {csvUploadError && (
+                    <div style={{ padding: '10px 14px', background: '#fde8e8', color: '#9b1c1c', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', border: '1px solid #f8b4b4' }}>
+                      <InfoOutlinedIcon sx={{ fontSize: 18, color: '#c81e1e' }} />
+                      <span>{csvUploadError}</span>
+                    </div>
+                  )}
+
+                  {/* Parsed Preview Table */}
+                  {csvParsedGuests.length > 0 && (
+                    <div className={styles.csvParsedSection}>
+                      <div className={styles.csvParsedHeader}>
+                        <span className={styles.csvParsedCount}>
+                          Ready to Import: {csvParsedGuests.length} Guests
+                        </span>
+                        <div className={styles.csvActionButtons}>
+                          <button
+                            type="button"
+                            className={styles.csvClearBtn}
+                            onClick={() => {
+                              setCsvParsedGuests([]);
+                              setCsvFileName('');
+                              if (fileInputRef.current) fileInputRef.current.value = '';
+                            }}
+                          >
+                            Clear
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.csvSubmitBtn}
+                            onClick={handleCsvUploadSubmit}
+                            disabled={isUploadingCsv}
+                          >
+                            <UploadFileIcon sx={{ fontSize: 18 }} />
+                            <span>{isUploadingCsv ? 'Uploading...' : `Upload ${csvParsedGuests.length} Guests`}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className={styles.csvPreviewTableWrapper}>
+                        <table className={styles.csvTableGuide}>
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Title</th>
+                              <th>Name</th>
+                              <th>Mobile</th>
+                              <th>Email</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {csvParsedGuests.slice(0, 10).map((g, idx) => (
+                              <tr key={idx}>
+                                <td>{idx + 1}</td>
+                                <td>{g.title}</td>
+                                <td><strong>{g.name}</strong></td>
+                                <td>{g.mobile}</td>
+                                <td>{g.email || '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {csvParsedGuests.length > 10 && (
+                        <p style={{ fontSize: '0.78rem', color: '#6e7e73', marginTop: '6px' }}>
+                          Previewing first 10 of {csvParsedGuests.length} guests parsed from your CSV file.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Filter and Search Bar */}

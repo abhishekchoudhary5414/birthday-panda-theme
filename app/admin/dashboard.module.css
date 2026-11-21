@@ -272,6 +272,7 @@
 }
 
 .menuHamburgerBtn {
+  display: none; /* Hidden on desktop; only shown on phone/mobile view */
   background: #f0f6ee;
   border: 1px solid #dce8d2;
   cursor: pointer;
@@ -279,7 +280,6 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast);
@@ -355,6 +355,235 @@
   padding: 20px 24px;
   margin-bottom: 24px;
   box-shadow: 0 4px 16px rgba(41, 75, 53, 0.05);
+}
+
+/* Guest Add Mode Switcher */
+.guestAddTabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #edf4eb;
+  padding-bottom: 12px;
+}
+
+.guestAddTabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1px solid #dce8d2;
+  background: #f8faf7;
+  color: #4a5b4e;
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.guestAddTabBtn:hover {
+  background: #edf6ea;
+  color: #294b35;
+}
+
+.guestAddTabBtn.activeTab {
+  background: linear-gradient(135deg, #3c8d40 0%, #294b35 100%);
+  color: #ffffff;
+  border-color: #294b35;
+  box-shadow: 0 3px 10px rgba(41, 75, 53, 0.2);
+}
+
+/* CSV Upload Section */
+.csvUploadContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.csvFormatCard {
+  background: linear-gradient(135deg, #f7faf5 0%, #f0f6ee 100%);
+  border: 1px solid #dce8d2;
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.csvFormatHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.csvFormatTitle {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #294b35;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.csvDownloadTemplateBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  background: #ffffff;
+  color: #294b35;
+  border: 1.5px solid #a3c58e;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.csvDownloadTemplateBtn:hover {
+  background: #eaf3e5;
+  border-color: #3c8d40;
+}
+
+.csvTableGuide {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 0.85rem;
+  border: 1px solid #e1ecde;
+}
+
+.csvTableGuide th {
+  background: #edf5eb;
+  color: #294b35;
+  font-weight: 700;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #dce8d2;
+}
+
+.csvTableGuide td {
+  padding: 8px 12px;
+  color: #4a5b4e;
+  border-bottom: 1px solid #f0f4ee;
+}
+
+.csvDropZone {
+  border: 2px dashed #a3c58e;
+  background: #fbfdfa;
+  border-radius: 12px;
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.csvDropZone:hover {
+  background: #f3f8f1;
+  border-color: #3c8d40;
+}
+
+.csvDropTitle {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #294b35;
+}
+
+.csvDropSubtext {
+  font-size: 0.84rem;
+  color: #6e7e73;
+}
+
+.csvFileInputHidden {
+  display: none;
+}
+
+.csvParsedSection {
+  background: #ffffff;
+  border: 1px solid #e3ece0;
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.csvParsedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.csvParsedCount {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #294b35;
+}
+
+.csvActionButtons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.csvSubmitBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: linear-gradient(135deg, #3c8d40 0%, #294b35 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(41, 75, 53, 0.2);
+}
+
+.csvSubmitBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(41, 75, 53, 0.25);
+}
+
+.csvSubmitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.csvClearBtn {
+  background: transparent;
+  border: 1px solid #e27d7d;
+  color: #c0392b;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.csvClearBtn:hover {
+  background: #fdf2f2;
+}
+
+.csvPreviewTableWrapper {
+  max-height: 220px;
+  overflow-y: auto;
+  border-radius: 8px;
+  border: 1px solid #e1ecde;
+  margin-top: 10px;
 }
 
 .addGuestTitle {
@@ -1116,6 +1345,17 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+
+  .topBarLeft {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .menuHamburgerBtn {
+    display: flex;
   }
 
   .topActions {
