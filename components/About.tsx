@@ -1,13 +1,24 @@
 'use client';
 
 import styles from './About.module.css';
-
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Sparkles, Smile, Star, Footprints, Music } from 'lucide-react';
 import { WavingPanda, PeekingPanda } from './PandaIllustrations';
 
 export const About: React.FC = () => {
+  const [childName, setChildName] = useState<string>('Ditvi');
+
+  useEffect(() => {
+    fetch('/api/event')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.event?.childName) {
+          setChildName(data.event.childName);
+        }
+      })
+      .catch((err) => console.error('Failed to load event data in About:', err));
+  }, []);
+
   return (
     <section id="about" className={`section-wrapper ${styles['about-section'] || 'about-section'}`}>
       <div className="container">
@@ -17,7 +28,7 @@ export const About: React.FC = () => {
             <Sparkles size={16} />
             <span>Meet the Birthday Star</span>
           </div>
-          <h2 className="section-title">Our Little Panda Cub Ditvi</h2>
+          <h2 className="section-title">Our Little Panda Cub {childName}</h2>
           <p className="section-subtitle">
             365 days of endless cuddles, cheerful giggles, bamboo toy stacks, and pure unconditional joy.
           </p>

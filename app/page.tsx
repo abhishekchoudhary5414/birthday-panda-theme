@@ -40,8 +40,8 @@ export default function HomePage() {
       {/* Invitation & Interactive RSVP Form */}
       <RSVP />
 
-      {/* Curated Gift Registry Section */}
-      <GiftRegistry />
+      {/* Curated Gift Registry Section - Showing 4 items with Show More link */}
+      <GiftRegistry limit={4} showAllLink={true} />
 
       {/* 4 Playable Interactive Games (Memory Match, Bamboo Catch, Quiz, Find Panda) */}
       <Games />

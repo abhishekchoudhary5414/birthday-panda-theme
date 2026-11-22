@@ -85,7 +85,7 @@ export const Hero: React.FC = () => {
             </div>
 
             <h1 className={styles['hero-title']}>
-              Welcome to Our Little Panda Birthday Party!
+              Welcome to Our Little {eventData.childName || 'Ditvi'}&apos;s Birthday Party!
             </h1>
 
             <p className={styles['hero-subtitle']}>

@@ -66,6 +66,9 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+import StarIcon from '@mui/icons-material/Star';
 import { CARD_BG_BASE64 } from './cardBgBase64';
 import { PartyPanda, BambooStalkDecoration } from '@/components/PandaIllustrations';
 import styles from './dashboard.module.css';
@@ -153,6 +156,28 @@ interface AdminDrivePhoto {
   directUrl: string;
   caption?: string;
   uploaderName?: string;
+}
+
+interface AdminGiftItem {
+  id: number;
+  asin?: string;
+  title: string;
+  category: string;
+  price: string;
+  list_price?: string;
+  rating?: number;
+  review_count?: string;
+  image_url: string;
+  purchase_url: string;
+  description?: string;
+  priority?: string;
+  is_ordered: boolean;
+  ordered_by?: string;
+  ordered_email?: string;
+  ordered_phone?: string;
+  order_note?: string;
+  ordered_at?: string;
+  created_at: string;
 }
 
 export default function AdminDashboardPage() {
@@ -423,6 +448,154 @@ export default function AdminDashboardPage() {
     navigator.clipboard.writeText(fullUrl);
     setCopiedPhotoId(photo.id);
     setTimeout(() => setCopiedPhotoId(null), 2500);
+  };
+
+  // Gift Registry Management State
+  const [adminGifts, setAdminGifts] = useState<AdminGiftItem[]>([]);
+  const [adminGiftsLoading, setAdminGiftsLoading] = useState(false);
+  const [giftAmazonUrl, setGiftAmazonUrl] = useState('');
+  const [isFetchingAmazonGift, setIsFetchingAmazonGift] = useState(false);
+  const [fetchedAmazonData, setFetchedAmazonData] = useState<any | null>(null);
+  const [newGiftCategory, setNewGiftCategory] = useState('toys');
+  const [newGiftPriority, setNewGiftPriority] = useState('medium');
+  const [newGiftCustomTitle, setNewGiftCustomTitle] = useState('');
+  const [newGiftCustomPrice, setNewGiftCustomPrice] = useState('');
+  const [newGiftCustomImg, setNewGiftCustomImg] = useState('');
+  const [newGiftCustomUrl, setNewGiftCustomUrl] = useState('');
+  const [newGiftCustomDesc, setNewGiftCustomDesc] = useState('');
+  const [isSavingGift, setIsSavingGift] = useState(false);
+  const [giftAlert, setGiftAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [giftFilterCategory, setGiftFilterCategory] = useState('all');
+  const [giftSearchQuery, setGiftSearchQuery] = useState('');
+
+  // Fetch all gifts from DB
+  const fetchAdminGifts = useCallback(async () => {
+    try {
+      setAdminGiftsLoading(true);
+      const res = await fetch('/api/gifts');
+      const data = await res.json();
+      if (data.gifts) {
+        setAdminGifts(data.gifts);
+      }
+    } catch (err) {
+      console.error('Fetch gifts error:', err);
+    } finally {
+      setAdminGiftsLoading(false);
+    }
+  }, []);
+
+  // 1-Click: Fetch all details from Amazon URL and save to DB
+  const handleFetchAndSaveAmazonProduct = async (overrideUrl?: string) => {
+    const targetUrl = (overrideUrl || giftAmazonUrl).trim();
+    if (!targetUrl) {
+      setGiftAlert({ type: 'error', message: 'Please enter or paste an Amazon product URL.' });
+      return;
+    }
+
+    try {
+      setIsFetchingAmazonGift(true);
+      setGiftAlert(null);
+
+      // 1. Fetch from Amazon scraper
+      const res = await fetch('/api/amazon-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: targetUrl }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.product) {
+        throw new Error(data.error || 'Failed to extract product details from Amazon.');
+      }
+
+      const p = data.product;
+
+      // Smart category detection
+      let category = newGiftCategory || 'toys';
+      const titleLower = p.title.toLowerCase();
+      if (titleLower.includes('headphone') || titleLower.includes('earbud') || titleLower.includes('audio') || titleLower.includes('bluetooth') || titleLower.includes('speaker')) {
+        category = 'electronics';
+      } else if (titleLower.includes('book') || titleLower.includes('story') || titleLower.includes('reading')) {
+        category = 'books';
+      } else if (titleLower.includes('plush') || titleLower.includes('stuffed') || titleLower.includes('doll') || titleLower.includes('cuddle')) {
+        category = 'soft';
+      } else if (titleLower.includes('swaddle') || titleLower.includes('bamboo') || titleLower.includes('blanket') || titleLower.includes('bowl') || titleLower.includes('plate') || titleLower.includes('feeder')) {
+        category = 'essentials';
+      }
+
+      // 2. Automatically save product directly to database
+      const saveRes = await fetch('/api/gifts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          asin: p.asin || '',
+          title: p.title,
+          category,
+          price: p.price || '$0.00',
+          listPrice: p.listPrice || '',
+          rating: p.rating || 4.5,
+          reviewCount: p.reviewCount || '',
+          imageUrl: p.mainImage,
+          purchaseUrl: p.productUrl,
+          description: p.features?.slice(0, 2).join(' • ') || p.brand || '',
+          priority: newGiftPriority || 'high',
+        }),
+      });
+
+      const saveData = await saveRes.json();
+      if (saveRes.ok && saveData.success) {
+        setGiftAlert({
+          type: 'success',
+          message: `Successfully fetched and added "${p.title.slice(0, 50)}..." to Gift Registry!`,
+        });
+        setGiftAmazonUrl('');
+        setFetchedAmazonData(p);
+        fetchAdminGifts();
+      } else {
+        throw new Error(saveData.error || 'Failed to save gift to database');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error processing Amazon URL';
+      setGiftAlert({ type: 'error', message: msg });
+    } finally {
+      setIsFetchingAmazonGift(false);
+    }
+  };
+
+  // Delete gift from DB
+  const handleDeleteGift = async (id: number) => {
+    if (!confirm('Are you sure you want to remove this gift from the registry?')) return;
+    try {
+      const res = await fetch(`/api/gifts?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setAdminGifts((prev) => prev.filter((g) => g.id !== id));
+      }
+    } catch (err) {
+      console.error('Delete gift error:', err);
+    }
+  };
+
+  // Toggle Ordered status in DB
+  const handleToggleGiftOrderedStatus = async (gift: AdminGiftItem) => {
+    try {
+      const nextOrdered = !gift.is_ordered;
+      const res = await fetch('/api/gifts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: gift.id,
+          is_ordered: nextOrdered,
+          ordered_by: nextOrdered ? 'Admin Marked' : null,
+        }),
+      });
+      if (res.ok) {
+        setAdminGifts((prev) =>
+          prev.map((g) => (g.id === gift.id ? { ...g, is_ordered: nextOrdered, ordered_by: nextOrdered ? 'Admin Marked' : undefined } : g))
+        );
+      }
+    } catch (err) {
+      console.error('Update gift status error:', err);
+    }
   };
 
   // Fetch Event Settings
@@ -1305,7 +1478,8 @@ export default function AdminDashboardPage() {
     fetchEventSettings();
     fetchWishes();
     fetchRsvps();
-  }, [fetchGuests, fetchQuizQuestions, fetchQuizSubmissions, fetchEventSettings, fetchWishes, fetchRsvps]);
+    fetchAdminGifts();
+  }, [fetchGuests, fetchQuizQuestions, fetchQuizSubmissions, fetchEventSettings, fetchWishes, fetchRsvps, fetchAdminGifts]);
 
   useEffect(() => {
     if (activeTab === '1') {
@@ -1314,6 +1488,9 @@ export default function AdminDashboardPage() {
     if (activeTab === '5') {
       fetchRsvps();
       fetchGuests();
+    }
+    if (activeTab === '6') {
+      fetchAdminGifts();
     }
     if (activeTab === '9') {
       fetchWishes();
@@ -1326,7 +1503,10 @@ export default function AdminDashboardPage() {
       fetchDrivePhotos();
       checkDriveStatus();
     }
-  }, [activeTab, fetchEventSettings, fetchWishes, fetchQuizQuestions, fetchQuizSubmissions, fetchRsvps, fetchGuests, fetchDrivePhotos, checkDriveStatus]);
+    if (activeTab === '12') {
+      fetchAdminGifts();
+    }
+  }, [activeTab, fetchEventSettings, fetchWishes, fetchQuizQuestions, fetchQuizSubmissions, fetchRsvps, fetchGuests, fetchDrivePhotos, checkDriveStatus, fetchAdminGifts]);
 
   // Handle single guest add
   const handleAddGuest = async (e: React.FormEvent) => {
@@ -2631,6 +2811,21 @@ export default function AdminDashboardPage() {
               <span className={styles.navIcon}><CardGiftcardIcon sx={{ fontSize: 20 }} /></span>
               <span className={styles.navItemText}>Gift Registry</span>
             </div>
+            {adminGifts.length > 0 && <span className={styles.navBadge}>{adminGifts.length}</span>}
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.navItem} ${activeTab === '12' ? styles.active : ''}`}
+            onClick={() => {
+              setActiveTab('12');
+              setIsMobileSidebarOpen(false);
+            }}
+          >
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><AddShoppingCartIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>Add Product</span>
+            </div>
           </button>
 
           <button
@@ -3217,7 +3412,36 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {guests.length === 0 ? (
+                    {loading ? (
+                      [...Array(5)].map((_, i) => (
+                        <tr key={`guest-skel-${i}`} style={{ borderBottom: '1px solid #edf4ea' }}>
+                          <td style={{ padding: '16px 18px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div className={styles.skeletonBase} style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <div className={styles.skeletonBase} style={{ width: '130px', height: '16px' }} />
+                                <div className={styles.skeletonBase} style={{ width: '80px', height: '12px' }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '16px 18px' }}>
+                            <div className={styles.skeletonBase} style={{ width: '110px', height: '15px' }} />
+                          </td>
+                          <td style={{ padding: '16px 18px', textAlign: 'center' }}>
+                            <div className={styles.skeletonBase} style={{ width: '85px', height: '24px', borderRadius: '12px', margin: '0 auto' }} />
+                          </td>
+                          <td style={{ padding: '16px 18px', textAlign: 'center' }}>
+                            <div className={styles.skeletonBase} style={{ width: '70px', height: '16px', margin: '0 auto' }} />
+                          </td>
+                          <td style={{ padding: '16px 18px', textAlign: 'center' }}>
+                            <div className={styles.skeletonBase} style={{ width: '90px', height: '28px', borderRadius: '6px', margin: '0 auto' }} />
+                          </td>
+                          <td style={{ padding: '16px 18px', textAlign: 'right' }}>
+                            <div className={styles.skeletonBase} style={{ width: '80px', height: '28px', borderRadius: '6px', marginLeft: 'auto' }} />
+                          </td>
+                        </tr>
+                      ))
+                    ) : guests.length === 0 ? (
                       <tr>
                         <td colSpan={6} style={{ textAlign: 'center', padding: '50px 20px' }}>
                           <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#eef6ec', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -3225,7 +3449,7 @@ export default function AdminDashboardPage() {
                           </div>
                           <h4 style={{ margin: '0 0 6px', color: '#294B35', fontSize: '1.1rem' }}>No guests found</h4>
                           <p style={{ margin: 0, color: '#7a8c7e', fontSize: '0.88rem' }}>
-                            {loading ? 'Fetching guest list from database...' : 'Add your first guest above or import using CSV!'}
+                            Add your first guest above or import using CSV!
                           </p>
                         </td>
                       </tr>
@@ -3641,8 +3865,22 @@ export default function AdminDashboardPage() {
                   </div>
 
                   {quizLoading ? (
-                    <div style={{ textAlign: 'center', padding: '30px', color: '#6e7e73' }}>
-                      Loading quiz questions...
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      {[...Array(3)].map((_, i) => (
+                        <div key={`quiz-skel-${i}`} className={styles.skeletonCard} style={{ padding: '18px 20px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div className={styles.skeletonBase} style={{ width: '32px', height: '24px', borderRadius: '6px' }} />
+                              <div className={styles.skeletonBase} style={{ width: '280px', height: '20px' }} />
+                            </div>
+                            <div className={styles.skeletonBase} style={{ width: '70px', height: '28px', borderRadius: '6px' }} />
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            <div className={styles.skeletonBase} style={{ height: '32px', borderRadius: '8px' }} />
+                            <div className={styles.skeletonBase} style={{ height: '32px', borderRadius: '8px' }} />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ) : quizList.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '40px', background: '#ffffff', borderRadius: '12px', border: '1px solid #dce8d2' }}>
@@ -3772,11 +4010,16 @@ export default function AdminDashboardPage() {
                     </thead>
                     <tbody>
                       {quizSubmissionsLoading ? (
-                        <tr>
-                          <td colSpan={6} style={{ textAlign: 'center', padding: '30px', color: '#6e7e73' }}>
-                            Loading submissions from database...
-                          </td>
-                        </tr>
+                        [...Array(4)].map((_, i) => (
+                          <tr key={`quiz-sub-skel-${i}`} className={styles.tr}>
+                            <td className={styles.td}><div className={styles.skeletonBase} style={{ width: '20px', height: '16px' }} /></td>
+                            <td className={styles.td}><div className={styles.skeletonBase} style={{ width: '130px', height: '18px' }} /></td>
+                            <td className={styles.td}><div className={styles.skeletonBase} style={{ width: '60px', height: '16px' }} /></td>
+                            <td className={styles.td}><div className={styles.skeletonBase} style={{ width: '50px', height: '22px', borderRadius: '10px' }} /></td>
+                            <td className={styles.td}><div className={styles.skeletonBase} style={{ width: '100px', height: '16px' }} /></td>
+                            <td className={styles.td}><div className={styles.skeletonBase} style={{ width: '70px', height: '26px', borderRadius: '6px' }} /></td>
+                          </tr>
+                        ))
                       ) : quizSubmissions.length === 0 ? (
                         <tr>
                           <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#6e7e73' }}>
@@ -4505,14 +4748,18 @@ export default function AdminDashboardPage() {
                   </thead>
                   <tbody>
                     {wishesLoading ? (
-                      <tr>
-                        <td colSpan={8} className={styles.emptyState}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '24px 0' }}>
-                            <ParkIcon sx={{ fontSize: 22, color: '#3c8d40' }} />
-                            <span>Loading wishes from Neon database...</span>
-                          </div>
-                        </td>
-                      </tr>
+                      [...Array(5)].map((_, i) => (
+                        <tr key={`wish-skel-${i}`} className={styles.tr}>
+                          <td className={styles.td} style={{ textAlign: 'center' }}><div className={styles.skeletonBase} style={{ width: '20px', height: '16px', margin: '0 auto' }} /></td>
+                          <td className={styles.td}><div className={styles.skeletonBase} style={{ width: '120px', height: '18px' }} /></td>
+                          <td className={styles.td}><div className={styles.skeletonBase} style={{ width: '80px', height: '16px' }} /></td>
+                          <td className={styles.td}><div className={styles.skeletonBase} style={{ width: '100px', height: '16px' }} /></td>
+                          <td className={styles.td}><div className={styles.skeletonBase} style={{ width: '85%', height: '18px' }} /></td>
+                          <td className={styles.td} style={{ textAlign: 'center' }}><div className={styles.skeletonBase} style={{ width: '35px', height: '16px', margin: '0 auto' }} /></td>
+                          <td className={styles.td}><div className={styles.skeletonBase} style={{ width: '90px', height: '16px' }} /></td>
+                          <td className={styles.td} style={{ textAlign: 'center' }}><div className={styles.skeletonBase} style={{ width: '75px', height: '26px', borderRadius: '6px', margin: '0 auto' }} /></td>
+                        </tr>
+                      ))
                     ) : wishesList.length === 0 ? (
                       <tr>
                         <td colSpan={8} className={styles.emptyState}>
@@ -4923,7 +5170,25 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rsvpsList.length === 0 ? (
+                    {rsvpsLoading ? (
+                      [...Array(5)].map((_, i) => (
+                        <tr key={`rsvp-skel-${i}`} style={{ borderBottom: '1px solid #edf4ea' }}>
+                          <td style={{ padding: '16px 18px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div className={styles.skeletonBase} style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
+                              <div className={styles.skeletonBase} style={{ width: '120px', height: '16px' }} />
+                            </div>
+                          </td>
+                          <td style={{ padding: '16px 18px' }}><div className={styles.skeletonBase} style={{ width: '110px', height: '15px' }} /></td>
+                          <td style={{ padding: '16px 18px', textAlign: 'center' }}><div className={styles.skeletonBase} style={{ width: '80px', height: '22px', borderRadius: '12px', margin: '0 auto' }} /></td>
+                          <td style={{ padding: '16px 18px', textAlign: 'center' }}><div className={styles.skeletonBase} style={{ width: '40px', height: '16px', margin: '0 auto' }} /></td>
+                          <td style={{ padding: '16px 18px' }}><div className={styles.skeletonBase} style={{ width: '90px', height: '15px' }} /></td>
+                          <td style={{ padding: '16px 18px' }}><div className={styles.skeletonBase} style={{ width: '160px', height: '15px' }} /></td>
+                          <td style={{ padding: '16px 18px' }}><div className={styles.skeletonBase} style={{ width: '80px', height: '15px' }} /></td>
+                          <td style={{ padding: '16px 18px', textAlign: 'right' }}><div className={styles.skeletonBase} style={{ width: '60px', height: '26px', borderRadius: '6px', marginLeft: 'auto' }} /></td>
+                        </tr>
+                      ))
+                    ) : rsvpsList.length === 0 ? (
                       <tr>
                         <td colSpan={8} style={{ textAlign: 'center', padding: '60px 20px' }}>
                           <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#eef6ec', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -5062,26 +5327,492 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Section 6: Gift Registry */}
+        {/* Section 6: Gift Registry & Guest Registrations */}
         {activeTab === '6' && (
           <div>
-            <div className={styles.sectionHeader}>
-              <CardGiftcardIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>Gift Registry &amp; Blessings Preference</span>
+            <div className={styles.sectionHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <CardGiftcardIcon sx={{ fontSize: 28, color: '#294B35' }} />
+                <span>Gift Registry &amp; Registered Guests</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('12')}
+                className={styles.btnPrimary}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '9px 18px',
+                  fontSize: '0.88rem',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #294B35 0%, #1a3323 100%)',
+                }}
+              >
+                <AddShoppingCartIcon sx={{ fontSize: 18 }} />
+                <span>+ Add New Product</span>
+              </button>
             </div>
-            <div style={{ background: '#ffffff', padding: '32px', borderRadius: '14px', border: '1px solid #e1e7de' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#f3f8f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CardGiftcardIcon sx={{ color: '#294b35', fontSize: 28 }} />
-                </div>
-                <div>
-                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.2rem' }}>Gift Preferences Configured</h3>
-                  <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.88rem' }}>&ldquo;Only your warm blessings &amp; presence are requested!&rdquo;</p>
+
+            {/* Quick Stats Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              <div style={{ background: '#ffffff', padding: '18px 20px', borderRadius: '14px', border: '1px solid #e1e7de', boxShadow: '0 2px 8px rgba(41,75,53,0.04)' }}>
+                <div style={{ fontSize: '0.8rem', color: '#6e7e73', fontWeight: 600 }}>Total Wishlist Products</div>
+                <div style={{ fontSize: '1.6rem', color: '#294b35', fontWeight: 800, marginTop: '4px' }}>{adminGifts.length}</div>
+              </div>
+              <div style={{ background: '#ffffff', padding: '18px 20px', borderRadius: '14px', border: '1px solid #e1e7de', boxShadow: '0 2px 8px rgba(41,75,53,0.04)' }}>
+                <div style={{ fontSize: '0.8rem', color: '#6e7e73', fontWeight: 600 }}>Available for Guests</div>
+                <div style={{ fontSize: '1.6rem', color: '#2e7d32', fontWeight: 800, marginTop: '4px' }}>
+                  {adminGifts.filter((g) => !g.is_ordered).length}
                 </div>
               </div>
-              <p style={{ color: '#576b5c', lineHeight: 1.6, fontSize: '0.94rem' }}>
-                For Ditvi&apos;s 1st birthday, the family has designated that guest presence and love are the sweetest gifts. If you wish to enable a digital registry wishlist or baby bank link in the future, it can be seamlessly toggled on here.
-              </p>
+              <div style={{ background: '#ffffff', padding: '18px 20px', borderRadius: '14px', border: '1px solid #e1e7de', boxShadow: '0 2px 8px rgba(41,75,53,0.04)' }}>
+                <div style={{ fontSize: '0.8rem', color: '#6e7e73', fontWeight: 600 }}>Registered by Guests</div>
+                <div style={{ fontSize: '1.6rem', color: '#ea580c', fontWeight: 800, marginTop: '4px' }}>
+                  {adminGifts.filter((g) => g.is_ordered).length}
+                </div>
+              </div>
+            </div>
+
+            {/* Registered Gifts & Products Table */}
+            <div style={{ background: '#ffffff', padding: '28px', borderRadius: '16px', border: '1px solid #e1e7de', boxShadow: '0 4px 16px rgba(41,75,53,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', marginBottom: '20px' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>Gift Registry Items &amp; Registrations</span>
+                    <span style={{ background: '#edf6ea', color: '#294b35', fontSize: '0.82rem', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                      {adminGifts.length}
+                    </span>
+                  </h3>
+                  <p style={{ margin: '2px 0 0', color: '#6e7e73', fontSize: '0.84rem' }}>
+                    Products registered by guests with verified emails are marked unavailable in the public registry.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ position: 'relative' }}>
+                    <SearchIcon sx={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: '#7b8e7e' }} />
+                    <input
+                      type="text"
+                      placeholder="Search product, guest name or email..."
+                      value={giftSearchQuery}
+                      onChange={(e) => setGiftSearchQuery(e.target.value)}
+                      style={{ padding: '7px 12px 7px 34px', borderRadius: '20px', border: '1px solid #cbe3c6', fontSize: '0.86rem', outline: 'none', background: '#fcfdfa', minWidth: '240px' }}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={fetchAdminGifts}
+                    disabled={adminGiftsLoading}
+                    className={styles.exportBtn}
+                    style={{ padding: '7px 14px', fontSize: '0.84rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <RefreshIcon sx={{ fontSize: 15, animation: adminGiftsLoading ? 'spin 1s linear infinite' : 'none' }} />
+                    <span>Refresh</span>
+                  </button>
+
+                  <a
+                    href="/#gifts"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.exportBtn}
+                    style={{ textDecoration: 'none', padding: '7px 14px', fontSize: '0.84rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <OpenInNewIcon sx={{ fontSize: 15 }} />
+                    <span>View Public Registry</span>
+                  </a>
+                </div>
+              </div>
+
+              {giftAlert && (
+                <div style={{ marginBottom: '16px', padding: '12px 16px', borderRadius: '10px', background: giftAlert.type === 'success' ? '#edf7ed' : '#fef2f2', border: `1px solid ${giftAlert.type === 'success' ? '#c8e6c9' : '#fecaca'}`, color: giftAlert.type === 'success' ? '#1e4620' : '#b91c1c', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                  {giftAlert.type === 'success' ? <CheckCircleIcon sx={{ fontSize: 18, color: '#2e7d32' }} /> : <WarningAmberIcon sx={{ fontSize: 18, color: '#dc2626' }} />}
+                  <span>{giftAlert.message}</span>
+                </div>
+              )}
+
+              {adminGiftsLoading && (
+                <div style={{ padding: '20px 0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {[...Array(4)].map((_, i) => (
+                      <div key={`gift-skel-${i}`} className={styles.skeletonTableRow} style={{ background: '#fafafa', borderRadius: '12px' }}>
+                        <div className={styles.skeletonBase} style={{ width: '56px', height: '56px', borderRadius: '10px' }} />
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div className={styles.skeletonBase} style={{ width: '60%', height: '18px' }} />
+                          <div className={styles.skeletonBase} style={{ width: '30%', height: '14px' }} />
+                        </div>
+                        <div className={styles.skeletonBase} style={{ width: '80px', height: '22px' }} />
+                        <div className={styles.skeletonBase} style={{ width: '90px', height: '26px', borderRadius: '12px' }} />
+                        <div className={styles.skeletonBase} style={{ width: '120px', height: '40px', borderRadius: '8px' }} />
+                        <div className={styles.skeletonBase} style={{ width: '100px', height: '30px', borderRadius: '6px' }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!adminGiftsLoading && adminGifts.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '50px 20px', background: '#fbfdf9', borderRadius: '14px', border: '1px dashed #d5e5d1' }}>
+                  <CardGiftcardIcon sx={{ fontSize: 48, color: '#a3c58e', marginBottom: '10px' }} />
+                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#294B35' }}>No Products in Gift Registry Yet</div>
+                  <p style={{ fontSize: '0.88rem', color: '#6e7e73', maxWidth: '420px', margin: '6px auto 16px' }}>
+                    Add gifts by going to the Add Product tab and pasting any Amazon product link!
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('12')}
+                    className={styles.btnPrimary}
+                    style={{ padding: '8px 20px', fontSize: '0.88rem' }}
+                  >
+                    Go to Add Product Section
+                  </button>
+                </div>
+              )}
+
+              {!adminGiftsLoading && adminGifts.length > 0 && (
+                <div className={styles.tableCard} style={{ width: '100%', overflowX: 'auto' }}>
+                  <table className={styles.table} style={{ width: '100%', minWidth: '950px' }}>
+                    <thead>
+                      <tr>
+                        <th className={styles.th} style={{ width: '70px' }}>Image</th>
+                        <th className={styles.th} style={{ width: '30%' }}>Product Details</th>
+                        <th className={styles.th} style={{ width: '12%' }}>Price</th>
+                        <th className={styles.th} style={{ width: '13%' }}>Status</th>
+                        <th className={styles.th} style={{ width: '30%' }}>Registered Guest Info</th>
+                        <th className={styles.th} style={{ width: '15%', textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {adminGifts
+                        .filter((g) => {
+                          if (!giftSearchQuery.trim()) return true;
+                          const q = giftSearchQuery.toLowerCase();
+                          return (
+                            g.title.toLowerCase().includes(q) ||
+                            (g.category && g.category.toLowerCase().includes(q)) ||
+                            (g.ordered_by && g.ordered_by.toLowerCase().includes(q)) ||
+                            (g.ordered_email && g.ordered_email.toLowerCase().includes(q)) ||
+                            (g.ordered_phone && g.ordered_phone.toLowerCase().includes(q))
+                          );
+                        })
+                        .map((gift) => (
+                          <tr key={gift.id} className={styles.tr}>
+                            <td className={styles.td}>
+                              <div style={{ width: '56px', height: '56px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e1e7de', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={gift.image_url} alt={gift.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                              </div>
+                            </td>
+                            <td className={styles.td}>
+                              <div style={{ fontWeight: 700, color: '#252525', fontSize: '0.92rem', lineHeight: 1.4 }}>
+                                <a href={gift.purchase_url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>
+                                  {gift.title}
+                                </a>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                                {gift.category && (
+                                  <span style={{ textTransform: 'capitalize', background: '#edf6ea', color: '#294b35', padding: '2px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                    {gift.category}
+                                  </span>
+                                )}
+                                {gift.asin && (
+                                  <span style={{ fontSize: '0.74rem', color: '#7b8e7e', fontFamily: 'monospace' }}>
+                                    ASIN: {gift.asin}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className={styles.td}>
+                              <span style={{ fontWeight: 800, color: '#294b35', fontSize: '1.05rem' }}>{gift.price}</span>
+                              {gift.list_price && (
+                                <div style={{ fontSize: '0.78rem', color: '#94a3b8', textDecoration: 'line-through' }}>
+                                  {gift.list_price}
+                                </div>
+                              )}
+                            </td>
+                            <td className={styles.td}>
+                              {gift.is_ordered ? (
+                                <span style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', padding: '5px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                                  <span>🔒 Unavailable</span>
+                                </span>
+                              ) : (
+                                <span style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '5px 12px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <CheckCircleIcon sx={{ fontSize: 15 }} />
+                                  <span>Available</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className={styles.td}>
+                              {gift.is_ordered ? (
+                                <div style={{ background: '#fff7ed', border: '1px solid #ffedd5', borderRadius: '10px', padding: '10px 14px', width: '100%', boxSizing: 'border-box' }}>
+                                  <div style={{ fontWeight: 800, color: '#9a3412', fontSize: '0.92rem' }}>
+                                    {gift.ordered_by || 'Anonymous Guest'}
+                                  </div>
+                                  {gift.ordered_email && (
+                                    <div style={{ fontSize: '0.8rem', color: '#c2410c', marginTop: '3px', wordBreak: 'break-all' }}>
+                                      ✉️ {gift.ordered_email}
+                                    </div>
+                                  )}
+                                  {gift.ordered_phone && (
+                                    <div style={{ fontSize: '0.78rem', color: '#7c2d12', marginTop: '3px' }}>
+                                      📞 {gift.ordered_phone}
+                                    </div>
+                                  )}
+                                  {gift.ordered_at && (
+                                    <div style={{ fontSize: '0.74rem', color: '#9a3412', opacity: 0.8, marginTop: '3px' }}>
+                                      🕒 {new Date(gift.ordered_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                  )}
+                                  {gift.order_note && (
+                                    <div style={{ fontSize: '0.76rem', color: '#475569', fontStyle: 'italic', marginTop: '5px', borderTop: '1px dashed #fed7aa', paddingTop: '5px' }}>
+                                      &ldquo;{gift.order_note}&rdquo;
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span style={{ color: '#94a3b8', fontSize: '0.84rem', fontStyle: 'italic' }}>
+                                  Not yet registered
+                                </span>
+                              )}
+                            </td>
+                            <td className={styles.td} style={{ textAlign: 'right' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleGiftOrderedStatus(gift)}
+                                  title={gift.is_ordered ? 'Release gift and mark as Available' : 'Mark as Unavailable/Registered'}
+                                  style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #cbd5e1',
+                                    background: gift.is_ordered ? '#fff7ed' : '#edf6ea',
+                                    color: gift.is_ordered ? '#c2410c' : '#294b35',
+                                    fontSize: '0.78rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {gift.is_ordered ? 'Release / Available' : 'Mark Registered'}
+                                </button>
+
+                                <a
+                                  href={gift.purchase_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="View on Amazon"
+                                  style={{ padding: '6px 8px', borderRadius: '6px', background: '#f1f5f9', color: '#334155', display: 'inline-flex', alignItems: 'center' }}
+                                >
+                                  <OpenInNewIcon sx={{ fontSize: 16 }} />
+                                </a>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteGift(gift.id)}
+                                  title="Delete Gift from Registry"
+                                  style={{ padding: '6px 8px', borderRadius: '6px', border: 'none', background: '#fee2e2', color: '#dc2626', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                                >
+                                  <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Section 12: Dedicated Add Product via Amazon URL */}
+        {activeTab === '12' && (
+          <div>
+            <div className={styles.sectionHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <AddShoppingCartIcon sx={{ fontSize: 28, color: '#ea580c' }} />
+                <span>Add Product to Gift Registry</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('6')}
+                className={styles.exportBtn}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 16px',
+                  fontSize: '0.86rem',
+                }}
+              >
+                <CardGiftcardIcon sx={{ fontSize: 17 }} />
+                <span>View Registry &amp; Registered Guests (Tab 6)</span>
+              </button>
+            </div>
+
+            {/* 1-Step Amazon URL Fetch & Add Card */}
+            <div style={{ background: '#ffffff', padding: '32px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '28px', boxShadow: '0 4px 16px rgba(41,75,53,0.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px' }}>
+                <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#fff7ed', border: '1px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShoppingCartIcon sx={{ color: '#ea580c', fontSize: 28 }} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.3rem', fontWeight: 800 }}>Paste Amazon Product URL</h3>
+                  <p style={{ margin: '3px 0 0', color: '#6e7e73', fontSize: '0.88rem' }}>
+                    Simply paste any Amazon product link below. The system automatically scrapes and parses high-resolution photos, real-time price, customer rating, review count, and saves it directly to your PostgreSQL gift registry.
+                  </p>
+                </div>
+              </div>
+
+              {/* URL Input Form */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleFetchAndSaveAmazonProduct();
+                }}
+              >
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                  <input
+                    type="url"
+                    required
+                    placeholder="Paste Amazon product URL (e.g. https://www.amazon.com/dp/B0DZHR44J9)..."
+                    value={giftAmazonUrl}
+                    onChange={(e) => setGiftAmazonUrl(e.target.value)}
+                    className={styles.formInput}
+                    style={{ flex: 1, minWidth: '300px', padding: '14px 18px', fontSize: '0.96rem', borderRadius: '12px', border: '1.5px solid #cbe3c6' }}
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={isFetchingAmazonGift || !giftAmazonUrl.trim()}
+                    className={styles.btnPrimary}
+                    style={{
+                      padding: '14px 28px',
+                      fontSize: '0.96rem',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      whiteSpace: 'nowrap',
+                      background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                      border: 'none',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 14px rgba(234, 88, 12, 0.25)',
+                    }}
+                  >
+                    <RefreshIcon sx={{ fontSize: 18, animation: isFetchingAmazonGift ? 'spin 1s linear infinite' : 'none' }} />
+                    <span>{isFetchingAmazonGift ? 'Fetching Product Details...' : 'Fetch & Add to Registry'}</span>
+                  </button>
+                </div>
+
+                {/* Quick Try Sample Chips */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '0.84rem', color: '#64748b' }}>
+                  <span style={{ fontWeight: 600 }}>Quick Test URLs:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = 'https://www.amazon.com/Bose-QuietComfort-Bluetooth-Headphones-Cancelling/dp/B0DZHR44J9';
+                      setGiftAmazonUrl(url);
+                      handleFetchAndSaveAmazonProduct(url);
+                    }}
+                    style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '5px 14px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, color: '#334155' }}
+                  >
+                    🎧 Bose QuietComfort (Twilight Blue)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = 'https://www.amazon.com/dp/B0CCZ26B5V';
+                      setGiftAmazonUrl(url);
+                      handleFetchAndSaveAmazonProduct(url);
+                    }}
+                    style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '20px', padding: '5px 14px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, color: '#334155' }}
+                  >
+                    🖤 Bose QuietComfort (Black)
+                  </button>
+                </div>
+              </form>
+
+              {/* Status Alert */}
+              {giftAlert && (
+                <div style={{ marginTop: '18px', padding: '12px 18px', borderRadius: '12px', background: giftAlert.type === 'success' ? '#edf7ed' : '#fef2f2', border: `1px solid ${giftAlert.type === 'success' ? '#c8e6c9' : '#fecaca'}`, color: giftAlert.type === 'success' ? '#1e4620' : '#b91c1c', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 600 }}>
+                  {giftAlert.type === 'success' ? <CheckCircleIcon sx={{ fontSize: 20, color: '#2e7d32' }} /> : <WarningAmberIcon sx={{ fontSize: 20, color: '#dc2626' }} />}
+                  <span>{giftAlert.message}</span>
+                </div>
+              )}
+
+              {/* Fetched Preview Card */}
+              {fetchedAmazonData && (
+                <div style={{ marginTop: '22px', padding: '20px', background: '#f8faf7', border: '1px solid #dce8d2', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={fetchedAmazonData.mainImage} alt={fetchedAmazonData.title} style={{ width: '84px', height: '84px', objectFit: 'contain', background: '#fff', borderRadius: '12px', padding: '6px', border: '1px solid #e2e8f0' }} />
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#1e293b', marginBottom: '6px' }}>
+                      {fetchedAmazonData.title}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '0.86rem' }}>
+                      <span style={{ fontWeight: 800, color: '#294B35', fontSize: '1.1rem' }}>{fetchedAmazonData.price}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b', fontWeight: 700 }}>
+                        <StarIcon sx={{ fontSize: 16 }} /> {fetchedAmazonData.rating}
+                      </span>
+                      <span style={{ color: '#64748b' }}>({fetchedAmazonData.reviewCount} customer reviews)</span>
+                      <span style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 10px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700 }}>
+                        ✓ Saved to Database &amp; Public Wishlist
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('6')}
+                    className={styles.exportBtn}
+                    style={{ padding: '8px 16px', fontSize: '0.86rem' }}
+                  >
+                    Go to Gift Registry →
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Recently Added Gifts Overview */}
+            <div style={{ background: '#ffffff', padding: '28px', borderRadius: '16px', border: '1px solid #e1e7de', boxShadow: '0 4px 16px rgba(41,75,53,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h4 style={{ margin: 0, color: '#294B35', fontSize: '1.05rem', fontWeight: 700 }}>
+                  Recently Added Products ({adminGifts.length})
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('6')}
+                  style={{ background: 'none', border: 'none', color: '#294B35', fontWeight: 700, cursor: 'pointer', fontSize: '0.86rem' }}
+                >
+                  Manage All in Registry →
+                </button>
+              </div>
+
+              {adminGifts.length === 0 ? (
+                <p style={{ color: '#64748b', fontSize: '0.88rem', margin: 0 }}>No products added yet. Paste a link above to get started!</p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+                  {adminGifts.slice(0, 6).map((g) => (
+                    <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: '#fafafa' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={g.image_url} alt={g.title} style={{ width: '48px', height: '48px', objectFit: 'contain', background: '#fff', borderRadius: '8px', padding: '3px', border: '1px solid #e2e8f0' }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {g.title}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', fontSize: '0.78rem' }}>
+                          <span style={{ fontWeight: 800, color: '#294B35' }}>{g.price}</span>
+                          <span style={{ color: g.is_ordered ? '#ea580c' : '#16a34a', fontWeight: 700 }}>
+                            {g.is_ordered ? '• Registered' : '• Available'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -5211,14 +5942,14 @@ export default function AdminDashboardPage() {
                   )}
 
                   <a
-                    href="/upload"
+                    href="/photos"
                     target="_blank"
                     rel="noopener noreferrer"
                     className={styles.btnPrimary}
                     style={{ padding: '8px 18px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
                   >
                     <PhotoLibraryIcon sx={{ fontSize: 16 }} />
-                    <span>View Public /upload Page</span>
+                    <span>View Public /photos Page</span>
                   </a>
                 </div>
               </div>
@@ -5254,9 +5985,9 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Public Guest Uploads</div>
+                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Public Drive Album</div>
                   <div style={{ fontSize: '0.92rem', color: '#2e7d32', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <CheckCircleIcon sx={{ fontSize: 16 }} /> Enabled at /upload
+                    <CheckCircleIcon sx={{ fontSize: 16 }} /> Available at /photos
                   </div>
                 </div>
               </div>
@@ -5269,8 +6000,8 @@ export default function AdminDashboardPage() {
                   <UploadFileIcon sx={{ color: '#294b35', fontSize: 24 }} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Upload New Photos to Google Drive</h3>
-                  <p style={{ margin: '2px 0 0', color: '#6e7e73', fontSize: '0.85rem' }}>Select photos to upload directly to Ditvi&apos;s birthday Google Drive folder.</p>
+                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Upload Photos &amp; Videos to Google Drive</h3>
+                  <p style={{ margin: '2px 0 0', color: '#6e7e73', fontSize: '0.85rem' }}>Select photos or videos to upload directly to Ditvi&apos;s birthday Google Drive folder.</p>
                 </div>
               </div>
 
@@ -5298,10 +6029,10 @@ export default function AdminDashboardPage() {
                 />
                 <CloudUploadIcon sx={{ fontSize: 44, color: '#789b63', marginBottom: '8px' }} />
                 <div style={{ fontSize: '1rem', fontWeight: 700, color: '#294b35' }}>
-                  Click to select photos or drag and drop here
+                  Click to select photos or videos (or drag and drop here)
                 </div>
                 <div style={{ fontSize: '0.82rem', color: '#7b8e7e', marginTop: '4px' }}>
-                  Supports JPG, PNG, WEBP, HEIC up to 15MB each
+                  Supports JPG, PNG, WEBP, MP4, MOV, HEIC up to 15MB each
                 </div>
               </div>
 
@@ -5398,7 +6129,7 @@ export default function AdminDashboardPage() {
                     style={{ padding: '10px 24px', fontSize: '0.94rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                   >
                     <CloudUploadIcon sx={{ fontSize: 18 }} />
-                    <span>{isDriveUploading ? 'Uploading to Google Drive...' : `Upload ${driveUploadFiles.length > 0 ? `${driveUploadFiles.length} ` : ''}Photo${driveUploadFiles.length > 1 ? 's' : ''}`}</span>
+                    <span>{isDriveUploading ? 'Uploading to Google Drive...' : `Upload ${driveUploadFiles.length > 0 ? `${driveUploadFiles.length} ` : ''}File${driveUploadFiles.length > 1 ? 's' : ''}`}</span>
                   </button>
                 </div>
               </form>
@@ -5444,9 +6175,14 @@ export default function AdminDashboardPage() {
 
               {/* Photo Cards Grid */}
               {driveLoading && (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: '#294B35', fontWeight: 600 }}>
-                  <RefreshIcon sx={{ fontSize: 32, animation: 'spin 1s linear infinite', marginBottom: '8px' }} />
-                  <div>Loading Photos from Google Drive...</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+                  {[...Array(6)].map((_, i) => (
+                    <div key={`drive-skel-${i}`} className={styles.skeletonCard} style={{ padding: '12px' }}>
+                      <div className={styles.skeletonBase} style={{ width: '100%', height: '170px', borderRadius: '10px', marginBottom: '12px' }} />
+                      <div className={styles.skeletonBase} style={{ width: '70%', height: '16px', marginBottom: '8px' }} />
+                      <div className={styles.skeletonBase} style={{ width: '45%', height: '12px' }} />
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -5455,7 +6191,7 @@ export default function AdminDashboardPage() {
                   <PhotoLibraryIcon sx={{ fontSize: 48, color: '#a3c58e', marginBottom: '10px' }} />
                   <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#294B35' }}>No Photos Found in Google Drive Folder</div>
                   <p style={{ fontSize: '0.88rem', color: '#6e7e73', maxWidth: '400px', margin: '6px auto 16px' }}>
-                    Upload birthday photos above or invite guests to share their snaps via the public /upload link!
+                    Upload birthday photos or videos above to display them on the website and in Google Drive!
                   </p>
                 </div>
               )}

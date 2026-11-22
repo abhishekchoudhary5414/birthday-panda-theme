@@ -2348,3 +2348,54 @@
   background: #e1efe0;
   border-color: #b7d8b3;
 }
+
+/* Skeleton Loading Animations */
+@keyframes skeletonShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeletonBase {
+  background: linear-gradient(
+    90deg,
+    #f0f4ee 25%,
+    #e2ebe0 37%,
+    #f0f4ee 63%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.skeletonCard {
+  background: #ffffff;
+  border: 1px solid #e1e7de;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(41, 75, 53, 0.04);
+}
+
+.skeletonStatGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.skeletonTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.skeletonTableRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f4ee;
+}
+

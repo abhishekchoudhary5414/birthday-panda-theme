@@ -149,7 +149,7 @@ export const Gallery: React.FC = () => {
           </p>
           <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
             <a
-              href="/upload"
+              href="/photos"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -165,8 +165,8 @@ export const Gallery: React.FC = () => {
                 transition: 'all 0.2s ease',
               }}
             >
-              <UploadCloud size={18} />
-              <span>Upload &amp; View Live Party Snaps on Google Drive</span>
+              <Sparkles size={18} />
+              <span>View All Google Drive Photos &amp; Videos</span>
             </a>
           </div>
         </div>

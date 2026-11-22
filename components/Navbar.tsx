@@ -29,6 +29,29 @@ export const Navbar: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>('home');
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [eventData, setEventData] = useState({
+    childName: 'Ditvi',
+    turningAge: '1',
+    eventTitle: "Ditvi's 1st Birthday Party",
+  });
+
+  // Fetch dynamic event settings from database
+  useEffect(() => {
+    fetch('/api/event')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.event) {
+          setEventData({
+            childName: data.event.childName || 'Ditvi',
+            turningAge: data.event.turningAge || '1',
+            eventTitle: data.event.eventTitle || "Ditvi's 1st Birthday Party",
+          });
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch event details in Navbar:', err);
+      });
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -57,9 +80,17 @@ export const Navbar: React.FC = () => {
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     setIsMobileMenuOpen(false);
+
+    // If on a sub-page (like /gift or /photos or /rsvp), navigate to /#hash
+    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+      window.location.href = `/${href}`;
+      return;
+    }
+
     const target = document.querySelector(href);
     if (target) {
       target.scrollIntoView({ behavior: 'smooth' });
+      window.history.pushState(null, '', href);
     }
   };
 
@@ -92,7 +123,9 @@ export const Navbar: React.FC = () => {
               </svg>
             </div>
             <div className={styles['logo-text-wrap']}>
-              <span className={styles['logo-name']}>Ditvi&apos;s 1st Birthday</span>
+              <span className={styles['logo-name']}>
+                {eventData.childName}&apos;s {eventData.turningAge === '1' ? '1st' : `${eventData.turningAge}th`} Birthday
+              </span>
               <span className={styles['logo-tagline']}>Panda &amp; Bamboo Bash</span>
             </div>
           </a>

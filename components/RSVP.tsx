@@ -41,6 +41,16 @@ export const RSVP: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submittedRSVP, setSubmittedRSVP] = useState<RSVPFormData | null>(null);
 
+  // Existing RSVP notification banner state with 3-second auto-transition to form
+  const [existingStatusBanner, setExistingStatusBanner] = useState<{
+    attending: 'yes' | 'no';
+    fullName: string;
+    email: string;
+    guestsCount?: number;
+    message: string;
+  } | null>(null);
+  const [showCountdown, setShowCountdown] = useState<number>(3);
+
   const [eventData, setEventData] = useState<{
     eventTitle?: string;
     childName?: string;
@@ -77,7 +87,7 @@ export const RSVP: React.FC = () => {
       });
   }, []);
 
-  // Check URL query parameters for pre-filling name, number, and email
+  // Check URL query parameters for pre-filling name, number, and email, and check if already in DB
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -98,17 +108,61 @@ export const RSVP: React.FC = () => {
         // If a new personalized link is opened, clear old local storage submission so they see the pre-filled form directly
         setSubmittedRSVP(null);
 
+        const cleanEmail = emailParam ? decodeURIComponent(emailParam).trim() : '';
+        const cleanName = nameParam ? decodeURIComponent(nameParam).trim() : '';
+        const cleanPhone = phoneParam ? decodeURIComponent(phoneParam).trim() : '';
+
         setFormData((prev) => ({
           ...prev,
-          fullName: nameParam ? decodeURIComponent(nameParam).trim() : prev.fullName,
-          phone: phoneParam ? decodeURIComponent(phoneParam).trim() : prev.phone,
-          email: emailParam ? decodeURIComponent(emailParam).trim() : prev.email,
+          fullName: cleanName || prev.fullName,
+          phone: cleanPhone || prev.phone,
+          email: cleanEmail || prev.email,
         }));
+
+        // If email was provided in URL query, check if an RSVP already exists in the database
+        if (cleanEmail) {
+          fetch(`/api/rsvp?email=${encodeURIComponent(cleanEmail)}`)
+            .then((res) => res.json())
+            .then((data) => {
+              if (data && data.exists && data.rsvp) {
+                const isAttending = data.rsvp.attending === 'yes';
+                setExistingStatusBanner({
+                  attending: isAttending ? 'yes' : 'no',
+                  fullName: data.rsvp.full_name || cleanName || 'Dear Guest',
+                  email: cleanEmail,
+                  guestsCount: data.rsvp.guests_count || 1,
+                  message: isAttending
+                    ? `Warmest greetings, ${data.rsvp.full_name}! You are already confirmed IN for the party (${data.rsvp.guests_count || 1} guest). We can't wait to welcome you to Ditvi's 1st birthday!`
+                    : `Warmest greetings, ${data.rsvp.full_name}! We previously recorded your response that you are unable to attend. We will miss you dearly and appreciate your love!`,
+                });
+              }
+            })
+            .catch((err) => console.error('RSVP email lookup error:', err));
+        }
       }
     } catch (err) {
       console.error('Error parsing RSVP prefill query params:', err);
     }
   }, []);
+
+  // 3-second countdown timer to transition from existing RSVP notification to RSVP form
+  useEffect(() => {
+    if (!existingStatusBanner) return;
+
+    setShowCountdown(3);
+    const interval = setInterval(() => {
+      setShowCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setExistingStatusBanner(null);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [existingStatusBanner]);
 
   // Check if previously submitted locally (only if no query params were provided)
   useEffect(() => {
@@ -167,6 +221,19 @@ export const RSVP: React.FC = () => {
 
       const data = await res.json();
       if (!res.ok) {
+        if (data.isDuplicateEmail) {
+          const isAttending = data.attending === 'yes';
+          setExistingStatusBanner({
+            attending: isAttending ? 'yes' : 'no',
+            fullName: data.fullName || formData.fullName,
+            email: formData.email,
+            guestsCount: data.guestsCount,
+            message: data.error || (isAttending
+              ? `Warm greetings! You are already confirmed IN on our guest list! We are so excited to celebrate with you.`
+              : `Thank you! An RSVP was already received letting us know you are unable to attend. We send you our warmest love!`),
+          });
+          return;
+        }
         throw new Error(data.error || 'Failed to submit RSVP');
       }
 
@@ -287,7 +354,119 @@ export const RSVP: React.FC = () => {
 
           {/* Right Column: RSVP Interactive Form */}
           <div className={`${styles['rsvp-form-container'] || 'rsvp-form-container'} card-bamboo`}>
-            {submittedRSVP ? (
+            {/* Polite Existing RSVP Notification Modal/State with 3-second auto-transition to form */}
+            {existingStatusBanner ? (
+              <div
+                style={{
+                  padding: '36px 24px',
+                  textAlign: 'center',
+                  background: existingStatusBanner.attending === 'yes' ? 'linear-gradient(135deg, #f0fdf4 0%, #eefbf1 100%)' : 'linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%)',
+                  borderRadius: '20px',
+                  border: `2px solid ${existingStatusBanner.attending === 'yes' ? '#bbf7d0' : '#fed7aa'}`,
+                  boxShadow: '0 8px 24px rgba(41, 75, 53, 0.08)',
+                  animation: 'fadeIn 0.3s ease-out',
+                }}
+              >
+                <div
+                  style={{
+                    width: '68px',
+                    height: '68px',
+                    borderRadius: '50%',
+                    background: existingStatusBanner.attending === 'yes' ? '#dcfce7' : '#fee2e2',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
+                  }}
+                >
+                  {existingStatusBanner.attending === 'yes' ? (
+                    <CheckCircle2 size={38} color="#16a34a" />
+                  ) : (
+                    <Heart size={38} color="#ea580c" fill="#ea580c" />
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    display: 'inline-block',
+                    padding: '4px 14px',
+                    borderRadius: '20px',
+                    fontSize: '0.8rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    background: existingStatusBanner.attending === 'yes' ? '#16a34a' : '#ea580c',
+                    color: '#ffffff',
+                    marginBottom: '10px',
+                  }}
+                >
+                  {existingStatusBanner.attending === 'yes' ? '✓ You Are Confirmed IN' : '♡ You Are OUT (Regrets Received)'}
+                </div>
+
+                <h3
+                  style={{
+                    fontSize: '1.35rem',
+                    fontWeight: 800,
+                    color: '#294B35',
+                    margin: '6px 0 10px',
+                  }}
+                >
+                  {existingStatusBanner.attending === 'yes'
+                    ? `You're Already on the Guest List!`
+                    : `Your Response Was Received!`}
+                </h3>
+
+                <p
+                  style={{
+                    fontSize: '0.94rem',
+                    lineHeight: 1.6,
+                    color: '#475569',
+                    maxWidth: '440px',
+                    margin: '0 auto 20px',
+                  }}
+                >
+                  {existingStatusBanner.message}
+                </p>
+
+                {/* 3-Second Countdown Progress Bar */}
+                <div
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '14px',
+                    padding: '12px 18px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontSize: '0.84rem',
+                    color: '#64748b',
+                    fontWeight: 600,
+                  }}
+                >
+                  <Sparkles size={16} color="#789B63" />
+                  <span>Loading RSVP form in <strong>{showCountdown} second{showCountdown === 1 ? '' : 's'}</strong>...</span>
+                </div>
+
+                <div style={{ marginTop: '16px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setExistingStatusBanner(null)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#294B35',
+                      fontWeight: 700,
+                      fontSize: '0.86rem',
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    Open RSVP form right now →
+                  </button>
+                </div>
+              </div>
+            ) : submittedRSVP ? (
               <div className={styles['rsvp-success-state']}>
                 <div className={styles['success-icon-wrap']}>
                   <CheckCircle2 size={54} color="var(--bamboo-green)" />

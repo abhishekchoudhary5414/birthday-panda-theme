@@ -25,11 +25,11 @@ export async function POST(req: NextRequest) {
 
     const trimmedName = fullName.trim();
     const trimmedPhone = phone.trim();
-    const trimmedEmail = email ? email.trim() : null;
+    const trimmedEmail = email && email.trim() ? email.trim().toLowerCase() : null;
     const rsvpStatus = attending === 'yes' ? 'attending' : 'declined';
     const parsedGuestsCount = parseInt(guestsCount, 10) || 1;
 
-    // 1. Ensure rsvps table exists and insert RSVP record
+    // 1. Ensure rsvps table exists
     await sql`
       CREATE TABLE IF NOT EXISTS rsvps (
         id SERIAL PRIMARY KEY,
@@ -44,6 +44,30 @@ export async function POST(req: NextRequest) {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `;
+
+    // 2. Disallow duplicate RSVP by email
+    if (trimmedEmail) {
+      const existingRsvp = await sql`
+        SELECT id, full_name, attending, guests_count, created_at FROM rsvps WHERE LOWER(email) = ${trimmedEmail} LIMIT 1
+      `;
+      if (existingRsvp && existingRsvp.length > 0) {
+        const isAttending = existingRsvp[0].attending === 'yes';
+        return NextResponse.json(
+          {
+            error: isAttending
+              ? `Warm greetings! An RSVP has already been confirmed for ${existingRsvp[0].full_name} (${trimmedEmail}). You are happily ON THE GUEST LIST! We can't wait to celebrate together.`
+              : `Thank you for checking! An RSVP was previously received for ${existingRsvp[0].full_name} (${trimmedEmail}) indicating you are unable to attend. We will miss you dearly!`,
+            isDuplicateEmail: true,
+            attending: existingRsvp[0].attending,
+            fullName: existingRsvp[0].full_name,
+            email: trimmedEmail,
+            guestsCount: existingRsvp[0].guests_count,
+            existingRSVP: existingRsvp[0],
+          },
+          { status: 409 }
+        );
+      }
+    }
 
     const inserted = await sql`
       INSERT INTO rsvps (full_name, phone, email, attending, guests_count, dietary, allergies, message)
@@ -103,6 +127,9 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const emailCheck = searchParams.get('email');
+
     await sql`
       CREATE TABLE IF NOT EXISTS rsvps (
         id SERIAL PRIMARY KEY,
@@ -117,6 +144,25 @@ export async function GET(req: NextRequest) {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `;
+
+    // Quick lookup by email for pre-checking RSVP status
+    if (emailCheck && emailCheck.trim()) {
+      const cleanEmail = emailCheck.trim().toLowerCase();
+      const existing = await sql`
+        SELECT id, full_name, attending, guests_count, dietary, allergies, message, created_at 
+        FROM rsvps 
+        WHERE LOWER(email) = ${cleanEmail} 
+        LIMIT 1
+      `;
+      if (existing.length > 0) {
+        return NextResponse.json({
+          success: true,
+          exists: true,
+          rsvp: existing[0],
+        });
+      }
+      return NextResponse.json({ success: true, exists: false });
+    }
 
     const rsvps = await sql`
       SELECT * FROM rsvps ORDER BY id DESC
