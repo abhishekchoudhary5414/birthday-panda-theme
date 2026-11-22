@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   try {
     // 1. Decode state & verify CSRF token
     const decodedState = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'));
-    const { userId, csrf } = decodedState;
+    const { userId, csrf, redirectUri } = decodedState;
 
     const cookieCsrf = req.cookies.get('gdrive_oauth_csrf')?.value;
     if (!csrf || !cookieCsrf || csrf !== cookieCsrf) {
@@ -45,8 +45,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${redirectBase}&gdrive_error=${encodeURIComponent('Invalid customer identity in OAuth state')}`);
     }
 
-    // 2. Exchange authorization code for tokens
-    const tokens = await exchangeCodeForTokens(code);
+    // 2. Exchange authorization code for tokens matching the exact redirect URI used in auth
+    const tokens = await exchangeCodeForTokens(code, redirectUri);
 
     // 3. Fetch customer Google profile / email
     const userInfo = await fetchGoogleUserInfo(tokens.accessToken);

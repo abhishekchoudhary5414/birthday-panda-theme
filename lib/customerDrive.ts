@@ -56,13 +56,15 @@ const tokenCache = new Map<number, TokenCache>();
  */
 export function buildGoogleAuthUrl(userId: number, stateToken: string, dynamicOrigin?: string): string {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || (dynamicOrigin ? `${dynamicOrigin}/api/google-drive/callback` : 'http://localhost:3000/api/google-drive/callback');
+  const redirectUri = (dynamicOrigin && !process.env.GOOGLE_REDIRECT_URI?.includes('://'))
+    ? `${dynamicOrigin}/api/google-drive/callback`
+    : (process.env.GOOGLE_REDIRECT_URI || (dynamicOrigin ? `${dynamicOrigin}/api/google-drive/callback` : 'http://localhost:3000/api/google-drive/callback'));
 
   if (!clientId) {
     throw new Error('GOOGLE_CLIENT_ID is not configured in environment variables');
   }
 
-  const statePayload = Buffer.from(JSON.stringify({ userId, csrf: stateToken })).toString('base64url');
+  const statePayload = Buffer.from(JSON.stringify({ userId, csrf: stateToken, redirectUri })).toString('base64url');
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -81,7 +83,7 @@ export function buildGoogleAuthUrl(userId: number, stateToken: string, dynamicOr
 /**
  * Exchange Authorization Code for Tokens
  */
-export async function exchangeCodeForTokens(code: string): Promise<{
+export async function exchangeCodeForTokens(code: string, customRedirectUri?: string): Promise<{
   accessToken: string;
   refreshToken?: string;
   expiresIn: number;
@@ -89,7 +91,7 @@ export async function exchangeCodeForTokens(code: string): Promise<{
 }> {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/google-drive/callback';
+  const redirectUri = customRedirectUri || process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/google-drive/callback';
 
   if (!clientId || !clientSecret) {
     throw new Error('Google OAuth credentials missing: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
