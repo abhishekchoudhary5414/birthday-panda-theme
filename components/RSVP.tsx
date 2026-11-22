@@ -311,11 +311,6 @@ export const RSVP: React.FC = () => {
                   </span>
                 </div>
 
-                <div className={styles['success-actions']}>
-                  <button type="button" onClick={handleReset} className="btn-secondary">
-                    Edit or Submit Another RSVP
-                  </button>
-                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className={styles['rsvp-form']} noValidate>
@@ -447,36 +442,9 @@ export const RSVP: React.FC = () => {
                   </div>
                 )}
 
-                {formData.attending === 'yes' && (
-                  <div className={styles['form-group']}>
-                    <label htmlFor="allergies" className={styles['form-label']}>
-                      Allergies (Optional)
-                    </label>
-                    <input
-                      id="allergies"
-                      type="text"
-                      className={styles['form-input']}
-                      placeholder="Let us know about any food allergies"
-                      value={formData.allergies}
-                      onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
-                    />
-                  </div>
-                )}
+          
 
-                {/* Personal Wish / Message */}
-                <div className={styles['form-group']}>
-                  <label htmlFor="message" className={styles['form-label']}>
-                    Optional Birthday Wish for {eventData.childName || 'Ditvi'}
-                  </label>
-                  <textarea
-                    id="message"
-                    rows={3}
-                    className={`${styles['form-input'] || 'form-input'} ${styles['form-textarea'] || 'form-textarea'}`}
-                    placeholder={`Write a sweet note or birthday blessing for ${eventData.childName || 'Ditvi'}...`}
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  />
-                </div>
+            
 
                 {submitError && (
                   <div style={{

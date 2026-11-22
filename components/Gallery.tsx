@@ -4,7 +4,7 @@ import styles from './Gallery.module.css';
 
 
 import React, { useState } from 'react';
-import { Sparkles, Maximize2, X, ChevronLeft, ChevronRight, Play, Film, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, Maximize2, X, ChevronLeft, ChevronRight, Play, Film, Image as ImageIcon, UploadCloud } from 'lucide-react';
 import { PeekingPanda } from './PandaIllustrations';
 
 interface GalleryItem {
@@ -147,6 +147,28 @@ export const Gallery: React.FC = () => {
           <p className="section-subtitle">
             Explore precious snapshots and captured laughter from Ditvi&apos;s first incredible year.
           </p>
+          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
+            <a
+              href="/upload"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'linear-gradient(135deg, var(--deep-forest-green, #294B35) 0%, var(--bamboo-green, #789B63) 100%)',
+                color: '#FFFFFF',
+                padding: '10px 22px',
+                borderRadius: '9999px',
+                fontWeight: 700,
+                fontSize: '0.92rem',
+                textDecoration: 'none',
+                boxShadow: '0 4px 14px rgba(41, 75, 53, 0.18)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <UploadCloud size={18} />
+              <span>Upload &amp; View Live Party Snaps on Google Drive</span>
+            </a>
+          </div>
         </div>
 
         {/* Album Filter Tabs */}

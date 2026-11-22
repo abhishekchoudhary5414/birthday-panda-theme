@@ -62,6 +62,10 @@ import SendIcon from '@mui/icons-material/Send';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import ChildCareIcon from '@mui/icons-material/ChildCare';
 import PetsIcon from '@mui/icons-material/Pets';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { CARD_BG_BASE64 } from './cardBgBase64';
 import { PartyPanda, BambooStalkDecoration } from '@/components/PandaIllustrations';
 import styles from './dashboard.module.css';
@@ -134,6 +138,21 @@ interface AdminRSVP {
   allergies?: string;
   message?: string;
   created_at: string;
+}
+
+interface AdminDrivePhoto {
+  id: string;
+  name: string;
+  mimeType: string;
+  size?: number;
+  createdTime: string;
+  webViewLink?: string;
+  webContentLink?: string;
+  thumbnailLink?: string;
+  proxyUrl: string;
+  directUrl: string;
+  caption?: string;
+  uploaderName?: string;
 }
 
 export default function AdminDashboardPage() {
@@ -237,6 +256,174 @@ export default function AdminDashboardPage() {
   const [isSavingEventSettings, setIsSavingEventSettings] = useState(false);
   const [isDeletingVenue, setIsDeletingVenue] = useState(false);
   const [eventAlert, setEventAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Google Drive Photos Management State
+  const [drivePhotos, setDrivePhotos] = useState<AdminDrivePhoto[]>([]);
+  const [driveLoading, setDriveLoading] = useState(false);
+  const [driveStatus, setDriveStatus] = useState<{
+    connected: boolean;
+    message: string;
+    folderId?: string;
+    folderName?: string;
+    filesCount?: number;
+  } | null>(null);
+  const [isTestingDrive, setIsTestingDrive] = useState(false);
+  const [driveUploadFiles, setDriveUploadFiles] = useState<File[]>([]);
+  const [driveUploadPreviews, setDriveUploadPreviews] = useState<string[]>([]);
+  const [driveUploaderName, setDriveUploaderName] = useState('Admin / Host');
+  const [driveCaption, setDriveCaption] = useState('');
+  const [isDriveUploading, setIsDriveUploading] = useState(false);
+  const [driveUploadSuccess, setDriveUploadSuccess] = useState<string | null>(null);
+  const [driveUploadError, setDriveUploadError] = useState<string | null>(null);
+  const [driveSearch, setDriveSearch] = useState('');
+  const [copiedPhotoId, setCopiedPhotoId] = useState<string | null>(null);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
+  const [isDeletingDrivePhoto, setIsDeletingDrivePhoto] = useState(false);
+  const driveFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch photos from Google Drive
+  const fetchDrivePhotos = useCallback(async () => {
+    try {
+      setDriveLoading(true);
+      const res = await fetch('/api/photos');
+      const data = await res.json();
+      if (data.photos) {
+        setDrivePhotos(data.photos);
+      }
+    } catch (err) {
+      console.error('Failed to fetch drive photos:', err);
+    } finally {
+      setDriveLoading(false);
+    }
+  }, []);
+
+  // Check Google Drive connection status
+  const checkDriveStatus = useCallback(async () => {
+    try {
+      setIsTestingDrive(true);
+      const res = await fetch('/api/admin/drive/status');
+      const data = await res.json();
+      setDriveStatus(data);
+    } catch (err) {
+      console.error('Failed to check drive status:', err);
+      setDriveStatus({
+        connected: false,
+        message: 'Network error contacting drive status API',
+        folderId: '',
+      });
+    } finally {
+      setIsTestingDrive(false);
+    }
+  }, []);
+
+  // Handle files selected for drive upload
+  const handleDriveFilesSelect = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const newFiles: File[] = [];
+    const newPreviews: string[] = [];
+    Array.from(files).forEach((file) => {
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        newFiles.push(file);
+        newPreviews.push(URL.createObjectURL(file));
+      }
+    });
+    setDriveUploadFiles((prev) => [...prev, ...newFiles]);
+    setDriveUploadPreviews((prev) => [...prev, ...newPreviews]);
+    setDriveUploadError(null);
+  };
+
+  const handleRemoveDrivePreview = (idx: number) => {
+    URL.revokeObjectURL(driveUploadPreviews[idx]);
+    setDriveUploadFiles((prev) => prev.filter((_, i) => i !== idx));
+    setDriveUploadPreviews((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  // Submit upload to Google Drive
+  const handleDriveUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (driveUploadFiles.length === 0) {
+      setDriveUploadError('Please select at least one photo or video to upload.');
+      return;
+    }
+
+    setIsDriveUploading(true);
+    setDriveUploadError(null);
+    setDriveUploadSuccess(null);
+
+    let uploadedCount = 0;
+    const errors: string[] = [];
+
+    for (const file of driveUploadFiles) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('uploaderName', driveUploaderName.trim() || 'Admin');
+      formData.append('caption', driveCaption.trim());
+
+      try {
+        const res = await fetch('/api/photos', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          uploadedCount++;
+        } else {
+          errors.push(data.error || `Upload failed for ${file.name}`);
+        }
+      } catch (err) {
+        errors.push(`Network error uploading ${file.name}`);
+      }
+    }
+
+    setIsDriveUploading(false);
+
+    if (uploadedCount > 0) {
+      setDriveUploadSuccess(`Successfully uploaded ${uploadedCount} photo${uploadedCount > 1 ? 's' : ''} directly to Google Drive!`);
+      driveUploadPreviews.forEach((u) => URL.revokeObjectURL(u));
+      setDriveUploadFiles([]);
+      setDriveUploadPreviews([]);
+      setDriveCaption('');
+      fetchDrivePhotos();
+      checkDriveStatus();
+    }
+
+    if (errors.length > 0) {
+      setDriveUploadError(errors.join('. '));
+    }
+  };
+
+  // Delete photo from Google Drive
+  const handleDeleteDrivePhoto = async (photoId: string) => {
+    if (!confirm('Are you sure you want to delete this photo from Google Drive? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setIsDeletingDrivePhoto(true);
+      setDeletingPhotoId(photoId);
+      const res = await fetch(`/api/photos/${photoId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setDrivePhotos((prev) => prev.filter((p) => p.id !== photoId));
+      } else {
+        alert(data.error || 'Failed to delete photo');
+      }
+    } catch (err) {
+      console.error('Delete photo error:', err);
+      alert('An error occurred while deleting the photo');
+    } finally {
+      setIsDeletingDrivePhoto(false);
+      setDeletingPhotoId(null);
+    }
+  };
+
+  // Copy direct link
+  const handleCopyPhotoLink = (photo: AdminDrivePhoto) => {
+    const fullUrl = window.location.origin + photo.proxyUrl;
+    navigator.clipboard.writeText(fullUrl);
+    setCopiedPhotoId(photo.id);
+    setTimeout(() => setCopiedPhotoId(null), 2500);
+  };
 
   // Fetch Event Settings
   const fetchEventSettings = useCallback(async () => {
@@ -1135,7 +1322,11 @@ export default function AdminDashboardPage() {
       fetchQuizQuestions();
       fetchQuizSubmissions();
     }
-  }, [activeTab, fetchEventSettings, fetchWishes, fetchQuizQuestions, fetchQuizSubmissions, fetchRsvps, fetchGuests]);
+    if (activeTab === '11') {
+      fetchDrivePhotos();
+      checkDriveStatus();
+    }
+  }, [activeTab, fetchEventSettings, fetchWishes, fetchQuizQuestions, fetchQuizSubmissions, fetchRsvps, fetchGuests, fetchDrivePhotos, checkDriveStatus]);
 
   // Handle single guest add
   const handleAddGuest = async (e: React.FormEvent) => {
@@ -4956,26 +5147,428 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Section 11: Media & Photo Albums */}
+        {/* Section 11: Media & Photo Albums (Google Drive) */}
         {activeTab === '11' && (
           <div>
             <div className={styles.sectionHeader}>
               <PhotoLibraryIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>Media &amp; Photo Albums</span>
+              <span>Google Drive Photos &amp; Media Management</span>
             </div>
-            <div style={{ background: '#ffffff', padding: '32px', borderRadius: '14px', border: '1px solid #e1e7de' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#f3f8f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <PhotoLibraryIcon sx={{ color: '#294b35', fontSize: 28 }} />
+
+            {/* Google Drive Connection Status Card */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '18px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#eef6ec', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CloudUploadIcon sx={{ color: '#294b35', fontSize: 28 }} />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.25rem', fontWeight: 700 }}>Google Drive Sync &amp; Storage</h3>
+                      {driveStatus ? (
+                        driveStatus.connected ? (
+                          <span style={{ background: '#edf7ed', color: '#1e4620', border: '1px solid #c8e6c9', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <CheckCircleIcon sx={{ fontSize: 14, color: '#2e7d32' }} /> Connected
+                          </span>
+                        ) : (
+                          <span style={{ background: '#fff8e1', color: '#8d6e00', border: '1px solid #ffe082', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <WarningAmberIcon sx={{ fontSize: 14, color: '#f57f17' }} /> Check Token
+                          </span>
+                        )
+                      ) : (
+                        <span style={{ background: '#f5f5f5', color: '#666', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 600 }}>Checking...</span>
+                      )}
+                    </div>
+                    <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.88rem' }}>
+                      Configured with GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN, and GOOGLE_DRIVE_FOLDER_ID
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.2rem' }}>Event Memory Gallery</h3>
-                  <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.88rem' }}>High-resolution birthday photoshoot albums and live ceremony snaps.</p>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={checkDriveStatus}
+                    disabled={isTestingDrive}
+                    className={styles.exportBtn}
+                    style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <RefreshIcon sx={{ fontSize: 16, animation: isTestingDrive ? 'spin 1s linear infinite' : 'none' }} />
+                    <span>{isTestingDrive ? 'Testing...' : 'Test Connection'}</span>
+                  </button>
+
+                  {driveStatus?.folderId && (
+                    <a
+                      href={`https://drive.google.com/drive/folders/${driveStatus.folderId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.exportBtn}
+                      style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                    >
+                      <OpenInNewIcon sx={{ fontSize: 16 }} />
+                      <span>Open in Drive</span>
+                    </a>
+                  )}
+
+                  <a
+                    href="/upload"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.btnPrimary}
+                    style={{ padding: '8px 18px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                  >
+                    <PhotoLibraryIcon sx={{ fontSize: 16 }} />
+                    <span>View Public /upload Page</span>
+                  </a>
                 </div>
               </div>
-              <p style={{ color: '#576b5c', lineHeight: 1.6, fontSize: '0.94rem' }}>
-                Guests can view Ditvi&apos;s 1st year journey milestones, baby photoshoot photos, and live cake cutting photos directly on the homepage gallery carousel.
-              </p>
+
+              {/* Status details & diagnostics */}
+              {driveStatus && !driveStatus.connected && (
+                <div style={{ background: '#fff9e6', border: '1px solid #fed7aa', borderLeft: '4px solid #f59e0b', borderRadius: '10px', padding: '14px 18px', marginBottom: '16px', fontSize: '0.88rem', color: '#78350f' }}>
+                  <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <WarningAmberIcon sx={{ fontSize: 18, color: '#f59e0b' }} />
+                    <span>Google Drive Authorization Notice</span>
+                  </div>
+                  <p style={{ margin: 0, lineHeight: 1.5 }}>
+                    {driveStatus.message}
+                  </p>
+                  <div style={{ marginTop: '10px', fontSize: '0.82rem', color: '#92400e', background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #fde68a' }}>
+                    <strong>How to refresh your token:</strong> In Google Cloud Console or Google OAuth Playground, regenerate a fresh <code>GOOGLE_REFRESH_TOKEN</code> with scope <code>https://www.googleapis.com/auth/drive.file</code> and update your <code>.env</code> file.
+                  </div>
+                </div>
+              )}
+
+              {/* Quick stats chips */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Google Drive Folder ID</div>
+                  <div style={{ fontSize: '0.92rem', color: '#294b35', fontWeight: 700, marginTop: '2px', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                    {driveStatus?.folderId || '1MI3z3eF9_sW520gQW8-X9R2_q1yG-uMc'}
+                  </div>
+                </div>
+                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Total Photos Loaded</div>
+                  <div style={{ fontSize: '1.25rem', color: '#294b35', fontWeight: 800, marginTop: '2px' }}>
+                    {drivePhotos.length}
+                  </div>
+                </div>
+                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Public Guest Uploads</div>
+                  <div style={{ fontSize: '0.92rem', color: '#2e7d32', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <CheckCircleIcon sx={{ fontSize: 16 }} /> Enabled at /upload
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Upload to Google Drive Section */}
+            <div style={{ background: '#ffffff', padding: '28px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '28px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#edf6ea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <UploadFileIcon sx={{ color: '#294b35', fontSize: 24 }} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Upload New Photos to Google Drive</h3>
+                  <p style={{ margin: '2px 0 0', color: '#6e7e73', fontSize: '0.85rem' }}>Select photos to upload directly to Ditvi&apos;s birthday Google Drive folder.</p>
+                </div>
+              </div>
+
+              {/* Dropzone */}
+              <div
+                onClick={() => driveFileInputRef.current?.click()}
+                style={{
+                  border: '2px dashed #b7d8b3',
+                  borderRadius: '14px',
+                  padding: '30px 20px',
+                  textAlign: 'center',
+                  background: '#fcfdfa',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  marginBottom: '18px',
+                }}
+              >
+                <input
+                  type="file"
+                  ref={driveFileInputRef}
+                  style={{ display: 'none' }}
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={(e) => handleDriveFilesSelect(e.target.files)}
+                />
+                <CloudUploadIcon sx={{ fontSize: 44, color: '#789b63', marginBottom: '8px' }} />
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: '#294b35' }}>
+                  Click to select photos or drag and drop here
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#7b8e7e', marginTop: '4px' }}>
+                  Supports JPG, PNG, WEBP, HEIC up to 15MB each
+                </div>
+              </div>
+
+              {/* Selected File Previews */}
+              {driveUploadPreviews.length > 0 && (
+                <div style={{ background: '#f8faf7', border: '1px solid #e2ede0', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#294b35' }}>
+                      Ready to Upload ({driveUploadPreviews.length} photos)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        driveUploadPreviews.forEach((u) => URL.revokeObjectURL(u));
+                        setDriveUploadFiles([]);
+                        setDriveUploadPreviews([]);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Clear Selection
+                    </button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px' }}>
+                    {driveUploadPreviews.map((url, idx) => (
+                      <div key={idx} style={{ position: 'relative', aspectRatio: '1', borderRadius: '10px', overflow: 'hidden', border: '1px solid #cbe3c6' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt={`Upload preview ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveDrivePreview(idx);
+                          }}
+                          style={{ position: 'absolute', top: 3, right: 3, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <CloseIcon sx={{ fontSize: 13 }} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Metadata Inputs & Submit Form */}
+              <form onSubmit={handleDriveUploadSubmit}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#294b35', marginBottom: '6px' }}>
+                      Uploader / Album Tag
+                    </label>
+                    <input
+                      type="text"
+                      value={driveUploaderName}
+                      onChange={(e) => setDriveUploaderName(e.target.value)}
+                      placeholder="e.g. Admin, Birthday Photoshoot, Cake Cutting"
+                      className={styles.formInput}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#294b35', marginBottom: '6px' }}>
+                      Photo Caption or Description (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={driveCaption}
+                      onChange={(e) => setDriveCaption(e.target.value)}
+                      placeholder="e.g. Ditvi in her party dress with panda balloons"
+                      className={styles.formInput}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                </div>
+
+                {driveUploadError && (
+                  <div style={{ color: '#d32f2f', fontSize: '0.86rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <WarningAmberIcon sx={{ fontSize: 16 }} />
+                    <span>{driveUploadError}</span>
+                  </div>
+                )}
+
+                {driveUploadSuccess && (
+                  <div style={{ color: '#2e7d32', fontSize: '0.88rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                    <CheckCircleIcon sx={{ fontSize: 18 }} />
+                    <span>{driveUploadSuccess}</span>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                  <button
+                    type="submit"
+                    disabled={isDriveUploading || driveUploadFiles.length === 0}
+                    className={styles.btnPrimary}
+                    style={{ padding: '10px 24px', fontSize: '0.94rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <CloudUploadIcon sx={{ fontSize: 18 }} />
+                    <span>{isDriveUploading ? 'Uploading to Google Drive...' : `Upload ${driveUploadFiles.length > 0 ? `${driveUploadFiles.length} ` : ''}Photo${driveUploadFiles.length > 1 ? 's' : ''}`}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Google Drive Photo Gallery */}
+            <div style={{ background: '#ffffff', padding: '28px', borderRadius: '16px', border: '1px solid #e1e7de', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', marginBottom: '22px' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>All Photos in Google Drive</span>
+                    <span style={{ background: '#edf6ea', color: '#294b35', fontSize: '0.82rem', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                      {drivePhotos.length}
+                    </span>
+                  </h3>
+                  <p style={{ margin: '2px 0 0', color: '#6e7e73', fontSize: '0.84rem' }}>Photos stored in folder &quot;{driveStatus?.folderName || 'Ditvi Birthday Photos'}&quot;</p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <div style={{ position: 'relative' }}>
+                    <SearchIcon sx={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: '#7b8e7e' }} />
+                    <input
+                      type="text"
+                      placeholder="Search photos..."
+                      value={driveSearch}
+                      onChange={(e) => setDriveSearch(e.target.value)}
+                      style={{ padding: '7px 12px 7px 34px', borderRadius: '20px', border: '1px solid #cbe3c6', fontSize: '0.86rem', outline: 'none', background: '#fcfdfa' }}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={fetchDrivePhotos}
+                    disabled={driveLoading}
+                    className={styles.exportBtn}
+                    style={{ padding: '7px 14px', fontSize: '0.84rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <RefreshIcon sx={{ fontSize: 15, animation: driveLoading ? 'spin 1s linear infinite' : 'none' }} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Photo Cards Grid */}
+              {driveLoading && (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: '#294B35', fontWeight: 600 }}>
+                  <RefreshIcon sx={{ fontSize: 32, animation: 'spin 1s linear infinite', marginBottom: '8px' }} />
+                  <div>Loading Photos from Google Drive...</div>
+                </div>
+              )}
+
+              {!driveLoading && drivePhotos.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '50px 20px', background: '#fbfdf9', borderRadius: '14px', border: '1px dashed #d5e5d1' }}>
+                  <PhotoLibraryIcon sx={{ fontSize: 48, color: '#a3c58e', marginBottom: '10px' }} />
+                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#294B35' }}>No Photos Found in Google Drive Folder</div>
+                  <p style={{ fontSize: '0.88rem', color: '#6e7e73', maxWidth: '400px', margin: '6px auto 16px' }}>
+                    Upload birthday photos above or invite guests to share their snaps via the public /upload link!
+                  </p>
+                </div>
+              )}
+
+              {!driveLoading && drivePhotos.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+                  {drivePhotos
+                    .filter((p) => {
+                      if (!driveSearch.trim()) return true;
+                      const q = driveSearch.toLowerCase();
+                      return (
+                        p.name.toLowerCase().includes(q) ||
+                        (p.caption && p.caption.toLowerCase().includes(q)) ||
+                        (p.uploaderName && p.uploaderName.toLowerCase().includes(q))
+                      );
+                    })
+                    .map((photo) => {
+                      const formattedSize = photo.size
+                        ? photo.size > 1024 * 1024
+                          ? `${(photo.size / (1024 * 1024)).toFixed(1)} MB`
+                          : `${Math.round(photo.size / 1024)} KB`
+                        : '';
+
+                      const formattedDate = photo.createdTime
+                        ? new Date(photo.createdTime).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })
+                        : '';
+
+                      return (
+                        <div
+                          key={photo.id}
+                          style={{
+                            background: '#ffffff',
+                            border: '1px solid #e1e7de',
+                            borderRadius: '14px',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            boxShadow: '0 2px 8px rgba(41,75,53,0.04)',
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
+                          <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', background: '#f2f6f1', overflow: 'hidden' }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={photo.proxyUrl || photo.directUrl}
+                              alt={photo.caption || photo.name}
+                              loading="lazy"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = photo.directUrl;
+                              }}
+                            />
+                            {photo.uploaderName && (
+                              <span style={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(41,75,53,0.85)', color: '#fff', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '10px', fontWeight: 600 }}>
+                                {photo.uploaderName}
+                              </span>
+                            )}
+                          </div>
+
+                          <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', flex: 1, gap: '6px' }}>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#252525', lineHeight: 1.3, wordBreak: 'break-all' }}>
+                              {photo.caption || photo.name.replace(/ditvi-birthday-.*?-(.+)/, '$1')}
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.74rem', color: '#7b8e7e', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid #f2f5f1' }}>
+                              <span>{formattedDate}</span>
+                              {formattedSize && <span>{formattedSize}</span>}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                              {photo.webViewLink && (
+                                <a
+                                  href={photo.webViewLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="View on Google Drive"
+                                  style={{ flex: 1, padding: '5px', textAlign: 'center', background: '#f0f5ee', color: '#294b35', borderRadius: '6px', fontSize: '0.76rem', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                                >
+                                  <OpenInNewIcon sx={{ fontSize: 13 }} />
+                                  <span>Drive</span>
+                                </a>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() => handleCopyPhotoLink(photo)}
+                                title="Copy direct photo URL"
+                                style={{ flex: 1, padding: '5px', background: copiedPhotoId === photo.id ? '#edf7ed' : '#f0f5ee', color: copiedPhotoId === photo.id ? '#2e7d32' : '#294b35', border: 'none', borderRadius: '6px', fontSize: '0.76rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                              >
+                                <ContentCopyIcon sx={{ fontSize: 13 }} />
+                                <span>{copiedPhotoId === photo.id ? 'Copied!' : 'Link'}</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteDrivePhoto(photo.id)}
+                                disabled={isDeletingDrivePhoto && deletingPhotoId === photo.id}
+                                title="Delete photo from Google Drive"
+                                style={{ padding: '5px 8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', fontSize: '0.76rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                              >
+                                <DeleteOutlineIcon sx={{ fontSize: 15 }} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
             </div>
           </div>
         )}
