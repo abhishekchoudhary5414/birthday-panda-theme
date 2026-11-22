@@ -287,12 +287,19 @@ export default function AdminDashboardPage() {
   const [driveLoading, setDriveLoading] = useState(false);
   const [driveStatus, setDriveStatus] = useState<{
     connected: boolean;
-    message: string;
+    isCustomerSpecific?: boolean;
+    accountEmail?: string | null;
     folderId?: string;
     folderName?: string;
+    sharingStatus?: string;
+    connectedAt?: string | null;
+    errorMessage?: string | null;
+    message?: string;
     filesCount?: number;
   } | null>(null);
   const [isTestingDrive, setIsTestingDrive] = useState(false);
+  const [isDisconnectingDrive, setIsDisconnectingDrive] = useState(false);
+  const [driveToast, setDriveToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [driveUploadFiles, setDriveUploadFiles] = useState<File[]>([]);
   const [driveUploadPreviews, setDriveUploadPreviews] = useState<string[]>([]);
   const [driveUploaderName, setDriveUploaderName] = useState('Admin / Host');
@@ -326,7 +333,7 @@ export default function AdminDashboardPage() {
   const checkDriveStatus = useCallback(async () => {
     try {
       setIsTestingDrive(true);
-      const res = await fetch('/api/admin/drive/status');
+      const res = await fetch('/api/google-drive/status');
       const data = await res.json();
       setDriveStatus(data);
     } catch (err) {
@@ -340,6 +347,30 @@ export default function AdminDashboardPage() {
       setIsTestingDrive(false);
     }
   }, []);
+
+  // Disconnect customer Google Drive
+  const handleDisconnectDrive = async () => {
+    if (!window.confirm('Are you sure you want to disconnect your Google Drive? Your photos will remain safe in your Drive, but new uploads will stop until you reconnect.')) {
+      return;
+    }
+    try {
+      setIsDisconnectingDrive(true);
+      const res = await fetch('/api/google-drive/disconnect', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setDriveToast({ type: 'success', message: data.message || 'Google Drive disconnected.' });
+        checkDriveStatus();
+        fetchDrivePhotos();
+      } else {
+        setDriveToast({ type: 'error', message: data.error || 'Failed to disconnect Google Drive.' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error disconnecting Drive';
+      setDriveToast({ type: 'error', message: msg });
+    } finally {
+      setIsDisconnectingDrive(false);
+    }
+  };
 
   // Handle files selected for drive upload
   const handleDriveFilesSelect = (files: FileList | null) => {
@@ -1502,6 +1533,21 @@ export default function AdminDashboardPage() {
     if (activeTab === '11') {
       fetchDrivePhotos();
       checkDriveStatus();
+
+      // Check URL search params for OAuth success or error
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const gdriveSuccess = params.get('gdrive_success');
+        const gdriveError = params.get('gdrive_error');
+        if (gdriveSuccess) {
+          setDriveToast({ type: 'success', message: gdriveSuccess });
+          // Clean URL without refresh
+          window.history.replaceState({}, '', '/admin?tab=11');
+        } else if (gdriveError) {
+          setDriveToast({ type: 'error', message: gdriveError });
+          window.history.replaceState({}, '', '/admin?tab=11');
+        }
+      }
     }
     if (activeTab === '12') {
       fetchAdminGifts();
@@ -5886,8 +5932,32 @@ export default function AdminDashboardPage() {
               <span>Google Drive Photos &amp; Media Management</span>
             </div>
 
-            {/* Google Drive Connection Status Card */}
+            {/* Google Drive Connection & Customer OAuth Card */}
             <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              
+              {/* Toast alert */}
+              {driveToast && (
+                <div style={{
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  marginBottom: '18px',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: driveToast.type === 'success' ? '#edf7ed' : '#fdf2f2',
+                  color: driveToast.type === 'success' ? '#1e4620' : '#991b1b',
+                  border: driveToast.type === 'success' ? '1px solid #c8e6c9' : '1px solid #fecaca',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {driveToast.type === 'success' ? <CheckCircleIcon sx={{ fontSize: 18 }} /> : <WarningAmberIcon sx={{ fontSize: 18 }} />}
+                    <span>{driveToast.message}</span>
+                  </div>
+                  <button type="button" onClick={() => setDriveToast(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700 }}>✕</button>
+                </div>
+              )}
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '18px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#eef6ec', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -5895,7 +5965,7 @@ export default function AdminDashboardPage() {
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.25rem', fontWeight: 700 }}>Google Drive Sync &amp; Storage</h3>
+                      <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.25rem', fontWeight: 700 }}>Google Drive Storage</h3>
                       {driveStatus ? (
                         driveStatus.connected ? (
                           <span style={{ background: '#edf7ed', color: '#1e4620', border: '1px solid #c8e6c9', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -5903,7 +5973,7 @@ export default function AdminDashboardPage() {
                           </span>
                         ) : (
                           <span style={{ background: '#fff8e1', color: '#8d6e00', border: '1px solid #ffe082', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <WarningAmberIcon sx={{ fontSize: 14, color: '#f57f17' }} /> Check Token
+                            <WarningAmberIcon sx={{ fontSize: 14, color: '#f57f17' }} /> Disconnected
                           </span>
                         )
                       ) : (
@@ -5911,12 +5981,55 @@ export default function AdminDashboardPage() {
                       )}
                     </div>
                     <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.88rem' }}>
-                      Configured with GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN, and GOOGLE_DRIVE_FOLDER_ID
+                      Connect your own Google Drive account to store and manage birthday photos and videos automatically.
                     </p>
                   </div>
                 </div>
 
+                {/* Connection action buttons */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  {driveStatus?.connected ? (
+                    <>
+                      <a
+                        href="/api/google-drive/connect"
+                        className={styles.exportBtn}
+                        style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                      >
+                        <RefreshIcon sx={{ fontSize: 16 }} />
+                        <span>Reconnect</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={handleDisconnectDrive}
+                        disabled={isDisconnectingDrive}
+                        className={styles.deleteBtn}
+                        style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                        <span>{isDisconnectingDrive ? 'Disconnecting...' : 'Disconnect'}</span>
+                      </button>
+                    </>
+                  ) : (
+                    <a
+                      href="/api/google-drive/connect"
+                      className={styles.btnPrimary}
+                      style={{
+                        padding: '10px 22px',
+                        fontSize: '0.92rem',
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        textDecoration: 'none',
+                        background: 'linear-gradient(135deg, #294B35 0%, #437351 100%)',
+                        boxShadow: '0 4px 14px rgba(41, 75, 53, 0.22)'
+                      }}
+                    >
+                      <CloudUploadIcon sx={{ fontSize: 18 }} />
+                      <span>Connect Google Drive</span>
+                    </a>
+                  )}
+
                   <button
                     type="button"
                     onClick={checkDriveStatus}
@@ -5925,7 +6038,7 @@ export default function AdminDashboardPage() {
                     style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                   >
                     <RefreshIcon sx={{ fontSize: 16, animation: isTestingDrive ? 'spin 1s linear infinite' : 'none' }} />
-                    <span>{isTestingDrive ? 'Testing...' : 'Test Connection'}</span>
+                    <span>{isTestingDrive ? 'Checking...' : 'Refresh Status'}</span>
                   </button>
 
                   {driveStatus?.folderId && (
@@ -5937,7 +6050,7 @@ export default function AdminDashboardPage() {
                       style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
                     >
                       <OpenInNewIcon sx={{ fontSize: 16 }} />
-                      <span>Open in Drive</span>
+                      <span>Open Folder</span>
                     </a>
                   )}
 
@@ -5949,7 +6062,7 @@ export default function AdminDashboardPage() {
                     style={{ padding: '8px 18px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
                   >
                     <PhotoLibraryIcon sx={{ fontSize: 16 }} />
-                    <span>View Public /photos Page</span>
+                    <span>View /photos Page</span>
                   </a>
                 </div>
               </div>
@@ -5959,35 +6072,39 @@ export default function AdminDashboardPage() {
                 <div style={{ background: '#fff9e6', border: '1px solid #fed7aa', borderLeft: '4px solid #f59e0b', borderRadius: '10px', padding: '14px 18px', marginBottom: '16px', fontSize: '0.88rem', color: '#78350f' }}>
                   <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <WarningAmberIcon sx={{ fontSize: 18, color: '#f59e0b' }} />
-                    <span>Google Drive Authorization Notice</span>
+                    <span>Google Drive Not Connected</span>
                   </div>
                   <p style={{ margin: 0, lineHeight: 1.5 }}>
-                    {driveStatus.message}
+                    {driveStatus.errorMessage || driveStatus.message || 'Click "Connect Google Drive" above to link your Google account. We will automatically create your "Birthday Website Media" folder and configure public access.'}
                   </p>
-                  <div style={{ marginTop: '10px', fontSize: '0.82rem', color: '#92400e', background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #fde68a' }}>
-                    <strong>How to refresh your token:</strong> In Google Cloud Console or Google OAuth Playground, regenerate a fresh <code>GOOGLE_REFRESH_TOKEN</code> with scope <code>https://www.googleapis.com/auth/drive.file</code> and update your <code>.env</code> file.
-                  </div>
                 </div>
               )}
 
-              {/* Quick stats chips */}
+              {/* Connected Google Account & Folder Info Cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
                 <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Google Drive Folder ID</div>
-                  <div style={{ fontSize: '0.92rem', color: '#294b35', fontWeight: 700, marginTop: '2px', wordBreak: 'break-all', fontFamily: 'monospace' }}>
-                    {driveStatus?.folderId || '1MI3z3eF9_sW520gQW8-X9R2_q1yG-uMc'}
+                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Connected Account</div>
+                  <div style={{ fontSize: '0.92rem', color: '#294b35', fontWeight: 700, marginTop: '2px', wordBreak: 'break-all' }}>
+                    {driveStatus?.accountEmail || 'Not Connected'}
+                  </div>
+                </div>
+                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Media Folder</div>
+                  <div style={{ fontSize: '0.92rem', color: '#294b35', fontWeight: 700, marginTop: '2px' }}>
+                    {driveStatus?.folderName || 'Birthday Website Media'}
+                  </div>
+                </div>
+                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Folder Access</div>
+                  <div style={{ fontSize: '0.92rem', color: driveStatus?.sharingStatus === 'public_reader' ? '#2e7d32' : '#f57f17', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <CheckCircleIcon sx={{ fontSize: 16 }} />
+                    {driveStatus?.sharingStatus === 'public_reader' ? 'Public Viewer' : (driveStatus?.sharingStatus || 'Public Viewer')}
                   </div>
                 </div>
                 <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
                   <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Total Photos Loaded</div>
                   <div style={{ fontSize: '1.25rem', color: '#294b35', fontWeight: 800, marginTop: '2px' }}>
                     {drivePhotos.length}
-                  </div>
-                </div>
-                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Public Drive Album</div>
-                  <div style={{ fontSize: '0.92rem', color: '#2e7d32', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <CheckCircleIcon sx={{ fontSize: 16 }} /> Available at /photos
                   </div>
                 </div>
               </div>

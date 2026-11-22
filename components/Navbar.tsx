@@ -21,7 +21,7 @@ const navItems: NavItem[] = [
   { label: 'Games', href: '#games' },
   { label: 'Fortune Jar', href: '#fortune' },
   { label: 'Wish Wall', href: '#wishes' },
-  { label: 'Live Stream', href: '#stream' },
+  { label: 'Live Stream', href: '/livestream' },
   { label: 'Contact', href: '#contact' },
 ];
 
@@ -78,10 +78,16 @@ export const Navbar: React.FC = () => {
   }, []);
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    // If it's a page link like /livestream or /photos or /gift, let standard navigation happen
+    if (href.startsWith('/')) {
+      setIsMobileMenuOpen(false);
+      return;
+    }
+
     e.preventDefault();
     setIsMobileMenuOpen(false);
 
-    // If on a sub-page (like /gift or /photos or /rsvp), navigate to /#hash
+    // If on a sub-page (like /gift or /photos or /livestream or /rsvp), navigate to /#hash
     if (typeof window !== 'undefined' && window.location.pathname !== '/') {
       window.location.href = `/${href}`;
       return;

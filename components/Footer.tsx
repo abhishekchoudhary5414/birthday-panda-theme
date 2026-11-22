@@ -139,6 +139,14 @@ export const Footer: React.FC = () => {
 
           <p className={styles['footer-copyright']}>
             &copy; 2026 The Chen Family. Designed for Ditvi&apos;s Birthday Guests. &bull;{' '}
+            <a href="/privacy" style={{ color: '#526e57', textDecoration: 'underline', fontSize: '0.8rem', marginRight: '8px' }}>
+              Privacy Policy
+            </a>
+            &bull;{' '}
+            <a href="/terms" style={{ color: '#526e57', textDecoration: 'underline', fontSize: '0.8rem', marginRight: '8px' }}>
+              Terms of Service
+            </a>
+            &bull;{' '}
             <a href="/admin/login" style={{ color: 'var(--accent-gold)', textDecoration: 'underline', fontSize: '0.8rem' }}>
               Admin Console
             </a>

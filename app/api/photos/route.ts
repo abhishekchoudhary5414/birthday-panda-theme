@@ -1,27 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { listPhotosFromDrive, uploadPhotoToDrive, testGoogleDriveConnection } from '@/lib/googleDrive';
+import {
+  listCustomerDrivePhotos,
+  uploadPhotoToCustomerDrive,
+  getCustomerDriveConnection,
+} from '@/lib/customerDrive';
 import { sql } from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-// GET: List all photos from Google Drive (merged with DB metadata if present)
+/**
+ * GET /api/photos
+ * Returns media photos and videos from Google Drive merged with database metadata.
+ * Works for both public guests (rendering gallery) and admin dashboard.
+ */
 export async function GET(req: NextRequest) {
   try {
+    const token = req.cookies.get('admin_token')?.value;
+    const admin = token ? verifyToken(token) : null;
+
+    // Determine target customer userId:
+    // 1. If admin is logged in, use admin.id
+    // 2. Otherwise default to the active customer in google_drive_connections or id 1
+    let targetUserId = admin?.id;
+    if (!targetUserId) {
+      const activeConn = await sql`
+        SELECT user_id FROM google_drive_connections WHERE connected = TRUE LIMIT 1
+      `;
+      targetUserId = (activeConn.length > 0 && activeConn[0].user_id) ? Number(activeConn[0].user_id) : 1;
+    }
+
     let drivePhotos: any[] = [];
     let driveError: string | null = null;
 
     try {
-      drivePhotos = await listPhotosFromDrive({ pageSize: 120 });
+      drivePhotos = await listCustomerDrivePhotos(targetUserId, 120);
     } catch (err: unknown) {
       driveError = err instanceof Error ? err.message : 'Failed to connect to Google Drive';
-      console.warn('Google Drive list error in /api/photos:', driveError);
+      console.warn('Google Drive list warning in /api/photos:', driveError);
     }
 
-    // Try fetching database metadata to augment captions / uploader names
+    // Augment with database metadata
     let dbPhotosMap = new Map<string, any>();
     try {
       const rows = await sql`
-        SELECT drive_file_id, caption, uploader_name, created_at 
+        SELECT drive_file_id, caption, uploader_name, media_type, created_at 
         FROM drive_photos 
         ORDER BY created_at DESC
       `;
@@ -32,13 +55,13 @@ export async function GET(req: NextRequest) {
       console.warn('DB read error for drive_photos (ignoring):', dbErr);
     }
 
-    // Merge Google Drive files with DB metadata
     const photos = drivePhotos.map((photo) => {
       const dbMeta = dbPhotosMap.get(photo.id);
       return {
         ...photo,
         caption: dbMeta?.caption || photo.caption || '',
         uploaderName: dbMeta?.uploader_name || 'Ditvi Party Guest',
+        mediaType: dbMeta?.media_type || (photo.mimeType.startsWith('video/') ? 'video' : 'image'),
         createdAt: dbMeta?.created_at || photo.createdTime,
       };
     });
@@ -62,27 +85,39 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST: Upload a photo to Google Drive
+/**
+ * POST /api/photos
+ * Customer-specific media upload to their connected Google Drive.
+ */
 export async function POST(req: NextRequest) {
   try {
+    const token = req.cookies.get('admin_token')?.value;
+    const admin = token ? verifyToken(token) : null;
+
+    // Use logged in customer ID or fallback to primary customer ID 1
+    const userId = admin?.id || 1;
+
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
     const caption = (formData.get('caption') as string) || '';
-    const uploaderName = (formData.get('uploaderName') as string) || 'Admin / Guest';
+    const uploaderName = (formData.get('uploaderName') as string) || (admin ? admin.name : 'Host / Guest');
+    const websiteId = (formData.get('websiteId') as string) || 'default';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Check mime type (images & short clips)
-    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+    // Validate file type
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImage && !isVideo) {
       return NextResponse.json(
         { error: 'Only image or video files are allowed' },
         { status: 400 }
       );
     }
 
-    // Check size limit: 15MB
+    // Validate size limit (15MB)
     const MAX_SIZE = 15 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
@@ -91,27 +126,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Sanitize file name with timestamp prefix
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const safeName = `ditvi-birthday-${timestamp}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const safeName = `birthday-${timestamp}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 
-    // Upload to Google Drive
-    const uploadedPhoto = await uploadPhotoToDrive({
-      buffer,
+    // Upload directly to customer's Google Drive folder
+    const uploadedPhoto = await uploadPhotoToCustomerDrive({
+      userId,
       fileName: safeName,
-      mimeType: file.type || 'image/jpeg',
+      mimeType: file.type,
+      buffer,
+      caption,
       description: caption ? `${caption} (Uploaded by ${uploaderName})` : `Uploaded by ${uploaderName}`,
     });
 
-    // Save record to DB for fast lookup & metadata retention
+    // Save metadata in Neon PostgreSQL drive_photos table
     try {
       await sql`
         INSERT INTO drive_photos (
-          drive_file_id, file_name, mime_type, file_size, web_view_link, thumbnail_link, caption, uploader_name
+          drive_file_id, file_name, mime_type, file_size, web_view_link, thumbnail_link, caption, uploader_name, user_id, website_id, media_type
         ) VALUES (
           ${uploadedPhoto.id},
           ${uploadedPhoto.name},
@@ -120,28 +155,33 @@ export async function POST(req: NextRequest) {
           ${uploadedPhoto.webViewLink || ''},
           ${uploadedPhoto.thumbnailLink || ''},
           ${caption},
-          ${uploaderName}
+          ${uploaderName},
+          ${userId},
+          ${websiteId},
+          ${isVideo ? 'video' : 'image'}
         )
         ON CONFLICT (drive_file_id) DO UPDATE SET
           caption = EXCLUDED.caption,
-          uploader_name = EXCLUDED.uploader_name;
+          uploader_name = EXCLUDED.uploader_name,
+          updated_at = CURRENT_TIMESTAMP;
       `;
     } catch (dbErr) {
-      console.warn('Database insert warning for drive_photos (non-fatal):', dbErr);
+      console.warn('Failed to insert metadata into drive_photos table (file still uploaded to Drive):', dbErr);
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Photo uploaded to Google Drive successfully!',
+      message: 'Photo uploaded to customer Google Drive successfully!',
       photo: {
         ...uploadedPhoto,
         caption,
         uploaderName,
+        mediaType: isVideo ? 'video' : 'image',
       },
     });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Upload failed';
-    console.error('Photo upload error:', err);
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Customer Drive photo upload error:', err);
+    const message = err instanceof Error ? err.message : 'Failed to upload photo to Google Drive';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

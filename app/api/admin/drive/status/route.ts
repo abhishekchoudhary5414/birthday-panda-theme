@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { testGoogleDriveConnection, getDriveFolderId } from '@/lib/googleDrive';
 import { verifyToken } from '@/lib/auth';
+import { getCustomerDriveConnection, getCustomerAccessToken } from '@/lib/customerDrive';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,16 +12,34 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const result = await testGoogleDriveConnection();
+    const conn = await getCustomerDriveConnection(admin.id);
+    let liveValid = false;
+    let liveError: string | null = null;
+
+    if (conn && conn.connected) {
+      try {
+        await getCustomerAccessToken(admin.id);
+        liveValid = true;
+      } catch (err: unknown) {
+        liveValid = false;
+        liveError = err instanceof Error ? err.message : 'Token verification failed';
+      }
+    }
+
+    const isConnected = Boolean(conn && conn.connected && liveValid);
 
     return NextResponse.json({
       success: true,
-      ...result,
+      connected: isConnected,
+      isCustomerSpecific: Boolean(conn && conn.connected),
+      accountEmail: isConnected ? (conn?.googleEmail || null) : null,
+      folderId: isConnected ? (conn?.rootFolderId || '') : '',
+      folderName: conn?.rootFolderName || 'Birthday Website Media',
+      sharingStatus: conn?.sharingStatus || 'disconnected',
+      connectedAt: conn?.createdAt || null,
+      errorMessage: liveError || conn?.errorMessage || null,
       hasClientId: Boolean(process.env.GOOGLE_CLIENT_ID),
       hasClientSecret: Boolean(process.env.GOOGLE_CLIENT_SECRET),
-      hasRefreshToken: Boolean(process.env.GOOGLE_REFRESH_TOKEN),
-      hasFolderId: Boolean(process.env.GOOGLE_DRIVE_FOLDER_ID),
-      folderId: process.env.GOOGLE_DRIVE_FOLDER_ID || '',
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Error checking Google Drive';

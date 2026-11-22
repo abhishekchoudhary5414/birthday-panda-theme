@@ -11,10 +11,10 @@ import { GiftRegistry } from '@/components/GiftRegistry';
 import { Games } from '@/components/Games';
 import { FortuneJar } from '@/components/FortuneJar';
 import { WishWall } from '@/components/WishWall';
-import { LiveStreaming } from '@/components/LiveStreaming';
 import { Contact } from '@/components/Contact';
 import { Footer } from '@/components/Footer';
 import { MusicPlayer } from '@/components/MusicPlayer';
+import { LiveStreamModal } from '@/components/LiveStreamModal';
 
 export default function HomePage() {
   return (
@@ -24,6 +24,9 @@ export default function HomePage() {
 
       {/* Sticky Navigation Bar */}
       <Navbar />
+
+      {/* Live Stream Popup if today is the birthday celebration date */}
+      <LiveStreamModal />
 
       {/* Hero Welcome Section */}
       <Hero />
@@ -51,9 +54,6 @@ export default function HomePage() {
 
       {/* Digital Birthday Wish Wall */}
       <WishWall />
-
-      {/* Virtual Live Streaming Section */}
-      <LiveStreaming />
 
       {/* Contact & Venue Location Section with Map */}
       <Contact />
