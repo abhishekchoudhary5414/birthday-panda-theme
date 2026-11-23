@@ -282,6 +282,16 @@ export default function AdminDashboardPage() {
   const [isDeletingVenue, setIsDeletingVenue] = useState(false);
   const [eventAlert, setEventAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Multi-User / Customer Accounts State
+  const [userAccounts, setUserAccounts] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserRole, setNewUserRole] = useState('admin');
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [userToast, setUserToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
   // Gmail & Invitations Management State
   const [gmailStatus, setGmailStatus] = useState<{
     connected: boolean;
@@ -379,6 +389,62 @@ export default function AdminDashboardPage() {
       setDriveLoading(false);
     }
   }, []);
+
+  // Fetch all user accounts and their Drive/Gmail statuses
+  const fetchUserAccounts = useCallback(async () => {
+    try {
+      setUsersLoading(true);
+      const res = await fetch('/api/admin/users');
+      const data = await res.json();
+      if (data.users) {
+        setUserAccounts(data.users);
+      }
+    } catch (err) {
+      console.error('Fetch users error:', err);
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  // Create a new user/customer account
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserName.trim() || !newUserEmail.trim() || !newUserPassword.trim()) {
+      setUserToast({ type: 'error', message: 'Name, email, and password are required.' });
+      return;
+    }
+
+    try {
+      setIsCreatingUser(true);
+      setUserToast(null);
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newUserName.trim(),
+          email: newUserEmail.trim(),
+          password: newUserPassword.trim(),
+          role: newUserRole,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setUserToast({ type: 'success', message: data.message });
+        setNewUserName('');
+        setNewUserEmail('');
+        setNewUserPassword('');
+        fetchUserAccounts();
+      } else {
+        setUserToast({ type: 'error', message: data.error || 'Failed to create user account.' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error creating user';
+      setUserToast({ type: 'error', message: msg });
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
 
   // Check Gmail connection status
   const checkGmailStatus = useCallback(async () => {
@@ -1807,6 +1873,9 @@ export default function AdminDashboardPage() {
         }
       }
     }
+    if (activeTab === 'users') {
+      fetchUserAccounts();
+    }
     if (activeTab === '11') {
       fetchDrivePhotos();
       checkDriveStatus();
@@ -3178,6 +3247,21 @@ export default function AdminDashboardPage() {
               <span className={styles.navItemText}>Email Invitations</span>
             </div>
             {gmailStatus?.connected && <span className={styles.navBadge} style={{ background: '#2e7d32' }}>Active</span>}
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.navItem} ${activeTab === 'users' ? styles.active : ''}`}
+            onClick={() => {
+              setActiveTab('users');
+              setIsMobileSidebarOpen(false);
+            }}
+          >
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><PeopleIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>Customer Accounts</span>
+            </div>
+            {userAccounts.length > 0 && <span className={styles.navBadge}>{userAccounts.length}</span>}
           </button>
 
           <button
@@ -6149,6 +6233,234 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Section: Customer Accounts & Multi-Tenant Connection Manager */}
+        {activeTab === 'users' && (
+          <div>
+            <div className={styles.sectionHeader}>
+              <PeopleIcon sx={{ fontSize: 26, color: '#294B35' }} />
+              <span>Customer Accounts &amp; Multi-User OAuth Storage</span>
+            </div>
+
+            {userToast && (
+              <div style={{
+                padding: '12px 18px',
+                borderRadius: '10px',
+                marginBottom: '18px',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: userToast.type === 'success' ? '#edf7ed' : '#fdf2f2',
+                color: userToast.type === 'success' ? '#1e4620' : '#991b1b',
+                border: userToast.type === 'success' ? '1px solid #c8e6c9' : '1px solid #fecaca',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {userToast.type === 'success' ? <CheckCircleIcon sx={{ fontSize: 18 }} /> : <WarningAmberIcon sx={{ fontSize: 18 }} />}
+                  <span>{userToast.message}</span>
+                </div>
+                <button type="button" onClick={() => setUserToast(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700 }}>✕</button>
+              </div>
+            )}
+
+            {/* Create New Customer Account Card */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <AddIcon sx={{ color: '#294B35' }} />
+                <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Add New Customer / Admin User</h3>
+              </div>
+              <p style={{ margin: '0 0 18px', color: '#6e7e73', fontSize: '0.86rem' }}>
+                Each customer has their own dedicated account, their own Google Drive media folder, and their own connected Gmail account.
+              </p>
+
+              <form onSubmit={handleCreateUser}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>Full Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. John Doe"
+                      value={newUserName}
+                      onChange={(e) => setNewUserName(e.target.value)}
+                      className={styles.filterInput}
+                      style={{ width: '100%' }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>Login Email</label>
+                    <input
+                      type="email"
+                      placeholder="e.g. john@example.com"
+                      value={newUserEmail}
+                      onChange={(e) => setNewUserEmail(e.target.value)}
+                      className={styles.filterInput}
+                      style={{ width: '100%' }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>Password</label>
+                    <input
+                      type="password"
+                      placeholder="Secure password"
+                      value={newUserPassword}
+                      onChange={(e) => setNewUserPassword(e.target.value)}
+                      className={styles.filterInput}
+                      style={{ width: '100%' }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>Role</label>
+                    <select
+                      value={newUserRole}
+                      onChange={(e) => setNewUserRole(e.target.value)}
+                      className={styles.filterSelect}
+                      style={{ width: '100%' }}
+                    >
+                      <option value="admin">Customer Admin</option>
+                      <option value="superadmin">Super Admin</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isCreatingUser}
+                  className={styles.btnPrimary}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 22px', fontSize: '0.88rem' }}
+                >
+                  <AddIcon sx={{ fontSize: 18 }} />
+                  <span>{isCreatingUser ? 'Creating User...' : 'Create Customer Account'}</span>
+                </button>
+              </form>
+            </div>
+
+            {/* List of Accounts with Drive & Gmail Status */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>All Customer Accounts &amp; Connected Accounts</h3>
+                  <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.85rem' }}>
+                    Each customer can independently connect, reconnect, or disconnect their own Google Drive and Gmail accounts.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={fetchUserAccounts}
+                  className={styles.exportBtn}
+                  style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+                >
+                  <RefreshIcon sx={{ fontSize: 16 }} />
+                  <span>Refresh Accounts</span>
+                </button>
+              </div>
+
+              {usersLoading ? (
+                <div style={{ padding: '30px', textAlign: 'center', color: '#6e7e73' }}>Loading customer accounts...</div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #edf4eb', color: '#6e7e73', fontSize: '0.78rem', textTransform: 'uppercase' }}>
+                        <th style={{ padding: '12px 10px' }}>User / Customer</th>
+                        <th style={{ padding: '12px 10px' }}>Role</th>
+                        <th style={{ padding: '12px 10px' }}>Google Drive Status</th>
+                        <th style={{ padding: '12px 10px' }}>Gmail Status</th>
+                        <th style={{ padding: '12px 10px', textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {userAccounts.map((u) => (
+                        <tr key={u.id} style={{ borderBottom: '1px solid #f2f7f1', background: u.isCurrentUser ? '#f8fbf7' : 'transparent' }}>
+                          <td style={{ padding: '12px 10px' }}>
+                            <div style={{ fontWeight: 700, color: '#294B35', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>{u.name}</span>
+                              {u.isCurrentUser && (
+                                <span style={{ background: '#edf7ed', color: '#1e4620', fontSize: '0.72rem', padding: '1px 8px', borderRadius: '10px', fontWeight: 800 }}>
+                                  YOU (Logged In)
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#6e7e73' }}>{u.email}</div>
+                          </td>
+                          <td style={{ padding: '12px 10px' }}>
+                            <span style={{ textTransform: 'capitalize', background: '#f1f5f9', color: '#334155', padding: '3px 8px', borderRadius: '6px', fontSize: '0.76rem', fontWeight: 700 }}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px 10px' }}>
+                            {u.drive.connected ? (
+                              <div>
+                                <span style={{ background: '#edf7ed', color: '#1e4620', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <CheckCircleIcon sx={{ fontSize: 13, color: '#2e7d32' }} /> Connected
+                                </span>
+                                <div style={{ fontSize: '0.78rem', color: '#294B35', marginTop: '2px', fontWeight: 600 }}>
+                                  {u.drive.accountEmail}
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                <span style={{ background: '#fff8e1', color: '#8d6e00', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <WarningAmberIcon sx={{ fontSize: 13, color: '#f57f17' }} /> Not Connected
+                                </span>
+                                {u.isCurrentUser && (
+                                  <div style={{ marginTop: '4px' }}>
+                                    <a href="/api/google-drive/connect" style={{ fontSize: '0.78rem', color: '#294B35', fontWeight: 700, textDecoration: 'underline' }}>
+                                      Connect Drive →
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: '12px 10px' }}>
+                            {u.gmail.connected ? (
+                              <div>
+                                <span style={{ background: '#edf7ed', color: '#1e4620', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <CheckCircleIcon sx={{ fontSize: 13, color: '#2e7d32' }} /> Connected
+                                </span>
+                                <div style={{ fontSize: '0.78rem', color: '#294B35', marginTop: '2px', fontWeight: 600 }}>
+                                  {u.gmail.accountEmail}
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                <span style={{ background: '#fff8e1', color: '#8d6e00', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <WarningAmberIcon sx={{ fontSize: 13, color: '#f57f17' }} /> Not Connected
+                                </span>
+                                {u.isCurrentUser && (
+                                  <div style={{ marginTop: '4px' }}>
+                                    <a href="/api/gmail/connect" style={{ fontSize: '0.78rem', color: '#294B35', fontWeight: 700, textDecoration: 'underline' }}>
+                                      Connect Gmail →
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: '12px 10px', textAlign: 'right' }}>
+                            {u.isCurrentUser ? (
+                              <span style={{ fontSize: '0.8rem', color: '#6e7e73', fontStyle: 'italic' }}>
+                                Use sidebar tabs (8 &amp; 11) to manage
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                                Managed by user
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
