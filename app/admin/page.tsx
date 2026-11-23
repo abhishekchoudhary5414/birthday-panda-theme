@@ -6985,85 +6985,127 @@ export default function AdminDashboardPage() {
         )}
 
         {/* Section 11: Media & Photo Albums (Google Drive) */}
+        {/* Section 11: Media & Photo Albums (Google Drive Panda Redesign) */}
         {activeTab === '11' && (
-          <div>
-            <div className={styles.sectionHeader}>
-              <PhotoLibraryIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>Google Drive Photos &amp; Media Management</span>
-            </div>
-
-            {/* Google Drive Connection & Customer OAuth Card */}
-            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
-              
-              {/* Toast alert */}
-              {driveToast && (
+          <div className={styles.mediaSectionWrapper}>
+            {/* Header with Title & Panda Theme Details */}
+            <div className={styles.sectionHeader} style={{ marginBottom: 0, justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{
-                  padding: '12px 18px',
-                  borderRadius: '10px',
-                  marginBottom: '18px',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #294B35 0%, #437351 100%)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                  background: driveToast.type === 'success' ? '#edf7ed' : '#fdf2f2',
-                  color: driveToast.type === 'success' ? '#1e4620' : '#991b1b',
-                  border: driveToast.type === 'success' ? '1px solid #c8e6c9' : '1px solid #fecaca',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  boxShadow: '0 4px 10px rgba(41, 75, 53, 0.2)'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {driveToast.type === 'success' ? <CheckCircleIcon sx={{ fontSize: 18 }} /> : <WarningAmberIcon sx={{ fontSize: 18 }} />}
-                    <span>{driveToast.message}</span>
-                  </div>
-                  <button type="button" onClick={() => setDriveToast(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700 }}>✕</button>
+                  <PhotoLibraryIcon sx={{ fontSize: 20 }} />
                 </div>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '18px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#eef6ec', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <CloudUploadIcon sx={{ color: '#294b35', fontSize: 28 }} />
+                <div>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#294B35' }}>Media &amp; Photo Albums</span>
+                  <div style={{ fontSize: '0.82rem', color: '#6e7e73', fontWeight: 500 }}>
+                    Google Drive cloud storage integration, batch media upload, and gallery curation
                   </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.25rem', fontWeight: 700 }}>Google Drive Storage</h3>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  background: 'rgba(120, 155, 99, 0.12)',
+                  color: '#294B35',
+                  padding: '5px 12px',
+                  borderRadius: '16px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  border: '1px solid rgba(120, 155, 99, 0.25)'
+                }}>
+                  📸 Panda Gallery Suite
+                </span>
+              </div>
+            </div>
+
+            {/* Toast feedback alerts */}
+            {driveToast && (
+              <div style={{
+                padding: '12px 18px',
+                borderRadius: '14px',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: driveToast.type === 'success' ? '#edf7ed' : '#fdf2f2',
+                color: driveToast.type === 'success' ? '#1e4620' : '#991b1b',
+                border: driveToast.type === 'success' ? '1px solid #c8e6c9' : '1px solid #fecaca',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.03)',
+                animation: 'fadeIn 0.2s ease-in-out'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {driveToast.type === 'success' ? <CheckCircleIcon sx={{ fontSize: 20 }} /> : <WarningAmberIcon sx={{ fontSize: 20 }} />}
+                  <span>{driveToast.message}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDriveToast(null)}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 800, fontSize: '1.1rem', padding: '0 4px' }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* 1. Google Drive Cloud Connection Banner & Stats */}
+            <div className={styles.mediaHeroCard}>
+              <div className={styles.mediaHeroHeader}>
+                <div className={styles.mediaHeroLeft}>
+                  <div className={styles.mediaPandaAvatar}>
+                    🐼
+                  </div>
+                  <div className={styles.mediaHeroTitles}>
+                    <h2>
+                      <span>Google Drive Cloud Storage</span>
                       {driveStatus ? (
                         driveStatus.connected ? (
-                          <span style={{ background: '#edf7ed', color: '#1e4620', border: '1px solid #c8e6c9', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <CheckCircleIcon sx={{ fontSize: 14, color: '#2e7d32' }} /> Connected
+                          <span className={styles.statusBadgeConnected}>
+                            <CheckCircleIcon sx={{ fontSize: 15 }} /> Connected
                           </span>
                         ) : (
-                          <span style={{ background: '#fff8e1', color: '#8d6e00', border: '1px solid #ffe082', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <WarningAmberIcon sx={{ fontSize: 14, color: '#f57f17' }} /> Disconnected
+                          <span className={styles.statusBadgeDisconnected}>
+                            <WarningAmberIcon sx={{ fontSize: 15 }} /> Disconnected
                           </span>
                         )
                       ) : (
-                        <span style={{ background: '#f5f5f5', color: '#666', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 600 }}>Checking...</span>
+                        <span style={{ background: '#f5f5f5', color: '#666', borderRadius: '16px', padding: '3px 10px', fontSize: '0.76rem', fontWeight: 600 }}>Checking...</span>
                       )}
-                    </div>
-                    <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.88rem' }}>
-                      Connect your own Google Drive account to store and manage birthday photos and videos automatically.
+                    </h2>
+                    <p>
+                      {driveStatus?.connected
+                        ? `Connected to Google Drive account: ${driveStatus.accountEmail || 'Host Google Account'}`
+                        : 'Connect your personal Google Drive account to store and share birthday photos & videos automatically.'}
                     </p>
                   </div>
                 </div>
 
-                {/* Connection action buttons */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <div className={styles.mediaHeroActions}>
                   {driveStatus?.connected ? (
                     <>
                       <a
                         href="/api/google-drive/connect"
-                        className={styles.exportBtn}
-                        style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                        className={styles.bambooBtnSecondary}
                       >
                         <RefreshIcon sx={{ fontSize: 16 }} />
-                        <span>Reconnect</span>
+                        <span>Change Account</span>
                       </a>
                       <button
                         type="button"
                         onClick={handleDisconnectDrive}
                         disabled={isDisconnectingDrive}
-                        className={styles.deleteBtn}
-                        style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                        className={styles.bambooBtnDanger}
                       >
                         <DeleteOutlineIcon sx={{ fontSize: 16 }} />
                         <span>{isDisconnectingDrive ? 'Disconnecting...' : 'Disconnect'}</span>
@@ -7072,18 +7114,7 @@ export default function AdminDashboardPage() {
                   ) : (
                     <a
                       href="/api/google-drive/connect"
-                      className={styles.btnPrimary}
-                      style={{
-                        padding: '10px 22px',
-                        fontSize: '0.92rem',
-                        fontWeight: 700,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        textDecoration: 'none',
-                        background: 'linear-gradient(135deg, #294B35 0%, #437351 100%)',
-                        boxShadow: '0 4px 14px rgba(41, 75, 53, 0.22)'
-                      }}
+                      className={styles.bambooBtnPrimary}
                     >
                       <CloudUploadIcon sx={{ fontSize: 18 }} />
                       <span>Connect Google Drive</span>
@@ -7094,8 +7125,7 @@ export default function AdminDashboardPage() {
                     type="button"
                     onClick={checkDriveStatus}
                     disabled={isTestingDrive}
-                    className={styles.exportBtn}
-                    style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    className={styles.bambooBtnSecondary}
                   >
                     <RefreshIcon sx={{ fontSize: 16, animation: isTestingDrive ? 'spin 1s linear infinite' : 'none' }} />
                     <span>{isTestingDrive ? 'Checking...' : 'Refresh Status'}</span>
@@ -7106,11 +7136,10 @@ export default function AdminDashboardPage() {
                       href={`https://drive.google.com/drive/folders/${driveStatus.folderId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={styles.exportBtn}
-                      style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                      className={styles.bambooBtnSecondary}
                     >
                       <OpenInNewIcon sx={{ fontSize: 16 }} />
-                      <span>Open Folder</span>
+                      <span>Drive Folder</span>
                     </a>
                   )}
 
@@ -7118,8 +7147,7 @@ export default function AdminDashboardPage() {
                     href="/photos"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={styles.btnPrimary}
-                    style={{ padding: '8px 18px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                    className={styles.bambooBtnPrimary}
                   >
                     <PhotoLibraryIcon sx={{ fontSize: 16 }} />
                     <span>View /photos Page</span>
@@ -7127,9 +7155,9 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Status details & diagnostics */}
+              {/* Status Warning if Disconnected */}
               {driveStatus && !driveStatus.connected && (
-                <div style={{ background: '#fff9e6', border: '1px solid #fed7aa', borderLeft: '4px solid #f59e0b', borderRadius: '10px', padding: '14px 18px', marginBottom: '16px', fontSize: '0.88rem', color: '#78350f' }}>
+                <div style={{ background: '#fff9e6', border: '1px solid #fed7aa', borderLeft: '4px solid #f59e0b', borderRadius: '12px', padding: '14px 18px', marginBottom: '20px', fontSize: '0.88rem', color: '#78350f' }}>
                   <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <WarningAmberIcon sx={{ fontSize: 18, color: '#f59e0b' }} />
                     <span>Google Drive Not Connected</span>
@@ -7140,61 +7168,69 @@ export default function AdminDashboardPage() {
                 </div>
               )}
 
-              {/* Connected Google Account & Folder Info Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Connected Account</div>
-                  <div style={{ fontSize: '0.92rem', color: '#294b35', fontWeight: 700, marginTop: '2px', wordBreak: 'break-all' }}>
-                    {driveStatus?.accountEmail || 'Not Connected'}
+              {/* Connected Drive Metrics Grid */}
+              <div className={styles.mediaStatsGrid}>
+                <div className={styles.mediaStatCard}>
+                  <div className={styles.mediaStatLabel}>
+                    <ShieldIcon sx={{ fontSize: 16, color: '#789b63' }} />
+                    <span>Connected Account</span>
+                  </div>
+                  <div className={styles.mediaStatValue} style={{ fontSize: '1rem', wordBreak: 'break-all' }}>
+                    {driveStatus?.accountEmail ? driveStatus.accountEmail.split('@')[0] : 'None'}
+                    <span style={{ fontSize: '0.74rem', color: '#6e7e73', display: 'block', fontWeight: 500 }}>
+                      {driveStatus?.accountEmail ? `@${driveStatus.accountEmail.split('@')[1]}` : 'Disconnected'}
+                    </span>
                   </div>
                 </div>
-                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Media Folder</div>
-                  <div style={{ fontSize: '0.92rem', color: '#294b35', fontWeight: 700, marginTop: '2px' }}>
+
+                <div className={styles.mediaStatCard}>
+                  <div className={styles.mediaStatLabel}>
+                    <PhotoLibraryIcon sx={{ fontSize: 16, color: '#789b63' }} />
+                    <span>Media Folder</span>
+                  </div>
+                  <div className={styles.mediaStatValue} style={{ fontSize: '1.05rem', wordBreak: 'break-all' }}>
                     {driveStatus?.folderName || 'Birthday Website Media'}
                   </div>
                 </div>
-                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Folder Access</div>
-                  <div style={{ fontSize: '0.92rem', color: driveStatus?.sharingStatus === 'public_reader' ? '#2e7d32' : '#f57f17', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <CheckCircleIcon sx={{ fontSize: 16 }} />
+
+                <div className={styles.mediaStatCard}>
+                  <div className={styles.mediaStatLabel}>
+                    <CheckCircleIcon sx={{ fontSize: 16, color: '#2e7d32' }} />
+                    <span>Folder Access Mode</span>
+                  </div>
+                  <div className={styles.mediaStatValue} style={{ fontSize: '1.05rem', color: driveStatus?.sharingStatus === 'public_reader' ? '#2e7d32' : '#f57f17' }}>
                     {driveStatus?.sharingStatus === 'public_reader' ? 'Public Viewer' : (driveStatus?.sharingStatus || 'Public Viewer')}
                   </div>
                 </div>
-                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Total Photos Loaded</div>
-                  <div style={{ fontSize: '1.25rem', color: '#294b35', fontWeight: 800, marginTop: '2px' }}>
+
+                <div className={styles.mediaStatCard}>
+                  <div className={styles.mediaStatLabel}>
+                    <AutoAwesomeIcon sx={{ fontSize: 16, color: '#294B35' }} />
+                    <span>Photos in Gallery</span>
+                  </div>
+                  <div className={styles.mediaStatValue}>
                     {drivePhotos.length}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Upload to Google Drive Section */}
-            <div style={{ background: '#ffffff', padding: '28px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '28px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#edf6ea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <UploadFileIcon sx={{ color: '#294b35', fontSize: 24 }} />
-                </div>
-                <div>
-                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Upload Photos &amp; Videos to Google Drive</h3>
-                  <p style={{ margin: '2px 0 0', color: '#6e7e73', fontSize: '0.85rem' }}>Select photos or videos to upload directly to Ditvi&apos;s birthday Google Drive folder.</p>
-                </div>
+            {/* 2. Interactive Panda Drag & Drop Upload Section */}
+            <div className={styles.mediaUploadCard}>
+              <div className={styles.emailCardTitleBar}>
+                <h3 className={styles.emailCardTitle}>
+                  <CloudUploadIcon sx={{ color: '#294B35', fontSize: 22 }} />
+                  <span>Upload Photos &amp; Videos to Google Drive</span>
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: '#5d8049', background: '#f1f8ee', padding: '3px 10px', borderRadius: '12px', fontWeight: 700 }}>
+                  🎋 Cloud Synced
+                </span>
               </div>
 
-              {/* Dropzone */}
+              {/* Dropzone with Bamboo Theme */}
               <div
                 onClick={() => driveFileInputRef.current?.click()}
-                style={{
-                  border: '2px dashed #b7d8b3',
-                  borderRadius: '14px',
-                  padding: '30px 20px',
-                  textAlign: 'center',
-                  background: '#fcfdfa',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  marginBottom: '18px',
-                }}
+                className={styles.mediaDropzone}
               >
                 <input
                   type="file"
@@ -7204,21 +7240,22 @@ export default function AdminDashboardPage() {
                   accept="image/*,video/*"
                   onChange={(e) => handleDriveFilesSelect(e.target.files)}
                 />
-                <CloudUploadIcon sx={{ fontSize: 44, color: '#789b63', marginBottom: '8px' }} />
-                <div style={{ fontSize: '1rem', fontWeight: 700, color: '#294b35' }}>
-                  Click to select photos or videos (or drag and drop here)
+                <CloudUploadIcon className={styles.mediaDropzoneIcon} />
+                <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#294b35', fontFamily: 'var(--font-heading)' }}>
+                  Click to select media or drag &amp; drop files here
                 </div>
-                <div style={{ fontSize: '0.82rem', color: '#7b8e7e', marginTop: '4px' }}>
-                  Supports JPG, PNG, WEBP, MP4, MOV, HEIC up to 15MB each
+                <div style={{ fontSize: '0.84rem', color: '#6e7e73', marginTop: '6px' }}>
+                  Supports high-resolution JPG, PNG, WEBP, MP4, MOV, and HEIC up to 15MB each
                 </div>
               </div>
 
               {/* Selected File Previews */}
               {driveUploadPreviews.length > 0 && (
-                <div style={{ background: '#f8faf7', border: '1px solid #e2ede0', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                <div style={{ background: '#f8faf7', border: '1px solid #e2ede0', borderRadius: '14px', padding: '16px', marginBottom: '20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#294b35' }}>
-                      Ready to Upload ({driveUploadPreviews.length} photos)
+                    <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#294b35', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <CheckCircleIcon sx={{ fontSize: 16, color: '#2e7d32' }} />
+                      <span>Ready to Upload ({driveUploadPreviews.length} media item{driveUploadPreviews.length > 1 ? 's' : ''})</span>
                     </span>
                     <button
                       type="button"
@@ -7227,14 +7264,15 @@ export default function AdminDashboardPage() {
                         setDriveUploadFiles([]);
                         setDriveUploadPreviews([]);
                       }}
-                      style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                      className={styles.bambooBtnDanger}
+                      style={{ padding: '4px 12px', fontSize: '0.78rem' }}
                     >
                       Clear Selection
                     </button>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px' }}>
+                  <div className={styles.mediaPreviewGrid}>
                     {driveUploadPreviews.map((url, idx) => (
-                      <div key={idx} style={{ position: 'relative', aspectRatio: '1', borderRadius: '10px', overflow: 'hidden', border: '1px solid #cbe3c6' }}>
+                      <div key={idx} className={styles.mediaPreviewThumb}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={url} alt={`Upload preview ${idx}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         <button
@@ -7243,7 +7281,7 @@ export default function AdminDashboardPage() {
                             e.stopPropagation();
                             handleRemoveDrivePreview(idx);
                           }}
-                          style={{ position: 'absolute', top: 3, right: 3, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          className={styles.mediaPreviewRemoveBtn}
                         >
                           <CloseIcon sx={{ fontSize: 13 }} />
                         </button>
@@ -7253,57 +7291,28 @@ export default function AdminDashboardPage() {
                 </div>
               )}
 
-              {/* Metadata Inputs & Submit Form */}
+              {/* Submit Form */}
               <form onSubmit={handleDriveUploadSubmit}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#294b35', marginBottom: '6px' }}>
-                      Uploader / Album Tag
-                    </label>
-                    <input
-                      type="text"
-                      value={driveUploaderName}
-                      onChange={(e) => setDriveUploaderName(e.target.value)}
-                      placeholder="e.g. Admin, Birthday Photoshoot, Cake Cutting"
-                      className={styles.formInput}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#294b35', marginBottom: '6px' }}>
-                      Photo Caption or Description (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={driveCaption}
-                      onChange={(e) => setDriveCaption(e.target.value)}
-                      placeholder="e.g. Ditvi in her party dress with panda balloons"
-                      className={styles.formInput}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                </div>
-
                 {driveUploadError && (
-                  <div style={{ color: '#d32f2f', fontSize: '0.86rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <WarningAmberIcon sx={{ fontSize: 16 }} />
+                  <div style={{ color: '#d32f2f', fontSize: '0.86rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px', background: '#fdf2f2', padding: '10px 14px', borderRadius: '10px', border: '1px solid #fecaca' }}>
+                    <WarningAmberIcon sx={{ fontSize: 18 }} />
                     <span>{driveUploadError}</span>
                   </div>
                 )}
 
                 {driveUploadSuccess && (
-                  <div style={{ color: '#2e7d32', fontSize: '0.88rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                  <div style={{ color: '#2e7d32', fontSize: '0.88rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, background: '#edf7ed', padding: '10px 14px', borderRadius: '10px', border: '1px solid #c8e6c9' }}>
                     <CheckCircleIcon sx={{ fontSize: 18 }} />
                     <span>{driveUploadSuccess}</span>
                   </div>
                 )}
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
                   <button
                     type="submit"
                     disabled={isDriveUploading || driveUploadFiles.length === 0}
-                    className={styles.btnPrimary}
-                    style={{ padding: '10px 24px', fontSize: '0.94rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                    className={styles.bambooBtnPrimary}
+                    style={{ padding: '11px 26px', fontSize: '0.94rem' }}
                   >
                     <CloudUploadIcon sx={{ fontSize: 18 }} />
                     <span>{isDriveUploading ? 'Uploading to Google Drive...' : `Upload ${driveUploadFiles.length > 0 ? `${driveUploadFiles.length} ` : ''}File${driveUploadFiles.length > 1 ? 's' : ''}`}</span>
@@ -7312,17 +7321,20 @@ export default function AdminDashboardPage() {
               </form>
             </div>
 
-            {/* Google Drive Photo Gallery */}
-            <div style={{ background: '#ffffff', padding: '28px', borderRadius: '16px', border: '1px solid #e1e7de', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', marginBottom: '22px' }}>
+            {/* 3. Google Drive Photo Gallery */}
+            <div className={styles.mediaGalleryCard}>
+              <div className={styles.mediaGalleryBar}>
                 <div>
-                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 className={styles.emailCardTitle}>
+                    <PhotoLibraryIcon sx={{ color: '#294B35', fontSize: 22 }} />
                     <span>All Photos in Google Drive</span>
-                    <span style={{ background: '#edf6ea', color: '#294b35', fontSize: '0.82rem', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                    <span style={{ background: '#edf6ea', color: '#294b35', fontSize: '0.8rem', padding: '3px 10px', borderRadius: '12px', fontWeight: 800 }}>
                       {drivePhotos.length}
                     </span>
                   </h3>
-                  <p style={{ margin: '2px 0 0', color: '#6e7e73', fontSize: '0.84rem' }}>Photos stored in folder &quot;{driveStatus?.folderName || 'Ditvi Birthday Photos'}&quot;</p>
+                  <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.84rem' }}>
+                    Photos stored in Google Drive folder &quot;{driveStatus?.folderName || 'Birthday Website Media'}&quot;
+                  </p>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -7330,10 +7342,10 @@ export default function AdminDashboardPage() {
                     <SearchIcon sx={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: '#7b8e7e' }} />
                     <input
                       type="text"
-                      placeholder="Search photos..."
+                      placeholder="Search photos &amp; tags..."
                       value={driveSearch}
                       onChange={(e) => setDriveSearch(e.target.value)}
-                      style={{ padding: '7px 12px 7px 34px', borderRadius: '20px', border: '1px solid #cbe3c6', fontSize: '0.86rem', outline: 'none', background: '#fcfdfa' }}
+                      className={styles.mediaSearchInput}
                     />
                   </div>
 
@@ -7341,21 +7353,21 @@ export default function AdminDashboardPage() {
                     type="button"
                     onClick={fetchDrivePhotos}
                     disabled={driveLoading}
-                    className={styles.exportBtn}
-                    style={{ padding: '7px 14px', fontSize: '0.84rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    className={styles.bambooBtnSecondary}
+                    style={{ padding: '8px 16px', fontSize: '0.84rem' }}
                   >
-                    <RefreshIcon sx={{ fontSize: 15, animation: driveLoading ? 'spin 1s linear infinite' : 'none' }} />
-                    <span>Refresh</span>
+                    <RefreshIcon sx={{ fontSize: 16, animation: driveLoading ? 'spin 1s linear infinite' : 'none' }} />
+                    <span>Refresh Gallery</span>
                   </button>
                 </div>
               </div>
 
-              {/* Photo Cards Grid */}
+              {/* Photo Cards Grid with Skeleton Loading */}
               {driveLoading && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+                <div className={styles.mediaPhotoGrid}>
                   {[...Array(6)].map((_, i) => (
                     <div key={`drive-skel-${i}`} className={styles.skeletonCard} style={{ padding: '12px' }}>
-                      <div className={styles.skeletonBase} style={{ width: '100%', height: '170px', borderRadius: '10px', marginBottom: '12px' }} />
+                      <div className={styles.skeletonBase} style={{ width: '100%', height: '170px', borderRadius: '12px', marginBottom: '12px' }} />
                       <div className={styles.skeletonBase} style={{ width: '70%', height: '16px', marginBottom: '8px' }} />
                       <div className={styles.skeletonBase} style={{ width: '45%', height: '12px' }} />
                     </div>
@@ -7364,17 +7376,27 @@ export default function AdminDashboardPage() {
               )}
 
               {!driveLoading && drivePhotos.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '50px 20px', background: '#fbfdf9', borderRadius: '14px', border: '1px dashed #d5e5d1' }}>
-                  <PhotoLibraryIcon sx={{ fontSize: 48, color: '#a3c58e', marginBottom: '10px' }} />
-                  <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#294B35' }}>No Photos Found in Google Drive Folder</div>
-                  <p style={{ fontSize: '0.88rem', color: '#6e7e73', maxWidth: '400px', margin: '6px auto 16px' }}>
-                    Upload birthday photos or videos above to display them on the website and in Google Drive!
+                <div style={{ textAlign: 'center', padding: '60px 20px', background: '#fbfdf9', borderRadius: '16px', border: '2px dashed #d5e5d1' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '10px' }}>🐼📸</div>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#294B35', fontFamily: 'var(--font-heading)' }}>
+                    No Photos Found in Google Drive Folder
+                  </div>
+                  <p style={{ fontSize: '0.88rem', color: '#6e7e73', maxWidth: '420px', margin: '8px auto 20px' }}>
+                    Upload birthday photos or photoshoot videos above to display them in the live website gallery!
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => driveFileInputRef.current?.click()}
+                    className={styles.bambooBtnPrimary}
+                  >
+                    <CloudUploadIcon sx={{ fontSize: 18 }} />
+                    <span>Upload First Photo</span>
+                  </button>
                 </div>
               )}
 
               {!driveLoading && drivePhotos.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+                <div className={styles.mediaPhotoGrid}>
                   {drivePhotos
                     .filter((p) => {
                       if (!driveSearch.trim()) return true;
@@ -7401,55 +7423,43 @@ export default function AdminDashboardPage() {
                         : '';
 
                       return (
-                        <div
-                          key={photo.id}
-                          style={{
-                            background: '#ffffff',
-                            border: '1px solid #e1e7de',
-                            borderRadius: '14px',
-                            overflow: 'hidden',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            boxShadow: '0 2px 8px rgba(41,75,53,0.04)',
-                            transition: 'all 0.2s ease',
-                          }}
-                        >
-                          <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 3', background: '#f2f6f1', overflow: 'hidden' }}>
+                        <div key={photo.id} className={styles.mediaPhotoItem}>
+                          <div className={styles.mediaPhotoImgWrap}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={photo.proxyUrl || photo.directUrl}
                               alt={photo.caption || photo.name}
                               loading="lazy"
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src = photo.directUrl;
                               }}
                             />
                             {photo.uploaderName && (
-                              <span style={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(41,75,53,0.85)', color: '#fff', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '10px', fontWeight: 600 }}>
+                              <span className={styles.mediaTagPill}>
                                 {photo.uploaderName}
                               </span>
                             )}
                           </div>
 
-                          <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', flex: 1, gap: '6px' }}>
-                            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#252525', lineHeight: 1.3, wordBreak: 'break-all' }}>
+                          <div className={styles.mediaPhotoDetails}>
+                            <div className={styles.mediaPhotoTitle} title={photo.caption || photo.name}>
                               {photo.caption || photo.name.replace(/ditvi-birthday-.*?-(.+)/, '$1')}
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.74rem', color: '#7b8e7e', marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid #f2f5f1' }}>
-                              <span>{formattedDate}</span>
-                              {formattedSize && <span>{formattedSize}</span>}
+                            <div className={styles.mediaPhotoMeta}>
+                              <span>📅 {formattedDate}</span>
+                              {formattedSize && <span>💾 {formattedSize}</span>}
                             </div>
 
-                            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                            <div className={styles.mediaPhotoActionGroup}>
                               {photo.webViewLink && (
                                 <a
                                   href={photo.webViewLink}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   title="View on Google Drive"
-                                  style={{ flex: 1, padding: '5px', textAlign: 'center', background: '#f0f5ee', color: '#294b35', borderRadius: '6px', fontSize: '0.76rem', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                                  className={styles.bambooBtnSecondary}
+                                  style={{ flex: 1, padding: '6px', fontSize: '0.76rem' }}
                                 >
                                   <OpenInNewIcon sx={{ fontSize: 13 }} />
                                   <span>Drive</span>
@@ -7460,7 +7470,8 @@ export default function AdminDashboardPage() {
                                 type="button"
                                 onClick={() => handleCopyPhotoLink(photo)}
                                 title="Copy direct photo URL"
-                                style={{ flex: 1, padding: '5px', background: copiedPhotoId === photo.id ? '#edf7ed' : '#f0f5ee', color: copiedPhotoId === photo.id ? '#2e7d32' : '#294b35', border: 'none', borderRadius: '6px', fontSize: '0.76rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                                className={styles.bambooBtnSecondary}
+                                style={{ flex: 1, padding: '6px', fontSize: '0.76rem', background: copiedPhotoId === photo.id ? '#edf7ed' : '#ffffff', color: copiedPhotoId === photo.id ? '#2e7d32' : '#294b35' }}
                               >
                                 <ContentCopyIcon sx={{ fontSize: 13 }} />
                                 <span>{copiedPhotoId === photo.id ? 'Copied!' : 'Link'}</span>
@@ -7471,7 +7482,8 @@ export default function AdminDashboardPage() {
                                 onClick={() => handleDeleteDrivePhoto(photo.id)}
                                 disabled={isDeletingDrivePhoto && deletingPhotoId === photo.id}
                                 title="Delete photo from Google Drive"
-                                style={{ padding: '5px 8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', fontSize: '0.76rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                className={styles.bambooBtnDanger}
+                                style={{ padding: '6px 10px', fontSize: '0.76rem' }}
                               >
                                 <DeleteOutlineIcon sx={{ fontSize: 15 }} />
                               </button>
