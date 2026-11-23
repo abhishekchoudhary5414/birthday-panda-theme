@@ -135,9 +135,9 @@ export async function POST(req: NextRequest) {
     for (const rec of validRecipients) {
       await sql`
         INSERT INTO invitation_queue (
-          campaign_id, guest_id, recipient_email, recipient_name, status, attempts, max_attempts, scheduled_for
+          campaign_id, user_id, guest_id, recipient_email, recipient_name, status, attempts, max_attempts, scheduled_for
         ) VALUES (
-          ${campaign.id}, ${rec.guestId}, ${rec.email}, ${rec.name}, 'pending', 0, 3, CURRENT_TIMESTAMP
+          ${campaign.id}, ${userId}, ${rec.guestId}, ${rec.email}, ${rec.name}, 'pending', 0, 3, CURRENT_TIMESTAMP
         )
         ON CONFLICT (campaign_id, recipient_email) DO NOTHING
       `;
