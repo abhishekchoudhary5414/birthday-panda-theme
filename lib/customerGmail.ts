@@ -273,6 +273,10 @@ export async function disconnectCustomerGmail(userId: number): Promise<boolean> 
 /**
  * Build RFC 2822 MIME message with HTML and plain-text fallback, supporting UTF-8 & emojis
  */
+/**
+ * Create an RFC 2822 compliant MIME message string for Gmail API
+ * Includes proper Message-ID, Date, RFC 2047 Q-encoding, and clean multipart boundaries.
+ */
 export function createMimeMessage(params: {
   fromName: string;
   fromEmail: string;
@@ -281,43 +285,76 @@ export function createMimeMessage(params: {
   subject: string;
   htmlBody: string;
   textBody: string;
+  replyTo?: string;
 }): string {
-  const { fromName, fromEmail, toName, toEmail, subject, htmlBody, textBody } = params;
-  const boundary = `====boundary_${Date.now()}_${Math.random().toString(36).substring(2)}====`;
+  const { fromName, fromEmail, toName, toEmail, subject, htmlBody, textBody, replyTo } = params;
+  const boundary = `boundary_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
 
-  // Encode UTF-8 headers
-  const encodedFromName = `=?UTF-8?B?${Buffer.from(fromName, 'utf8').toString('base64')}?=`;
-  const fromHeader = `${encodedFromName} <${fromEmail}>`;
-  
+  // Safe header encoder: only use RFC 2047 encoding if non-ASCII characters are present
+  const encodeHeader = (str: string): string => {
+    if (!str) return '';
+    // If string has only standard printable ASCII, keep it clean and unencoded
+    if (/^[\x20-\x7E]+$/.test(str) && !/[<>";]/.test(str)) {
+      return str;
+    }
+    return `=?UTF-8?B?${Buffer.from(str, 'utf8').toString('base64')}?=`;
+  };
+
+  const safeFromName = fromName ? encodeHeader(fromName) : '';
+  const fromHeader = safeFromName ? `${safeFromName} <${fromEmail}>` : fromEmail;
+
   let toHeader = toEmail;
   if (toName) {
-    const encodedToName = `=?UTF-8?B?${Buffer.from(toName, 'utf8').toString('base64')}?=`;
-    toHeader = `${encodedToName} <${toEmail}>`;
+    const safeToName = encodeHeader(toName);
+    toHeader = safeToName ? `${safeToName} <${toEmail}>` : toEmail;
   }
 
-  const encodedSubject = `=?UTF-8?B?${Buffer.from(subject, 'utf8').toString('base64')}?=`;
+  const subjectHeader = encodeHeader(subject);
+
+  // Generate unique RFC 2822 Message-ID
+  const domain = fromEmail.split('@')[1] || 'gmail.com';
+  const messageId = `<${Date.now()}.${Math.random().toString(36).substring(2, 12)}@${domain}>`;
+  const dateHeader = new Date().toUTCString();
+
+  // Wrap base64 bodies to 76 chars per RFC 2045 standard
+  const wrapBase64 = (b64: string): string => {
+    return b64.replace(/(.{76})/g, '$1\r\n');
+  };
+
+  const textBase64 = wrapBase64(Buffer.from(textBody, 'utf8').toString('base64'));
+  const htmlBase64 = wrapBase64(Buffer.from(htmlBody, 'utf8').toString('base64'));
 
   const lines = [
     `From: ${fromHeader}`,
     `To: ${toHeader}`,
-    `Subject: ${encodedSubject}`,
+    `Subject: ${subjectHeader}`,
+    `Date: ${dateHeader}`,
+    `Message-ID: ${messageId}`,
     `MIME-Version: 1.0`,
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
+  ];
+
+  if (replyTo) {
+    lines.push(`Reply-To: ${replyTo}`);
+  }
+
+  lines.push(
     '',
     `--${boundary}`,
     `Content-Type: text/plain; charset="UTF-8"`,
     `Content-Transfer-Encoding: base64`,
     '',
-    Buffer.from(textBody, 'utf8').toString('base64'),
+    textBase64,
     '',
     `--${boundary}`,
     `Content-Type: text/html; charset="UTF-8"`,
     `Content-Transfer-Encoding: base64`,
     '',
-    Buffer.from(htmlBody, 'utf8').toString('base64'),
+    htmlBase64,
     '',
     `--${boundary}--`,
-  ];
+    ''
+  );
 
   const rawMime = lines.join('\r\n');
   return Buffer.from(rawMime, 'utf8')
@@ -334,11 +371,12 @@ export async function sendGmailMessage(params: {
   userId: number;
   toEmail: string;
   toName?: string;
+  fromName?: string;
   subject: string;
   htmlBody: string;
   textBody: string;
 }): Promise<{ messageId: string }> {
-  const { userId, toEmail, toName, subject, htmlBody, textBody } = params;
+  const { userId, toEmail, toName, fromName, subject, htmlBody, textBody } = params;
 
   const conn = await getCustomerGmailConnection(userId);
   if (!conn || !conn.connected || !conn.googleEmail) {
@@ -347,14 +385,20 @@ export async function sendGmailMessage(params: {
 
   const accessToken = await getCustomerGmailAccessToken(userId);
 
+  // Use genuine host name or email prefix instead of generic "Host"
+  const senderDisplayName = (fromName && fromName.trim()) 
+    ? fromName.trim() 
+    : conn.googleEmail.split('@')[0];
+
   const rawMessage = createMimeMessage({
-    fromName: 'Birthday Celebration Host',
+    fromName: senderDisplayName,
     fromEmail: conn.googleEmail,
     toName,
     toEmail,
     subject,
     htmlBody,
     textBody,
+    replyTo: conn.googleEmail,
   });
 
   const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {

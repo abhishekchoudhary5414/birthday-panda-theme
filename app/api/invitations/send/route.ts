@@ -96,6 +96,7 @@ export async function POST(req: NextRequest) {
           userId: admin.id,
           toEmail: guest.email,
           toName: guest.name,
+          fromName: hostName,
           subject,
           htmlBody,
           textBody,

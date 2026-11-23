@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
       userId: admin.id,
       toEmail: conn.googleEmail,
       toName: admin.name || 'Host',
+      fromName: hostName,
       subject: testSubject,
       htmlBody,
       textBody,

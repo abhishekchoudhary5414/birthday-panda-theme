@@ -305,7 +305,7 @@ export default function AdminDashboardPage() {
   const [gmailToast, setGmailToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Email template & customization state
-  const [emailSubject, setEmailSubject] = useState("You're Invited to My Birthday! 🎂");
+  const [emailSubject, setEmailSubject] = useState("Ditvi's 1st Birthday Celebration Invitation");
   const [emailCustomMessage, setEmailCustomMessage] = useState(
     "We would love to invite you to celebrate this magical milestone with us! Join us for a joyful day filled with laughter, delicious treats, games, and warm family moments."
   );
