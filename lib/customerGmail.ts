@@ -313,16 +313,9 @@ export function createMimeMessage(params: {
 
   // Generate unique RFC 2822 Message-ID
   const domain = fromEmail.split('@')[1] || 'gmail.com';
-  const messageId = `<${Date.now()}.${Math.random().toString(36).substring(2, 12)}@${domain}>`;
+  const randomPart = Math.random().toString(36).substring(2, 10);
+  const messageId = `<invitation.${Date.now()}.${randomPart}@${domain}>`;
   const dateHeader = new Date().toUTCString();
-
-  // Wrap base64 bodies to 76 chars per RFC 2045 standard
-  const wrapBase64 = (b64: string): string => {
-    return b64.replace(/(.{76})/g, '$1\r\n');
-  };
-
-  const textBase64 = wrapBase64(Buffer.from(textBody, 'utf8').toString('base64'));
-  const htmlBase64 = wrapBase64(Buffer.from(htmlBody, 'utf8').toString('base64'));
 
   const lines = [
     `From: ${fromHeader}`,
@@ -342,15 +335,15 @@ export function createMimeMessage(params: {
     '',
     `--${boundary}`,
     `Content-Type: text/plain; charset="UTF-8"`,
-    `Content-Transfer-Encoding: base64`,
+    `Content-Transfer-Encoding: 8bit`,
     '',
-    textBase64,
+    textBody,
     '',
     `--${boundary}`,
     `Content-Type: text/html; charset="UTF-8"`,
-    `Content-Transfer-Encoding: base64`,
+    `Content-Transfer-Encoding: 8bit`,
     '',
-    htmlBase64,
+    htmlBody,
     '',
     `--${boundary}--`,
     ''
