@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
           WHERE id = ${existing[0].id}
         `;
       } else {
-        const randomCode = 'DITVI-' + Math.floor(1000 + Math.random() * 9000);
+        const randomCode = 'PANDA-' + Math.floor(1000 + Math.random() * 9000);
         await sql`
           INSERT INTO guests (title, name, mobile, email, invite_code, rsvp_status, invited, notes)
           VALUES (${cleanTitle}, ${trimmedName}, ${trimmedPhone}, ${trimmedEmail}, ${randomCode}, ${rsvpStatus}, true, ${message ? message.trim() : null})

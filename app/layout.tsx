@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Ditvi's 1st Birthday | Cute Panda & Bamboo Celebration",
+  title: "1st Birthday | Cute Panda & Bamboo Celebration",
   description:
-    "Join us for Ditvi's 1st Birthday Celebration in the Bamboo Grove! Explore memories, play interactive panda games, pick fortunes, and RSVP.",
+    "Join us for our 1st Birthday Celebration in the Bamboo Grove! Explore memories, play interactive panda games, pick fortunes, and RSVP.",
   keywords: [
     'Panda Birthday',
     'Bamboo Forest',
@@ -12,11 +12,11 @@ export const metadata: Metadata = {
     '1st Birthday Celebration',
     'Panda Party',
     'Birthday RSVP',
-    'Ditvi Birthday',
+    'Birthday Celebration',
   ],
   authors: [{ name: 'The Family' }],
   openGraph: {
-    title: "Ditvi's 1st Birthday | Cute Panda & Bamboo Celebration",
+    title: "1st Birthday | Cute Panda & Bamboo Celebration",
     description:
       "Join us for a magical day filled with happiness, laughter, bamboo and unforgettable memories!",
     type: 'website',

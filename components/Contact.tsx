@@ -22,8 +22,8 @@ interface EventData {
 
 export const Contact: React.FC = () => {
   const [eventData, setEventData] = useState<EventData>({
-    eventTitle: "Ditvi's 1st Birthday Party",
-    childName: 'Ditvi',
+    eventTitle: "1st Birthday Party",
+    childName: 'Birthday Star',
     turningAge: '1',
     eventDate: 'Saturday, December 12, 2026',
     eventTime: '3:30 PM – 7:30 PM CST',
@@ -32,7 +32,7 @@ export const Contact: React.FC = () => {
     venueCity: '',
     venueMapUrl: '',
     contactPhone: '+1 (555) 019-2831',
-    contactEmail: 'family@ditvibirthday.com',
+    contactEmail: 'family@birthday.com',
   });
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export const Contact: React.FC = () => {
           </div>
           <h2 className="section-title">Party Venue &amp; Contact Info</h2>
           <p className="section-subtitle">
-            Everything you need to find the venue, park conveniently, and reach {eventData.childName || 'Ditvi'}&apos;s parents on party day.
+            Everything you need to find the venue, park conveniently, and reach {eventData.childName || 'Birthday Star'}&apos;s parents on party day.
           </p>
         </div>
 
@@ -94,7 +94,7 @@ export const Contact: React.FC = () => {
                     <p className={styles['info-desc']}>
                       {hasVenue
                         ? [eventData.venueAddress, eventData.venueCity].filter(Boolean).join(', ')
-                        : "Venue location details will be announced soon by Ditvi's family!"}
+                        : "Venue location details will be announced soon by the host family!"}
                     </p>
                   </div>
                 </div>
@@ -144,7 +144,7 @@ export const Contact: React.FC = () => {
                 <a href={`tel:${(eventData.contactPhone || '+15550192831').replace(/[^0-9+]/g, '')}`} className={styles['host-phone-pill']}>
                   <Phone size={16} />
                   <div>
-                    <span className={styles['host-name']}>{eventData.childName || 'Ditvi'}&apos;s Family</span>
+                    <span className={styles['host-name']}>{eventData.childName || 'Birthday Star'}&apos;s Family</span>
                     <span className={styles['host-number']}>{eventData.contactPhone || '+1 (555) 019-2831'}</span>
                   </div>
                 </a>
@@ -201,7 +201,7 @@ export const Contact: React.FC = () => {
                   Venue to be Announced
                 </h3>
                 <p style={{ color: '#5D7963', maxWidth: '340px', fontSize: '0.92rem', lineHeight: '1.5' }}>
-                  The celebration venue is being finalized by Ditvi&apos;s parents and will be updated here soon! Stay tuned!
+                  The celebration venue is being finalized by the host parents and will be updated here soon! Stay tuned!
                 </p>
               </div>
             )}

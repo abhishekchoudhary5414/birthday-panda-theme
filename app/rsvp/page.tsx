@@ -7,8 +7,8 @@ import { Footer } from '@/components/Footer';
 import { MusicPlayer } from '@/components/MusicPlayer';
 
 export const metadata: Metadata = {
-  title: "RSVP • Ditvi's 1st Birthday Celebration",
-  description: "Confirm your presence for Ditvi's 1st Birthday Party in the Bamboo Grove.",
+  title: "RSVP • Our 1st Birthday Celebration",
+  description: "Confirm your presence for Our 1st Birthday Party in the Bamboo Grove.",
 };
 
 export default function RsvpPage() {

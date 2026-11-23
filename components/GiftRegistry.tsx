@@ -54,6 +54,7 @@ export interface GiftRegistryProps {
 }
 
 export const GiftRegistry: React.FC<GiftRegistryProps> = ({ limit, showAllLink = false }) => {
+  const [childName, setChildName] = useState<string>('Birthday Star');
   const [gifts, setGifts] = useState<GiftItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -210,9 +211,9 @@ export const GiftRegistry: React.FC<GiftRegistryProps> = ({ limit, showAllLink =
             <Gift size={16} />
             <span>Curated Gift Ideas</span>
           </div>
-          <h2 className="section-title">Ditvi&apos;s 1st Birthday Gift Registry</h2>
+          <h2 className="section-title">{childName}&apos;s 1st Birthday Gift Registry</h2>
           <p className="section-subtitle">
-            Your presence at Ditvi&apos;s party is truly the greatest gift of all! If you wish to bless him with a special keepsake, browse the wishlist below. Once registered, items are marked unavailable to prevent duplicates.
+            Your presence at {childName}&apos;s party is truly the greatest gift of all! If you wish to bless him with a special keepsake, browse the wishlist below. Once registered, items are marked unavailable to prevent duplicates.
           </p>
         </div>
 
@@ -244,7 +245,7 @@ export const GiftRegistry: React.FC<GiftRegistryProps> = ({ limit, showAllLink =
         {isLoading && (
           <div style={{ textAlign: 'center', padding: '60px 0', color: '#294B35' }}>
             <RefreshCw size={36} className="animate-spin" style={{ margin: '0 auto 12px', display: 'block' }} />
-            <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>Loading Ditvi&apos;s Gift Registry...</div>
+            <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>Loading {childName}&apos;s Gift Registry...</div>
           </div>
         )}
 
@@ -501,7 +502,7 @@ export const GiftRegistry: React.FC<GiftRegistryProps> = ({ limit, showAllLink =
               </div>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#294B35', fontWeight: 800 }}>
-                  Register Ditvi&apos;s Gift
+                  Register {childName}&apos;s Gift
                 </h3>
                 <p style={{ margin: '2px 0 0', fontSize: '0.85rem', color: '#6e7e73' }}>
                   Provide your email to claim this gift and mark it unavailable.

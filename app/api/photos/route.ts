@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import sharp from 'sharp';
 import {
   listCustomerDrivePhotos,
   uploadPhotoToCustomerDrive,
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
     let dbPhotosMap = new Map<string, any>();
     try {
       const rows = await sql`
-        SELECT drive_file_id, caption, uploader_name, media_type, created_at 
+        SELECT drive_file_id, caption, uploader_name, media_type, target_section, milestone_index, created_at 
         FROM drive_photos 
         ORDER BY created_at DESC
       `;
@@ -60,8 +61,10 @@ export async function GET(req: NextRequest) {
       return {
         ...photo,
         caption: dbMeta?.caption || photo.caption || '',
-        uploaderName: dbMeta?.uploader_name || 'Ditvi Party Guest',
+        uploaderName: dbMeta?.uploader_name || 'Party Guest',
         mediaType: dbMeta?.media_type || (photo.mimeType.startsWith('video/') ? 'video' : 'image'),
+        targetSection: dbMeta?.target_section || 'gallery',
+        milestoneIndex: dbMeta?.milestone_index !== undefined && dbMeta?.milestone_index !== null ? Number(dbMeta.milestone_index) : null,
         createdAt: dbMeta?.created_at || photo.createdTime,
       };
     });
@@ -102,6 +105,10 @@ export async function POST(req: NextRequest) {
     const caption = (formData.get('caption') as string) || '';
     const uploaderName = (formData.get('uploaderName') as string) || (admin ? admin.name : 'Host / Guest');
     const websiteId = (formData.get('websiteId') as string) || 'default';
+    const targetSectionRaw = (formData.get('targetSection') as string) || 'none';
+    const targetSection = (targetSectionRaw === 'none' || targetSectionRaw === 'null' || !targetSectionRaw) ? null : targetSectionRaw;
+    const milestoneIndexStr = formData.get('milestoneIndex') as string | null;
+    const milestoneIndex = (targetSection === 'timeline' && milestoneIndexStr) ? parseInt(milestoneIndexStr, 10) : null;
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -127,17 +134,40 @@ export async function POST(req: NextRequest) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    let uploadBuffer = Buffer.from(arrayBuffer);
+    let finalMimeType = file.type;
+    let finalFileName = file.name;
+
+    // Apply high-performance smart compression for images
+    if (isImage) {
+      try {
+        // Resize to max 1920x1920 maintaining aspect ratio, convert to WebP with 82% quality (crystal clear yet 70-85% smaller)
+        uploadBuffer = await sharp(uploadBuffer)
+          .rotate() // Auto-orient based on EXIF
+          .resize(1920, 1920, {
+            fit: 'inside',
+            withoutEnlargement: true,
+          })
+          .webp({ quality: 82, effort: 4 })
+          .toBuffer();
+
+        finalMimeType = 'image/webp';
+        finalFileName = file.name.replace(/\.[^/.]+$/, '') + '.webp';
+      } catch (compressionErr) {
+        console.warn('Image compression fallback to original buffer:', compressionErr);
+        uploadBuffer = Buffer.from(arrayBuffer);
+      }
+    }
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const safeName = `birthday-${timestamp}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const safeName = `birthday-${timestamp}-${finalFileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 
     // Upload directly to customer's Google Drive folder
     const uploadedPhoto = await uploadPhotoToCustomerDrive({
       userId,
       fileName: safeName,
-      mimeType: file.type,
-      buffer,
+      mimeType: finalMimeType,
+      buffer: uploadBuffer,
       caption,
       description: caption ? `${caption} (Uploaded by ${uploaderName})` : `Uploaded by ${uploaderName}`,
     });
@@ -146,7 +176,7 @@ export async function POST(req: NextRequest) {
     try {
       await sql`
         INSERT INTO drive_photos (
-          drive_file_id, file_name, mime_type, file_size, web_view_link, thumbnail_link, caption, uploader_name, user_id, website_id, media_type
+          drive_file_id, file_name, mime_type, file_size, web_view_link, thumbnail_link, caption, uploader_name, user_id, website_id, media_type, target_section, milestone_index
         ) VALUES (
           ${uploadedPhoto.id},
           ${uploadedPhoto.name},
@@ -158,15 +188,33 @@ export async function POST(req: NextRequest) {
           ${uploaderName},
           ${userId},
           ${websiteId},
-          ${isVideo ? 'video' : 'image'}
+          ${isVideo ? 'video' : 'image'},
+          ${targetSection},
+          ${milestoneIndex}
         )
         ON CONFLICT (drive_file_id) DO UPDATE SET
           caption = EXCLUDED.caption,
           uploader_name = EXCLUDED.uploader_name,
+          target_section = EXCLUDED.target_section,
+          milestone_index = EXCLUDED.milestone_index,
           updated_at = CURRENT_TIMESTAMP;
       `;
     } catch (dbErr) {
       console.warn('Failed to insert metadata into drive_photos table (file still uploaded to Drive):', dbErr);
+    }
+
+    // If target section is child photo or hero, also update event_settings so ecard & hero use it immediately
+    const photoUrl = uploadedPhoto.directUrl || uploadedPhoto.thumbnailLink || `/api/photos/${uploadedPhoto.id}`;
+    if (targetSection === 'child_photo' || targetSection === 'hero') {
+      try {
+        await sql`
+          INSERT INTO event_settings (key, value)
+          VALUES ('child_photo_url', ${photoUrl})
+          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+        `;
+      } catch (settingsErr) {
+        console.warn('Failed to update event_settings with child_photo_url:', settingsErr);
+      }
     }
 
     return NextResponse.json({
@@ -177,6 +225,9 @@ export async function POST(req: NextRequest) {
         caption,
         uploaderName,
         mediaType: isVideo ? 'video' : 'image',
+        targetSection,
+        milestoneIndex,
+        photoUrl,
       },
     });
   } catch (err: unknown) {

@@ -17,12 +17,13 @@ interface EventData {
   venueName?: string;
   venueAddress?: string;
   venueCity?: string;
+  childPhotoUrl?: string;
 }
 
 export const Hero: React.FC = () => {
   const [eventData, setEventData] = useState<EventData>({
-    eventTitle: "Ditvi's 1st Birthday Party",
-    childName: 'Ditvi',
+    eventTitle: "1st Birthday Party",
+    childName: 'Birthday Star',
     turningAge: '1',
     eventDate: 'Saturday, Dec 12, 2026',
     eventDateIso: '2026-12-12',
@@ -30,19 +31,46 @@ export const Hero: React.FC = () => {
     venueName: '',
     venueAddress: '',
     venueCity: '',
+    childPhotoUrl: '',
   });
+  const [imgError, setImgError] = useState(false);
+  const [isPhotoLoading, setIsPhotoLoading] = useState(true);
 
   useEffect(() => {
+    // 1. Fetch public event settings
     fetch('/api/event')
       .then((res) => res.json())
       .then((data) => {
         if (data && data.event) {
-          setEventData(data.event);
+          setEventData((prev) => ({
+            ...prev,
+            ...data.event,
+          }));
         }
       })
       .catch((err) => {
         console.error('Failed to load event details in Hero component:', err);
       });
+
+    // 2. Also query /api/photos to guarantee we get child_photo directly from drive_photos
+    fetch('/api/photos')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.photos)) {
+          const childPhoto = data.photos.find((p: any) => p.targetSection === 'child_photo');
+          if (childPhoto) {
+            const url = childPhoto.proxyUrl || childPhoto.directUrl || childPhoto.thumbnailLink;
+            if (url) {
+              setEventData((prev) => ({
+                ...prev,
+                childPhotoUrl: url,
+              }));
+            }
+          }
+        }
+      })
+      .catch((err) => console.warn('Could not query photos in Hero:', err))
+      .finally(() => setIsPhotoLoading(false));
   }, []);
 
   const handleScrollToRSVP = (e: React.MouseEvent) => {
@@ -52,7 +80,7 @@ export const Hero: React.FC = () => {
   };
 
   const handleAddToCalendar = () => {
-    const child = eventData.childName || 'Ditvi';
+    const child = eventData.childName || 'Birthday Star';
     const title = encodeURIComponent(`${child}'s 1st Birthday - Panda & Bamboo Celebration`);
     const details = encodeURIComponent(`Join us for ${child}'s 1st Birthday party with panda games, bamboo treats, and unforgettable fun!`);
     const venue = [eventData.venueName, eventData.venueAddress, eventData.venueCity].filter(Boolean).join(', ') || 'Venue to be announced';
@@ -85,11 +113,11 @@ export const Hero: React.FC = () => {
             </div>
 
             <h1 className={styles['hero-title']}>
-              Welcome to Our Little {eventData.childName || 'Ditvi'}&apos;s Birthday Party!
+              Welcome to Our Little {eventData.childName || 'Birthday Star'}&apos;s Birthday Party!
             </h1>
 
             <p className={styles['hero-subtitle']}>
-              Let&apos;s celebrate a day filled with happiness, laughter, bamboo and unforgettable memories as <strong className={styles['child-name']}>{eventData.childName || 'Ditvi'}</strong> turns <strong>{eventData.turningAge || '1'}</strong>!
+              Let&apos;s celebrate a day filled with happiness, laughter, bamboo and unforgettable memories as <strong className={styles['child-name']}>{eventData.childName || 'Birthday Star'}</strong> turns <strong>{eventData.turningAge || '1'}</strong>!
             </p>
 
             {/* Quick Event Summary Pills */}
@@ -156,7 +184,7 @@ export const Hero: React.FC = () => {
                 <FloatingPandaWithBalloons size={150} />
               </div>
 
-              {/* Prominent Centerpiece: Large Baby Ditvi Photo Frame */}
+              {/* Prominent Centerpiece: Large Baby Photo Frame */}
               <div className={`${styles['baby-featured-showcase'] || 'baby-featured-showcase'} floating-panda`}>
                 {/* Decorative Panda Ears on Photo Frame */}
                 <div className={styles['photo-panda-ears']} aria-hidden="true">
@@ -167,11 +195,53 @@ export const Hero: React.FC = () => {
                 </div>
 
                 <div className={styles['baby-photo-large-frame']}>
-                  <img
-                    src="https://images.unsplash.com/photo-1544126592-807ade215a0b?auto=format&fit=crop&w=700&q=85"
-                    alt={`Birthday Girl ${eventData.childName || 'Ditvi'}`}
-                    className={styles['baby-photo-large-img']}
-                  />
+                  {eventData.childPhotoUrl && !imgError ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={eventData.childPhotoUrl}
+                      alt={`Birthday Star ${eventData.childName || 'Birthday Star'}`}
+                      className={styles['baby-photo-large-img']}
+                      onError={() => {
+                        console.warn('Hero image failed to load, falling back to proxy URL');
+                        // If it's a direct Google Drive link or failed, fallback to proxy
+                        const match = eventData.childPhotoUrl?.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                        if (match && match[1] && !eventData.childPhotoUrl?.includes('/api/photos/')) {
+                          setEventData((prev) => ({
+                            ...prev,
+                            childPhotoUrl: `/api/photos/${match[1]}`,
+                          }));
+                        } else {
+                          setImgError(true);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'radial-gradient(circle, #f3f9ee 0%, #e2eedb 100%)',
+                      position: 'relative'
+                    }}>
+                      <PartyPanda size={150} />
+                      <span style={{
+                        position: 'absolute',
+                        bottom: '18px',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        color: 'var(--deep-forest-green, #294b35)',
+                        background: 'rgba(255,255,255,0.85)',
+                        padding: '3px 12px',
+                        borderRadius: '12px',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+                      }}>
+                        {eventData.childName || 'Birthday Star'}
+                      </span>
+                    </div>
+                  )}
                   <div className={styles['photo-inner-sparkle']}>
                     <Sparkles size={18} color="#FFD700" />
                   </div>
@@ -183,7 +253,7 @@ export const Hero: React.FC = () => {
                     <Star size={15} fill="var(--accent-gold)" color="var(--accent-gold)" />
                   </div>
                   <div className={styles['badge-text-group']}>
-                    <span className={styles['badge-name']}>{eventData.childName || 'Ditvi'}</span>
+                    <span className={styles['badge-name']}>{eventData.childName || 'Birthday Star'}</span>
                     <span className={styles['badge-age']}>Turning {eventData.turningAge || '1'} Year Old! 🎂</span>
                   </div>
                 </div>

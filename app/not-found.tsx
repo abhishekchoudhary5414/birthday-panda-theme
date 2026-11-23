@@ -18,7 +18,7 @@ export default function NotFound() {
       <h1 style={{ fontSize: '3rem', fontWeight: 800, margin: '0 0 12px' }}>404</h1>
       <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0 0 16px' }}>Page Not Found in the Bamboo Grove</h2>
       <p style={{ maxWidth: '420px', color: '#6E7E73', margin: '0 0 24px', lineHeight: 1.5 }}>
-        Oops! The page you were looking for doesn&apos;t seem to exist. Let&apos;s get you back to Ditvi&apos;s birthday celebration!
+        Oops! The page you were looking for doesn&apos;t seem to exist. Let&apos;s get you back to Our birthday celebration!
       </p>
       <Link
         href="/"

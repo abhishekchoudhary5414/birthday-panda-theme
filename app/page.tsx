@@ -1,5 +1,8 @@
+'use client';
+
 import styles from './page.module.css';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { BirthdayPageLoader } from '@/components/BirthdayPageLoader';
 import { FloatingLeaves } from '@/components/FloatingLeaves';
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
@@ -17,8 +20,65 @@ import { MusicPlayer } from '@/components/MusicPlayer';
 import { LiveStreamModal } from '@/components/LiveStreamModal';
 
 export default function HomePage() {
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [childName, setChildName] = useState('Birthday Star');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // Check database settings & photos content readiness
+    const loadInitialData = async () => {
+      try {
+        const [eventRes, photosRes] = await Promise.all([
+          fetch('/api/event').then((r) => r.json()).catch(() => null),
+          fetch('/api/photos').then((r) => r.json()).catch(() => null),
+        ]);
+
+        if (!isMounted) return;
+
+        if (eventRes?.event?.childName) {
+          setChildName(eventRes.event.childName);
+        }
+
+        // If there's a child photo, pre-load the image so it's fully cached in browser before loader fades
+        const childPhotoUrl = eventRes?.event?.childPhotoUrl || 
+          photosRes?.photos?.find((p: any) => p.targetSection === 'child_photo')?.proxyUrl ||
+          photosRes?.photos?.find((p: any) => p.targetSection === 'child_photo')?.directUrl;
+
+        if (childPhotoUrl) {
+          const img = new Image();
+          img.src = childPhotoUrl;
+          await new Promise<void>((resolve) => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            // Max 2.5s wait for image to avoid stalling on slow networks
+            setTimeout(resolve, 2500);
+          });
+        }
+      } catch (err) {
+        console.warn('Initial data load warning:', err);
+      } finally {
+        if (isMounted) {
+          // Small delay for smooth entry experience
+          setTimeout(() => {
+            setIsDataLoaded(true);
+          }, 350);
+        }
+      }
+    };
+
+    loadInitialData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <main className={styles['panda-birthday-app']}>
+      {/* Festive Birthday Animation Loader (Floating Balloon Panda & Bamboo Progress) */}
+      <BirthdayPageLoader childName={childName} isReady={isDataLoaded} />
+
       {/* Gentle Floating Bamboo Leaves Particle Ambient Layer */}
       <FloatingLeaves />
 

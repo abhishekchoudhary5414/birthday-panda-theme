@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       forceResend = false,
       subject = "You're Invited to My Birthday! 🎂",
       message = '',
-      birthdayPersonName = 'Ditvi',
+      birthdayPersonName = 'Birthday Star',
       birthdayDate = 'Saturday, December 12, 2026',
       birthdayTime = '3:30 PM - 7:30 PM CST',
       birthdayLocation = 'Austin, TX',

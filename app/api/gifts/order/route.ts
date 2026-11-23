@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     if (!cleanName) {
       return NextResponse.json(
-        { error: 'Please enter your name so the family knows who blessed Ditvi with this gift.' },
+        { error: 'Please enter your name so the family knows who blessed the child with this gift.' },
         { status: 400 }
       );
     }

@@ -22,8 +22,8 @@ export async function GET(req: NextRequest) {
     });
 
     const eventDetails = {
-      eventTitle: settingsMap['event_title'] || "Ditvi's 1st Birthday Party",
-      childName: settingsMap['child_name'] || 'Ditvi',
+      eventTitle: settingsMap['event_title'] || "1st Birthday Celebration",
+      childName: settingsMap['child_name'] || 'Birthday Star',
       turningAge: settingsMap['turning_age'] || '1',
       eventDate: settingsMap['event_date'] || 'Saturday, December 12, 2026',
       eventDateIso: settingsMap['event_date_iso'] || '2026-12-12',
@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
       contactPhone: settingsMap['contact_phone'] || '',
       contactEmail: settingsMap['contact_email'] || '',
       dressCode: settingsMap['dress_code'] || 'Pastel forest tones, sage, cream, or panda-inspired accents',
+      childPhotoUrl: settingsMap['child_photo_url'] || '',
     };
 
     return NextResponse.json({ success: true, event: eventDetails });
@@ -70,11 +71,12 @@ export async function POST(req: NextRequest) {
       contactPhone,
       contactEmail,
       dressCode,
+      childPhotoUrl,
     } = body;
 
     const entries = [
-      { key: 'event_title', value: eventTitle || "Ditvi's 1st Birthday Party" },
-      { key: 'child_name', value: childName || 'Ditvi' },
+      { key: 'event_title', value: eventTitle || "1st Birthday Celebration" },
+      { key: 'child_name', value: childName || 'Birthday Star' },
       { key: 'turning_age', value: String(turningAge || '1') },
       { key: 'event_date', value: eventDate || 'Saturday, December 12, 2026' },
       { key: 'event_date_iso', value: eventDateIso || '2026-12-12' },
@@ -86,6 +88,7 @@ export async function POST(req: NextRequest) {
       { key: 'contact_phone', value: contactPhone || '' },
       { key: 'contact_email', value: contactEmail || '' },
       { key: 'dress_code', value: dressCode || 'Pastel forest tones, sage, cream, or panda-inspired accents' },
+      { key: 'child_photo_url', value: childPhotoUrl || '' },
     ];
 
     for (const item of entries) {

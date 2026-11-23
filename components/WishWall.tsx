@@ -34,6 +34,7 @@ const relationOptions = [
 
 export const WishWall: React.FC = () => {
   const [wishes, setWishes] = useState<Wish[]>([]);
+  const [childName, setChildName] = useState<string>('the Birthday Star');
   const [loadingWishes, setLoadingWishes] = useState(true);
 
   // Form states
@@ -66,8 +67,9 @@ export const WishWall: React.FC = () => {
 
   useEffect(() => {
     fetchWishes();
+    fetch('/api/event').then(r => r.json()).then(d => { if (d?.event?.childName) setChildName(d.event.childName); }).catch(() => {});
     try {
-      const savedLikes = localStorage.getItem('ditvi_liked_wishes');
+      const savedLikes = localStorage.getItem('birthday_liked_wishes');
       if (savedLikes) {
         setLikedIds(JSON.parse(savedLikes));
       }
@@ -95,7 +97,7 @@ export const WishWall: React.FC = () => {
       return;
     }
     if (!message.trim()) {
-      setError('Please write a heartfelt birthday message for Ditvi.');
+      setError('`Please write a heartfelt birthday message for ${childName}.`');
       return;
     }
 
@@ -150,7 +152,7 @@ export const WishWall: React.FC = () => {
     setLikedIds(newLiked);
 
     try {
-      localStorage.setItem('ditvi_liked_wishes', JSON.stringify(newLiked));
+      localStorage.setItem('birthday_liked_wishes', JSON.stringify(newLiked));
     } catch {
       // ignore
     }
@@ -207,9 +209,9 @@ export const WishWall: React.FC = () => {
             <MessageCircle size={16} />
             <span>Guestbook of Love</span>
           </div>
-          <h2 className="section-title">Ditvi&apos;s Birthday Wish Wall</h2>
+          <h2 className="section-title">{childName}&apos;s Birthday Wish Wall</h2>
           <p className="section-subtitle">
-            Leave a digital birthday blessing, heartfelt prayer, or funny note for Ditvi&apos;s first birthday memory keepsake! Saved directly to our family memory book.
+            Leave a digital birthday blessing, heartfelt prayer, or funny note for {childName}&apos;s first birthday memory keepsake! Saved directly to our family memory book.
           </p>
         </div>
 
@@ -224,7 +226,7 @@ export const WishWall: React.FC = () => {
 
               {isSubmittedNotice && (
                 <div className={styles['wish-success-pill']}>
-                  🎉 Your sweet wish has been saved to Ditvi&apos;s memory book!
+                  🎉 Your sweet wish has been saved to the memory book!
                 </div>
               )}
 
@@ -308,7 +310,7 @@ export const WishWall: React.FC = () => {
                   id="wishMsg"
                   rows={4}
                   className={`${styles['form-input'] || 'form-input'} ${styles['form-textarea'] || 'form-textarea'}`}
-                  placeholder="Dear Ditvi, happy 1st birthday! May you always smile as bright as the sun..."
+                  placeholder={`Dear ${childName}, happy 1st birthday! May you always smile as bright as the sun...`}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   required
@@ -406,7 +408,7 @@ export const WishWall: React.FC = () => {
                 <div style={{ padding: '36px 20px', textAlign: 'center', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #DCE8D2' }}>
                   <span style={{ fontSize: '2.5rem' }}>🐼</span>
                   <p style={{ marginTop: '8px', color: '#555', fontWeight: 600 }}>
-                    {loadingWishes ? 'Loading wishes from memory wall...' : 'Be the first to leave a sweet birthday wish for Ditvi!'}
+                    {loadingWishes ? 'Loading wishes from memory wall...' : `Be the first to leave a sweet birthday wish for ${childName}!`}
                   </p>
                 </div>
               )}

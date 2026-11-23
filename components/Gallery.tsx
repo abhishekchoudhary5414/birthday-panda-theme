@@ -3,14 +3,13 @@
 import styles from './Gallery.module.css';
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, Maximize2, X, ChevronLeft, ChevronRight, Play, Film, Image as ImageIcon, UploadCloud } from 'lucide-react';
 import { PeekingPanda } from './PandaIllustrations';
 
 interface GalleryItem {
-  id: number;
+  id: number | string;
   type: 'photo' | 'video';
-  album: 'milestones' | 'photoshoot' | 'family' | 'celebration';
   title: string;
   caption: string;
   thumbnail: string;
@@ -18,94 +17,50 @@ interface GalleryItem {
   duration?: string;
 }
 
-const galleryData: GalleryItem[] = [
-  {
-    id: 1,
-    type: 'photo',
-    album: 'photoshoot',
-    title: 'Ditvi in his Fluffy Panda Suit',
-    caption: 'Looking cozy, cute, and ready to feast on bamboo cookies!',
-    thumbnail: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?auto=format&fit=crop&w=700&q=80',
-    mediaUrl: 'https://images.unsplash.com/photo-1544126592-807ade215a0b?auto=format&fit=crop&w=1200&q=85',
-  },
-  {
-    id: 2,
-    type: 'photo',
-    album: 'milestones',
-    title: 'First Autumn In The Forest',
-    caption: 'Ditvi marveling at golden leaves and gentle breezes.',
-    thumbnail: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=700&q=80',
-    mediaUrl: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=1200&q=85',
-  },
-  {
-    id: 3,
-    type: 'video',
-    album: 'celebration',
-    title: 'Ditvi’s First Birthday Cake Smash Teaser',
-    caption: 'Tasting the bamboo-topped cream cupcake for the very first time!',
-    thumbnail: 'https://images.unsplash.com/photo-1558636508-e0db3814bd1d?auto=format&fit=crop&w=700&q=80',
-    mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    duration: '0:45',
-  },
-  {
-    id: 4,
-    type: 'photo',
-    album: 'family',
-    title: 'Panda Hugs with Mommy',
-    caption: 'Warm morning snuggles before starting the birthday festivities.',
-    thumbnail: 'https://images.unsplash.com/photo-1566004100631-35d015d4799c?auto=format&fit=crop&w=700&q=80',
-    mediaUrl: 'https://images.unsplash.com/photo-1566004100631-35d015d4799c?auto=format&fit=crop&w=1200&q=85',
-  },
-  {
-    id: 5,
-    type: 'photo',
-    album: 'photoshoot',
-    title: 'Panda Cub Stacking Wooden Blocks',
-    caption: 'Master architect at work building his bamboo castle.',
-    thumbnail: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=700&q=80',
-    mediaUrl: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&w=1200&q=85',
-  },
-  {
-    id: 6,
-    type: 'video',
-    album: 'milestones',
-    title: 'Wobbly First Steps Montage',
-    caption: 'From crawling in the grass to walking into daddy’s arms.',
-    thumbnail: 'https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&fit=crop&w=700&q=80',
-    mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
-    duration: '1:12',
-  },
-  {
-    id: 7,
-    type: 'photo',
-    album: 'family',
-    title: 'Daddy’s Shoulder Ride at the Botanical Park',
-    caption: 'Seeing the world from up high, smiling from ear to ear.',
-    thumbnail: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=700&q=80',
-    mediaUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=85',
-  },
-  {
-    id: 8,
-    type: 'photo',
-    album: 'celebration',
-    title: 'Birthday Invitations & Panda Decor Prep',
-    caption: 'Balloons inflated, bamboo garlands hung, everything ready!',
-    thumbnail: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=700&q=80',
-    mediaUrl: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1200&q=85',
-  },
-];
-
-type AlbumTab = 'all' | 'milestones' | 'photoshoot' | 'family' | 'celebration' | 'videos';
-
 export const Gallery: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<AlbumTab>('all');
+  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [childName, setChildName] = useState<string>('Birthday Star');
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
 
-  const filteredItems = galleryData.filter((item) => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'videos') return item.type === 'video';
-    return item.album === activeTab;
-  });
+  useEffect(() => {
+    // 1. Fetch child name
+    fetch('/api/event')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.event?.childName) {
+          setChildName(data.event.childName);
+        }
+      })
+      .catch((err) => console.warn('Could not fetch event in Gallery:', err));
+
+    // 2. Fetch Google Drive Photos uploaded by admin
+    fetch('/api/photos')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.photos)) {
+          // Display only photos explicitly assigned to 'gallery'
+          const driveGalleryItems: GalleryItem[] = data.photos
+            .filter((p: any) => p.targetSection === 'gallery')
+            .map((p: any, i: number) => {
+              const isVid = p.mediaType === 'video' || p.mimeType?.startsWith('video/');
+              const src = p.proxyUrl || p.directUrl || p.thumbnailLink;
+              return {
+                id: p.id || `drive-${i}`,
+                type: isVid ? 'video' : 'photo',
+                title: p.caption || p.name?.replace(/^birthday-.*?-(.+)/, '$1') || `${childName} Birthday Photo`,
+                caption: p.caption || `Google Drive upload by ${p.uploaderName || 'Admin'}`,
+                thumbnail: src,
+                mediaUrl: src,
+              };
+            });
+
+          setItems(driveGalleryItems);
+        }
+      })
+      .catch((err) => console.warn('Could not fetch Drive photos in Gallery:', err))
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const handleOpenLightbox = (index: number) => {
     setActiveLightboxIndex(index);
@@ -118,18 +73,18 @@ export const Gallery: React.FC = () => {
   const handleNextLightbox = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (activeLightboxIndex !== null) {
-      setActiveLightboxIndex((activeLightboxIndex + 1) % filteredItems.length);
+      setActiveLightboxIndex((activeLightboxIndex + 1) % items.length);
     }
   };
 
   const handlePrevLightbox = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (activeLightboxIndex !== null) {
-      setActiveLightboxIndex((activeLightboxIndex - 1 + filteredItems.length) % filteredItems.length);
+      setActiveLightboxIndex((activeLightboxIndex - 1 + items.length) % items.length);
     }
   };
 
-  const currentItem = activeLightboxIndex !== null ? filteredItems[activeLightboxIndex] : null;
+  const currentItem = activeLightboxIndex !== null ? items[activeLightboxIndex] : null;
 
   return (
     <section id="gallery" className={`section-wrapper ${styles['gallery-section'] || 'gallery-section'}`}>
@@ -145,126 +100,82 @@ export const Gallery: React.FC = () => {
           </div>
           <h2 className="section-title">Photo &amp; Video Gallery</h2>
           <p className="section-subtitle">
-            Explore precious snapshots and captured laughter from Ditvi&apos;s first incredible year.
+            Explore precious snapshots and captured laughter from {childName}&apos;s first incredible year.
           </p>
-          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
-            <a
-              href="/photos"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'linear-gradient(135deg, var(--deep-forest-green, #294B35) 0%, var(--bamboo-green, #789B63) 100%)',
-                color: '#FFFFFF',
-                padding: '10px 22px',
-                borderRadius: '9999px',
-                fontWeight: 700,
-                fontSize: '0.92rem',
-                textDecoration: 'none',
-                boxShadow: '0 4px 14px rgba(41, 75, 53, 0.18)',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <Sparkles size={18} />
-              <span>View All Google Drive Photos &amp; Videos</span>
-            </a>
+        </div>
+
+        {/* Gallery Grid or Empty State */}
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#789b63' }}>
+            <Sparkles size={32} className="animate-spin" />
+            <p style={{ marginTop: '10px', fontSize: '0.95rem' }}>Loading precious gallery moments...</p>
           </div>
-        </div>
+        ) : items.length === 0 ? (
+          <div style={{
+            textAlign: 'center',
+            padding: '50px 20px',
+            background: 'rgba(255, 255, 255, 0.7)',
+            borderRadius: '24px',
+            border: '2px dashed #dce8d2',
+            maxWidth: '540px',
+            margin: '0 auto'
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: '8px' }}>🐼📸</div>
+            <h3 style={{ fontSize: '1.25rem', color: '#294b35', marginBottom: '8px', fontFamily: 'var(--font-heading)' }}>
+              Memories Coming Soon!
+            </h3>
+            <p style={{ fontSize: '0.92rem', color: '#688265', margin: 0, lineHeight: 1.5 }}>
+              The host family will be uploading captured moments and smiles directly to Google Drive. Check back soon or visit the full photos page!
+            </p>
+          </div>
+        ) : (
+          <div className={styles['gallery-grid']}>
+            {items.map((item, index) => (
+              <div
+                key={item.id}
+                className={styles['gallery-card']}
+                onClick={() => handleOpenLightbox(index)}
+                role="button"
+                tabIndex={0}
+                aria-label={`View ${item.title}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleOpenLightbox(index);
+                  }
+                }}
+              >
+                <div className={styles['gallery-media-wrapper']}>
+                  <img
+                    src={item.thumbnail}
+                    alt={item.title}
+                    className={styles['gallery-thumbnail']}
+                    loading="lazy"
+                  />
 
-        {/* Album Filter Tabs */}
-        <div className={styles['album-tabs-container']}>
-          <button
-            type="button"
-            className={`${styles['album-tab'] || 'album-tab'} ${styles['all'] || 'all'} ${styles['active'] || 'active'}`}
-            onClick={() => setActiveTab('all')}
-          >
-            All Memories ({galleryData.length})
-          </button>
-          <button
-            type="button"
-            className={`${styles['album-tab'] || 'album-tab'} ${styles['photoshoot'] || 'photoshoot'} ${styles['active'] || 'active'}`}
-            onClick={() => setActiveTab('photoshoot')}
-          >
-            Panda Photoshoot
-          </button>
-          <button
-            type="button"
-            className={`${styles['album-tab'] || 'album-tab'} ${styles['milestones'] || 'milestones'} ${styles['active'] || 'active'}`}
-            onClick={() => setActiveTab('milestones')}
-          >
-            Baby Milestones
-          </button>
-          <button
-            type="button"
-            className={`${styles['album-tab'] || 'album-tab'} ${styles['family'] || 'family'} ${styles['active'] || 'active'}`}
-            onClick={() => setActiveTab('family')}
-          >
-            Family Smiles
-          </button>
-          <button
-            type="button"
-            className={`${styles['album-tab'] || 'album-tab'} ${styles['celebration'] || 'celebration'} ${styles['active'] || 'active'}`}
-            onClick={() => setActiveTab('celebration')}
-          >
-            Celebration
-          </button>
-          <button
-            type="button"
-            className={`${styles['album-tab'] || 'album-tab'} ${styles['video-tab'] || 'video-tab'} ${styles['videos'] || 'videos'} ${styles['active'] || 'active'}`}
-            onClick={() => setActiveTab('videos')}
-          >
-            <Film size={15} />
-            <span>Videos</span>
-          </button>
-        </div>
+                  {item.type === 'video' && (
+                    <div className={styles['video-play-indicator']}>
+                      <Play size={22} fill="#FFFFFF" color="#FFFFFF" />
+                      {item.duration && <span className={styles['video-duration']}>{item.duration}</span>}
+                    </div>
+                  )}
 
-        {/* Gallery Grid */}
-        <div className={styles['gallery-grid']}>
-          {filteredItems.map((item, index) => (
-            <div
-              key={item.id}
-              className={styles['gallery-card']}
-              onClick={() => handleOpenLightbox(index)}
-              role="button"
-              tabIndex={0}
-              aria-label={`View ${item.title}`}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  handleOpenLightbox(index);
-                }
-              }}
-            >
-              <div className={styles['gallery-media-wrapper']}>
-                <img
-                  src={item.thumbnail}
-                  alt={item.title}
-                  className={styles['gallery-thumbnail']}
-                  loading="lazy"
-                />
-
-                {item.type === 'video' && (
-                  <div className={styles['video-play-indicator']}>
-                    <Play size={22} fill="#FFFFFF" color="#FFFFFF" />
-                    {item.duration && <span className={styles['video-duration']}>{item.duration}</span>}
-                  </div>
-                )}
-
-                <div className={styles['gallery-overlay']}>
-                  <div className={styles['overlay-content']}>
-                    <span className={styles['overlay-badge']}>
-                      {item.type === 'video' ? 'Play Video' : 'View Fullscreen'}
-                    </span>
-                    <h4 className={styles['overlay-title']}>{item.title}</h4>
-                    <p className={styles['overlay-caption']}>{item.caption}</p>
-                  </div>
-                  <div className={styles['overlay-expand-btn']}>
-                    <Maximize2 size={18} />
+                  <div className={styles['gallery-overlay']}>
+                    <div className={styles['overlay-content']}>
+                      <span className={styles['overlay-badge']}>
+                        {item.type === 'video' ? 'Play Video' : 'View Fullscreen'}
+                      </span>
+                      <h4 className={styles['overlay-title']}>{item.title}</h4>
+                      <p className={styles['overlay-caption']}>{item.caption}</p>
+                    </div>
+                    <div className={styles['overlay-expand-btn']}>
+                      <Maximize2 size={18} />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Lightbox Modal */}
@@ -324,7 +235,7 @@ export const Gallery: React.FC = () => {
                 <p className={styles['lightbox-desc']}>{currentItem.caption}</p>
               </div>
               <div className={styles['lightbox-counter']}>
-                {(activeLightboxIndex ?? 0) + 1} / {filteredItems.length}
+                {(activeLightboxIndex ?? 0) + 1} / {items.length}
               </div>
             </div>
           </div>

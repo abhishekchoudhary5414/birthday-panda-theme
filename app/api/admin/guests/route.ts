@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
         const title = g.title?.trim() || 'Mr.';
         const email = g.email?.trim() || null;
-        const randomCode = 'DITVI-' + Math.floor(1000 + Math.random() * 9000);
+        const randomCode = 'PANDA-' + Math.floor(1000 + Math.random() * 9000);
 
         const res = await sql`
           INSERT INTO guests (title, name, mobile, email, invite_code, rsvp_status, invited)
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate cute invite code e.g. DITVI-8492
-    const randomCode = 'DITVI-' + Math.floor(1000 + Math.random() * 9000);
+    const randomCode = 'PANDA-' + Math.floor(1000 + Math.random() * 9000);
 
     const inserted = await sql`
       INSERT INTO guests (title, name, mobile, email, invite_code, rsvp_status, invited)

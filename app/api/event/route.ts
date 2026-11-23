@@ -12,8 +12,8 @@ export async function GET() {
     });
 
     const eventDetails = {
-      eventTitle: settingsMap['event_title'] || "Ditvi's 1st Birthday Party",
-      childName: settingsMap['child_name'] || 'Ditvi',
+      eventTitle: settingsMap['event_title'] || "1st Birthday Celebration",
+      childName: settingsMap['child_name'] || 'Birthday Star',
       turningAge: settingsMap['turning_age'] || '1',
       eventDate: settingsMap['event_date'] || 'Saturday, December 12, 2026',
       eventDateIso: settingsMap['event_date_iso'] || '2026-12-12',
@@ -25,6 +25,7 @@ export async function GET() {
       contactPhone: settingsMap['contact_phone'] || '',
       contactEmail: settingsMap['contact_email'] || '',
       dressCode: settingsMap['dress_code'] || 'Pastel forest tones, sage, cream, or panda-inspired accents',
+      childPhotoUrl: settingsMap['child_photo_url'] || '',
     };
 
     return NextResponse.json({ success: true, event: eventDetails });

@@ -6,7 +6,8 @@ import { Heart, Sparkles, Smile, Star, Footprints, Music } from 'lucide-react';
 import { WavingPanda, PeekingPanda } from './PandaIllustrations';
 
 export const About: React.FC = () => {
-  const [childName, setChildName] = useState<string>('Ditvi');
+  const [childName, setChildName] = useState<string>('Birthday Star');
+  const [childPhotoUrl, setChildPhotoUrl] = useState<string>('');
 
   useEffect(() => {
     fetch('/api/event')
@@ -14,6 +15,9 @@ export const About: React.FC = () => {
       .then((data) => {
         if (data?.event?.childName) {
           setChildName(data.event.childName);
+        }
+        if (data?.event?.childPhotoUrl) {
+          setChildPhotoUrl(data.event.childPhotoUrl);
         }
       })
       .catch((err) => console.error('Failed to load event data in About:', err));
@@ -43,11 +47,38 @@ export const About: React.FC = () => {
             </div>
 
             <div className={styles['portrait-frame']}>
-              <img
-                src="https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=600&q=80"
-                alt="Ditvi laughing with his panda toy"
-                className={styles['portrait-image']}
-              />
+              {childPhotoUrl ? (
+                <img
+                  src={childPhotoUrl}
+                  alt={`${childName} laughing with panda toys`}
+                  className={styles['portrait-image']}
+                />
+              ) : (
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'radial-gradient(circle, #f4f8f1 0%, #e2eedb 100%)',
+                  padding: '24px'
+                }}>
+                  <WavingPanda size={160} />
+                  <span style={{
+                    marginTop: '8px',
+                    fontSize: '0.86rem',
+                    fontWeight: 700,
+                    color: '#294b35',
+                    background: 'rgba(255,255,255,0.85)',
+                    padding: '4px 14px',
+                    borderRadius: '16px',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+                  }}>
+                    {childName}&apos;s First Year
+                  </span>
+                </div>
+              )}
               <div className={styles['portrait-badge']}>
                 <Heart size={16} fill="var(--blush-pink)" color="var(--blush-pink)" />
                 <span>One Year of Magic</span>
@@ -90,41 +121,43 @@ export const About: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Column: Ditvi's Story & Parents' Message */}
+          {/* Right Column: Birthday Star Story & Parents' Message */}
           <div className={styles['about-story-col']}>
             <div className={`card-bamboo ${styles['story-card'] || 'story-card'}`}>
               <h3 className={styles['story-title']}>
                 Growing Up in Our Cozy Bamboo Grove 🌿
               </h3>
               <p className={styles['story-paragraph']}>
-                From the moment Ditvi opened his bright curious eyes, our entire world transformed into a wondrous playground. He has the sweetest contagious laugh, loves soft panda plushies more than anything, and waves enthusiastically at everyone he meets.
+                From the moment {childName} opened bright curious eyes, our entire world transformed into a wondrous playground. Our little star has the sweetest contagious laugh, loves soft panda plushies more than anything, and waves enthusiastically at everyone.
               </p>
               <p className={styles['story-paragraph']}>
-                Whether he is discovering how to roll, stacking bamboo-colored rings, or tasting mashed banana with messy panda-level enthusiasm, Ditvi turns ordinary moments into heartwarming adventures.
+                Whether discovering how to roll, stacking bamboo-colored rings, or tasting yummy treats with messy panda-level enthusiasm, {childName} turns ordinary moments into heartwarming adventures.
               </p>
 
               {/* Parents' Section */}
               <div className={styles['parents-note-box']}>
                 <div className={styles['parents-avatar-group']}>
-                  <img
-                    src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80"
-                    alt="Daddy Eric"
-                    className={styles['parent-img']}
-                    title="Daddy Eric"
-                  />
-                  <img
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
-                    alt="Mommy Sarah"
-                    className={`${styles['parent-img'] || 'parent-img'} ${styles['overlap'] || 'overlap'}`}
-                    title="Mommy Sarah"
-                  />
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '50%',
+                    background: '#eef5ea',
+                    border: '2px solid #789b63',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.4rem',
+                    boxShadow: '0 4px 10px rgba(41, 75, 53, 0.12)'
+                  }}>
+                    👨‍👩‍👧
+                  </div>
                 </div>
                 <div className={styles['parents-text']}>
-                  <h4 className={styles['parents-label']}>A Letter From Mommy &amp; Daddy</h4>
+                  <h4 className={styles['parents-label']}>A Letter From Parents</h4>
                   <p className={styles['parents-quote']}>
-                    &ldquo;Ditvi, you are our greatest blessing, our joyful little bear cub, and the brightest sunshine in our home. Thank you for filling this first year with infinite laughter and pure warmth. We love you always.&rdquo;
+                    &ldquo;{childName}, you are our greatest blessing, our joyful little bear cub, and the brightest sunshine in our home. Thank you for filling this first year with infinite laughter and pure warmth. We love you always.&rdquo;
                   </p>
-                  <span className={styles['parents-signature']}>&mdash; Sarah &amp; Eric Chen</span>
+                  <span className={styles['parents-signature']}>&mdash; With Forever Love, Mommy &amp; Daddy</span>
                 </div>
               </div>
             </div>

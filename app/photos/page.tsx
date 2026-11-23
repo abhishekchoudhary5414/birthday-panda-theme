@@ -132,10 +132,10 @@ export default function PhotosGalleryPage() {
           </div>
 
           <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: '#294B35', margin: '0 0 10px', letterSpacing: '-0.5px' }}>
-            Ditvi&apos;s Celebration Photos &amp; Videos
+            Our Celebration Photos &amp; Videos
           </h1>
           <p style={{ fontSize: '1.05rem', color: '#6e7e73', maxWidth: '640px', margin: '0 auto', lineHeight: 1.6 }}>
-            Browse, view in high resolution, or download all beautiful photos and clips uploaded directly to Ditvi&apos;s Google Drive cloud album.
+            Browse, view in high resolution, or download all beautiful photos and clips uploaded directly to Our Google Drive cloud album.
           </p>
         </div>
 

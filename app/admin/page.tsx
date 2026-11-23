@@ -164,6 +164,8 @@ interface AdminDrivePhoto {
   directUrl: string;
   caption?: string;
   uploaderName?: string;
+  targetSection?: 'child_photo' | 'timeline' | 'gallery' | string;
+  milestoneIndex?: number | null;
 }
 
 interface AdminGiftItem {
@@ -272,8 +274,8 @@ export default function AdminDashboardPage() {
 
   // Event & Venue Settings State (loaded from /api/admin/event)
   const [eventSettings, setEventSettings] = useState({
-    eventTitle: "Ditvi's 1st Birthday Party",
-    childName: 'Ditvi',
+    eventTitle: "1st Birthday Celebration",
+    childName: 'Birthday Star',
     turningAge: '1',
     eventDate: 'Saturday, December 12, 2026',
     eventDateIso: '2026-12-12',
@@ -283,8 +285,9 @@ export default function AdminDashboardPage() {
     venueCity: '',
     venueMapUrl: '',
     contactPhone: '+1 (555) 019-2831',
-    contactEmail: 'family@ditvibirthday.com',
+    contactEmail: 'family@birthday.com',
     dressCode: 'Pastel forest tones, sage, cream, or panda-inspired accents',
+    childPhotoUrl: '',
   });
   const [eventSettingsLoading, setEventSettingsLoading] = useState(false);
   const [isSavingEventSettings, setIsSavingEventSettings] = useState(false);
@@ -309,11 +312,11 @@ export default function AdminDashboardPage() {
   const [gmailToast, setGmailToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Email template & customization state
-  const [emailSubject, setEmailSubject] = useState("Ditvi's 1st Birthday Celebration Invitation");
+  const [emailSubject, setEmailSubject] = useState("1st Birthday Celebration Celebration Invitation");
   const [emailCustomMessage, setEmailCustomMessage] = useState(
     "We would love to invite you to celebrate this magical milestone with us! Join us for a joyful day filled with laughter, delicious treats, games, and warm family moments."
   );
-  const [emailBirthdayPerson, setEmailBirthdayPerson] = useState('Ditvi');
+  const [emailBirthdayPerson, setEmailBirthdayPerson] = useState('Birthday Star');
   const [emailBirthdayDate, setEmailBirthdayDate] = useState('Saturday, December 12, 2026');
   const [emailBirthdayTime, setEmailBirthdayTime] = useState('3:30 PM - 7:30 PM CST');
   const [emailBirthdayLocation, setEmailBirthdayLocation] = useState('Austin, TX');
@@ -364,6 +367,8 @@ export default function AdminDashboardPage() {
   const [driveUploadPreviews, setDriveUploadPreviews] = useState<string[]>([]);
   const [driveUploaderName, setDriveUploaderName] = useState('Admin / Host');
   const [driveCaption, setDriveCaption] = useState('');
+  const [driveTargetSection, setDriveTargetSection] = useState<'child_photo' | 'timeline' | 'gallery' | 'none'>('none');
+  const [driveMilestoneIndex, setDriveMilestoneIndex] = useState<number>(1);
   const [isDriveUploading, setIsDriveUploading] = useState(false);
   const [driveUploadSuccess, setDriveUploadSuccess] = useState<string | null>(null);
   const [driveUploadError, setDriveUploadError] = useState<string | null>(null);
@@ -372,6 +377,10 @@ export default function AdminDashboardPage() {
   const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
   const [isDeletingDrivePhoto, setIsDeletingDrivePhoto] = useState(false);
   const driveFileInputRef = useRef<HTMLInputElement>(null);
+  const websiteFileInputRef = useRef<HTMLInputElement>(null);
+  const [websiteTargetSection, setWebsiteTargetSection] = useState<'child_photo' | 'timeline' | 'gallery'>('child_photo');
+  const [websiteMilestoneIndex, setWebsiteMilestoneIndex] = useState<number>(1);
+  const [isWebsiteDirectUploading, setIsWebsiteDirectUploading] = useState(false);
 
   // Panda Common Modal dialog state (replaces window.alert & window.confirm)
   const [modalConfig, setModalConfig] = useState<{
@@ -755,6 +764,59 @@ export default function AdminDashboardPage() {
     setDriveUploadPreviews((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  // Client-side image compression helper to speed up network uploads
+  const compressImageClient = async (file: File): Promise<File> => {
+    if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
+      return file;
+    }
+    return new Promise((resolve) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      img.onload = () => {
+        const maxDimension = 1920;
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (blob && blob.size < file.size) {
+              const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, '') + '.webp', {
+                type: 'image/webp',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(file);
+            }
+          },
+          'image/webp',
+          0.85
+        );
+      };
+      img.onerror = () => resolve(file);
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Submit upload to Google Drive
   const handleDriveUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -770,11 +832,18 @@ export default function AdminDashboardPage() {
     let uploadedCount = 0;
     const errors: string[] = [];
 
-    for (const file of driveUploadFiles) {
+    for (const rawFile of driveUploadFiles) {
+      // Pre-compress images in browser for ultra-fast network transfer
+      const file = await compressImageClient(rawFile);
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('uploaderName', driveUploaderName.trim() || 'Admin');
       formData.append('caption', driveCaption.trim());
+      formData.append('targetSection', driveTargetSection);
+      if (driveTargetSection === 'timeline') {
+        formData.append('milestoneIndex', String(driveMilestoneIndex));
+      }
 
       try {
         const res = await fetch('/api/photos', {
@@ -801,11 +870,107 @@ export default function AdminDashboardPage() {
       setDriveUploadPreviews([]);
       setDriveCaption('');
       fetchDrivePhotos();
+      fetchEventSettings();
       checkDriveStatus();
     }
 
     if (errors.length > 0) {
       setDriveUploadError(errors.join('. '));
+    }
+  };
+
+  // Direct file upload handler for Website & eCard Photos tab
+  const handleWebsiteDirectUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    if (!driveStatus?.connected) {
+      showPandaAlert('Please connect Google Drive first using the button above.', 'Google Drive Required', 'warning');
+      return;
+    }
+
+    setIsWebsiteDirectUploading(true);
+    let uploadedCount = 0;
+    const errors: string[] = [];
+
+    for (const rawFile of Array.from(files)) {
+      try {
+        const file = await compressImageClient(rawFile);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('uploaderName', 'Admin Host');
+        formData.append('targetSection', websiteTargetSection);
+        if (websiteTargetSection === 'timeline') {
+          formData.append('milestoneIndex', String(websiteMilestoneIndex));
+        }
+
+        const res = await fetch('/api/photos', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          uploadedCount++;
+        } else {
+          errors.push(data.error || `Upload failed for ${file.name}`);
+        }
+      } catch (err) {
+        errors.push(`Upload error for ${rawFile.name}`);
+      }
+    }
+
+    setIsWebsiteDirectUploading(false);
+
+    if (uploadedCount > 0) {
+      showPandaAlert(
+        websiteTargetSection === 'child_photo'
+          ? 'Child Honoree photo successfully uploaded to Google Drive and activated on Hero & eCard!'
+          : websiteTargetSection === 'timeline'
+          ? `Milestone #${websiteMilestoneIndex} photo uploaded to Google Drive and updated on Timeline!`
+          : `Successfully uploaded ${uploadedCount} photo(s) to Google Drive for the / page Gallery!`,
+        'Upload Successful',
+        'success'
+      );
+      fetchDrivePhotos();
+      fetchEventSettings();
+      checkDriveStatus();
+    }
+
+    if (errors.length > 0) {
+      showPandaAlert(errors.join('. '), 'Upload Error', 'danger');
+    }
+  };
+
+  // Quick assign photo section (child_photo, timeline, gallery, none)
+  const handleAssignPhotoSection = async (photoId: string, section: 'child_photo' | 'timeline' | 'gallery' | 'none', milestoneIdx?: number) => {
+    try {
+      const res = await fetch(`/api/photos/${photoId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetSection: section === 'none' ? null : section,
+          milestoneIndex: milestoneIdx,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showPandaAlert(
+          section === 'child_photo'
+            ? 'Photo set as official Child Honoree photo! It is now active on the Hero Section and Invitation eCard.'
+            : section === 'timeline'
+            ? `Photo assigned to Timeline milestone #${milestoneIdx || 1}!`
+            : section === 'gallery'
+            ? 'Photo added to / page Gallery!'
+            : 'Photo unassigned (set to None / unplaced).',
+          'Updated Successfully',
+          'success'
+        );
+        fetchDrivePhotos();
+        fetchEventSettings();
+      } else {
+        showPandaAlert(data.error || 'Failed to update photo assignment', 'Error', 'danger');
+      }
+    } catch (err) {
+      console.error('Assign photo error:', err);
+      showPandaAlert('Network error updating photo assignment', 'Error', 'danger');
     }
   };
 
@@ -1218,7 +1383,7 @@ export default function AdminDashboardPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `Ditvi_Birthday_RSVP_Submissions_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Birthday_RSVP_Submissions_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1260,7 +1425,7 @@ export default function AdminDashboardPage() {
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
-      doc.text("Ditvi's 1st Birthday Celebration • Bamboo Grove", 42, 34);
+      doc.text("1st Birthday Celebration Celebration • Bamboo Grove", 42, 34);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9.5);
@@ -1400,11 +1565,11 @@ export default function AdminDashboardPage() {
         doc.setFontSize(7.5);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(110, 130, 115);
-        doc.text("Ditvi's 1st Birthday Celebration • Official RSVP Admin Registry • Bamboo Forest Theme", 42, 580);
+        doc.text("1st Birthday Celebration Celebration • Official RSVP Admin Registry • Bamboo Forest Theme", 42, 580);
         doc.text(`Page ${i} of ${pageCount}`, 755, 580, { align: 'right' });
       }
 
-      doc.save(`Ditvi_Birthday_Official_RSVP_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+      doc.save(`Birthday_Official_RSVP_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Failed to export RSVP PDF:', err);
       showPandaAlert('Failed to generate RSVP PDF report.')
@@ -1418,7 +1583,7 @@ export default function AdminDashboardPage() {
   const openWhatsappModal = (guest: Guest) => {
     setWhatsappGuest(guest);
     const guestName = guest.name ? `${guest.title ? guest.title + ' ' : ''}${guest.name}` : 'Guest';
-    const defaultMsg = `Dear ${guestName},\n\nYou are cordially invited to Ditvi's 1st Birthday Celebration in the Bamboo Grove! 🐼🎋\n\nPlease confirm your attendance and let us know your preferences by filling out your RSVP using the link below:`;
+    const defaultMsg = `Dear ${guestName},\n\nYou are cordially invited to 1st Birthday Celebration Celebration in the Bamboo Grove! 🐼🎋\n\nPlease confirm your attendance and let us know your preferences by filling out your RSVP using the link below:`;
     setWhatsappCustomMessage(defaultMsg);
   };
 
@@ -1532,7 +1697,7 @@ export default function AdminDashboardPage() {
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(20);
-      doc.text("Ditvi's 1st Birthday Celebration", 40, 36);
+      doc.text("1st Birthday Celebration Celebration", 40, 36);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10.5);
@@ -1594,14 +1759,14 @@ export default function AdminDashboardPage() {
           doc.setFontSize(8);
           doc.setTextColor(140, 140, 140);
           doc.text(
-            `Ditvi's 1st Birthday Wish Keepsake | Page ${currentPage} of ${pageCount}`,
+            `1st Birthday Celebration Wish Keepsake | Page ${currentPage} of ${pageCount}`,
             40,
             doc.internal.pageSize.height - 20
           );
         },
       });
 
-      doc.save(`Ditvi_Birthday_Wishes_Keepsake_${new Date().toISOString().slice(0, 10)}.pdf`);
+      doc.save(`Birthday_Wishes_Keepsake_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Failed to generate wishes PDF:', err);
       showPandaAlert('Failed to generate PDF. Please try again.')
@@ -1666,7 +1831,7 @@ export default function AdminDashboardPage() {
           doc.setTextColor(255, 255, 255);
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(15);
-          doc.text("Ditvi's 1st Birthday - Guestbook Keepsake Cards", marginX, 26);
+          doc.text("1st Birthday Celebration - Guestbook Keepsake Cards", marginX, 26);
 
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
@@ -1759,12 +1924,12 @@ export default function AdminDashboardPage() {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.5);
         doc.setTextColor(181, 132, 34); // #B58422 Gold
-        doc.text("A HEARTFELT BIRTHDAY WISH FOR DITVI", centerX, y + 80, { align: 'center' });
+        doc.text("A HEARTFELT BIRTHDAY WISH FOR {eventSettings.childName ? eventSettings.childName.toUpperCase() : 'OUR CELEBRANT'}", centerX, y + 80, { align: 'center' });
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(13);
         doc.setTextColor(41, 75, 53); // #294B35
-        doc.text("Ditvi's 1st Birthday Keepsake", centerX, y + 96, { align: 'center' });
+        doc.text("1st Birthday Celebration Keepsake", centerX, y + 96, { align: 'center' });
 
         // Thin decorative gold divider
         doc.setFillColor(217, 182, 111);
@@ -1835,7 +2000,7 @@ export default function AdminDashboardPage() {
           year: 'numeric',
         });
         doc.text(
-          `Recorded on ${dateStr} • Ditvi's Memory Wall (${wish.likes || 1} Likes)`,
+          `Recorded on ${dateStr} • Memory Wall (${wish.likes || 1} Likes)`,
           centerX,
           footerY + 13,
           { align: 'center' }
@@ -1847,14 +2012,14 @@ export default function AdminDashboardPage() {
           doc.setFontSize(7.5);
           doc.setTextColor(130, 145, 135);
           doc.text(
-            `Ditvi's 1st Birthday Celebration • Official Memory Keepsake • Sheet ${pageIndex + 1} of ${totalPages}`,
+            `1st Birthday Celebration Celebration • Official Memory Keepsake • Sheet ${pageIndex + 1} of ${totalPages}`,
             marginX,
             pageHeight - 10
           );
         }
       });
 
-      doc.save(`Ditvi_Birthday_Wishes_4_Cards_A4_${new Date().toISOString().slice(0, 10)}.pdf`);
+      doc.save(`Birthday_Wishes_4_Cards_A4_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Failed to generate 4-card A4 PDF:', err);
       showPandaAlert('Failed to generate A4 Cards PDF. Please try again.')
@@ -1885,7 +2050,7 @@ export default function AdminDashboardPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `Ditvi_Birthday_Wishes_All_Data_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Birthday_Wishes_All_Data_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1904,7 +2069,7 @@ export default function AdminDashboardPage() {
       });
       const a = document.createElement('a');
       a.href = dataUrl;
-      a.download = `Ditvi-Birthday-Wish-${(wish.name || 'guest').replace(/\s+/g, '_')}.png`;
+      a.download = `Birthday-Wish-${(wish.name || 'guest').replace(/\s+/g, '_')}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1962,9 +2127,10 @@ export default function AdminDashboardPage() {
         }
       }
     }
-    if (activeTab === '11') {
+    if (activeTab === '11' || activeTab === 'page_photos') {
       fetchDrivePhotos();
       checkDriveStatus();
+      fetchEventSettings();
 
       // Check URL search params for OAuth success or error
       if (typeof window !== 'undefined') {
@@ -1974,10 +2140,10 @@ export default function AdminDashboardPage() {
         if (gdriveSuccess) {
           setDriveToast({ type: 'success', message: gdriveSuccess });
           // Clean URL without refresh
-          window.history.replaceState({}, '', '/admin?tab=11');
+          window.history.replaceState({}, '', `/admin?tab=${activeTab}`);
         } else if (gdriveError) {
           setDriveToast({ type: 'error', message: gdriveError });
-          window.history.replaceState({}, '', '/admin?tab=11');
+          window.history.replaceState({}, '', `/admin?tab=${activeTab}`);
         }
       }
     }
@@ -2029,7 +2195,7 @@ export default function AdminDashboardPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'ditvi_guest_list_template.csv');
+    link.setAttribute('download', 'guest_list_template.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -2169,7 +2335,7 @@ export default function AdminDashboardPage() {
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
-      doc.text("Ditvi's 1st Birthday Celebration • Bamboo Grove", 40, 36);
+      doc.text("1st Birthday Celebration Celebration • Bamboo Grove", 40, 36);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9.5);
@@ -2265,7 +2431,7 @@ export default function AdminDashboardPage() {
           doc.setFontSize(7.5);
           doc.setTextColor(110, 130, 115);
           doc.text(
-            "Ditvi's 1st Birthday Celebration • Official Guest Directory • Bamboo Forest Theme",
+            "1st Birthday Celebration Celebration • Official Guest Directory • Bamboo Forest Theme",
             40,
             doc.internal.pageSize.height - 18
           );
@@ -2278,7 +2444,7 @@ export default function AdminDashboardPage() {
         },
       });
 
-      doc.save(`Ditvi_Birthday_Guest_List_${new Date().toISOString().slice(0, 10)}.pdf`);
+      doc.save(`Birthday_Guest_List_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Failed to generate PDF:', err);
       showPandaAlert('Could not generate PDF. Please try again.')
@@ -2548,7 +2714,7 @@ export default function AdminDashboardPage() {
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
-      doc.text("Ditvi's 1st Birthday Celebration", 40, 36);
+      doc.text("1st Birthday Celebration Celebration", 40, 36);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10.5);
@@ -2632,7 +2798,7 @@ export default function AdminDashboardPage() {
           doc.setFontSize(8);
           doc.setTextColor(140, 140, 140);
           doc.text(
-            `Ditvi's 1st Birthday | Generated on ${new Date().toLocaleDateString('en-US')} | Page ${currentPage} of ${pageCount}`,
+            `1st Birthday Celebration | Generated on ${new Date().toLocaleDateString('en-US')} | Page ${currentPage} of ${pageCount}`,
             40,
             doc.internal.pageSize.height - 20
           );
@@ -2640,7 +2806,7 @@ export default function AdminDashboardPage() {
       });
 
       const cleanName = sub.player_name.replace(/[^a-zA-Z0-9]/g, '_');
-      doc.save(`Ditvi_Quiz_${cleanName}_Report.pdf`);
+      doc.save(`Quiz_${cleanName}_Report.pdf`);
     } catch (err) {
       console.error('Error generating single quiz PDF:', err);
       showPandaAlert('Failed to generate PDF for this person. Please try again.')
@@ -2675,7 +2841,7 @@ export default function AdminDashboardPage() {
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
-      doc.text("Ditvi's 1st Birthday Celebration", 40, 36);
+      doc.text("1st Birthday Celebration Celebration", 40, 36);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10.5);
@@ -2801,7 +2967,7 @@ export default function AdminDashboardPage() {
             doc.setFontSize(8);
             doc.setTextColor(140, 140, 140);
             doc.text(
-              `Ditvi's 1st Birthday Master Quiz Report | Page ${currentPage} of ${pageCount}`,
+              `1st Birthday Celebration Master Quiz Report | Page ${currentPage} of ${pageCount}`,
               40,
               doc.internal.pageSize.height - 20
             );
@@ -2809,7 +2975,7 @@ export default function AdminDashboardPage() {
         });
       }
 
-      doc.save(`Ditvi_Birthday_All_Quiz_Submissions_${new Date().toISOString().slice(0, 10)}.pdf`);
+      doc.save(`Birthday_All_Quiz_Submissions_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Error generating all quiz PDF:', err);
       showPandaAlert('Failed to generate master PDF report. Please try again.')
@@ -3153,7 +3319,7 @@ export default function AdminDashboardPage() {
 
       const a = document.createElement('a');
       a.href = dataUrl;
-      a.download = `Ditvi-1st-Birthday-Invitation-${guest.name.replace(/\s+/g, '_')}.png`;
+      a.download = `Birthday-Invitation-${guest.name.replace(/\s+/g, '_')}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -3178,7 +3344,7 @@ export default function AdminDashboardPage() {
 
       const a = document.createElement('a');
       a.href = dataUrl;
-      a.download = `Ditvi-Thank-You-Card-${guest.name.replace(/\s+/g, '_')}.png`;
+      a.download = `Thank-You-Card-${guest.name.replace(/\s+/g, '_')}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -3403,6 +3569,21 @@ export default function AdminDashboardPage() {
 
           <button
             type="button"
+            className={`${styles.navItem} ${activeTab === 'page_photos' ? styles.active : ''}`}
+            onClick={() => {
+              setActiveTab('page_photos');
+              setIsMobileSidebarOpen(false);
+            }}
+          >
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><ImageIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>Website &amp; eCard Photos</span>
+            </div>
+            {eventSettings.childPhotoUrl && <span className={styles.navBadge} style={{ background: '#2e7d32' }}>Active</span>}
+          </button>
+
+          <button
+            type="button"
             className={`${styles.navItem} ${activeTab === '11' ? styles.active : ''}`}
             onClick={() => {
               setActiveTab('11');
@@ -3433,7 +3614,7 @@ export default function AdminDashboardPage() {
             </button>
             <div>
               <h1 className={styles.consoleHeaderTitle}>Birthday Event Management Console</h1>
-              <p className={styles.consoleSubtext}>Celebrating Ditvi&apos;s 1st Birthday Celebration</p>
+              <p className={styles.consoleSubtext}>Celebrating {eventSettings.childName || 'Birthday Star'}&apos;s 1st Birthday Celebration</p>
             </div>
           </div>
 
@@ -4192,7 +4373,7 @@ export default function AdminDashboardPage() {
                   <span>{eventSettings.eventDate || 'Saturday, December 12, 2026'}</span>
                 </div>
                 <h2 className={styles.overviewSpotlightTitle}>
-                  {eventSettings.eventTitle || "Ditvi's 1st Birthday Party"}
+                  {eventSettings.eventTitle || "1st Birthday Celebration Party"}
                 </h2>
                 <div className={styles.overviewSpotlightMeta}>
                   <span className={styles.overviewSpotlightMetaItem}>
@@ -4419,6 +4600,20 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
 
+                {/* Website & eCard Photos */}
+                <div className={styles.overviewModuleCard} onClick={() => setActiveTab('page_photos')}>
+                  <div className={styles.overviewModuleTop}>
+                    <div className={styles.overviewModuleTitleGroup}>
+                      <ImageIcon sx={{ color: '#3c8d40', fontSize: 22 }} />
+                      <span className={styles.overviewModuleTitle}>Website &amp; eCard Photos</span>
+                    </div>
+                    <span className={styles.overviewModuleBadge}>{eventSettings.childPhotoUrl ? 'Photo Active' : 'Placeholder'}</span>
+                  </div>
+                  <p className={styles.overviewModuleDesc}>
+                    Manage Google Drive photos specifically for the Hero section, Timeline milestones, and Birthday Invitation eCards.
+                  </p>
+                </div>
+
                 {/* Media & Google Drive */}
                 <div className={styles.overviewModuleCard} onClick={() => setActiveTab('11')}>
                   <div className={styles.overviewModuleTop}>
@@ -4510,7 +4705,7 @@ export default function AdminDashboardPage() {
                   <form onSubmit={handleAddQuizQuestion} className={styles.quizForm}>
                     <div>
                       <label className={styles.formLabel} htmlFor="quiz-question-input">
-                        Question Text (e.g. What is Ditvi&apos;s favorite food?)
+                        Question Text (e.g. What is the baby&apos;s favorite food?)
                       </label>
                       <input
                         id="quiz-question-input"
@@ -4574,7 +4769,7 @@ export default function AdminDashboardPage() {
                       <input
                         id="quiz-explanation-input"
                         type="text"
-                        placeholder="e.g. Ditvi loves sweet potato mash and smiles every time she eats it!"
+                        placeholder="e.g. The baby loves sweet potato mash and smiles every time she eats it!"
                         className={styles.inputField}
                         value={newQuizExplanation}
                         onChange={(e) => setNewQuizExplanation(e.target.value)}
@@ -4926,7 +5121,7 @@ export default function AdminDashboardPage() {
                         className={styles.eventInput}
                         value={eventSettings.eventTitle}
                         onChange={(e) => setEventSettings({ ...eventSettings, eventTitle: e.target.value })}
-                        placeholder="Ditvi's 1st Birthday Party"
+                        placeholder="1st Birthday Celebration"
                         required
                       />
                     </div>
@@ -4941,7 +5136,7 @@ export default function AdminDashboardPage() {
                         className={styles.eventInput}
                         value={eventSettings.childName}
                         onChange={(e) => setEventSettings({ ...eventSettings, childName: e.target.value })}
-                        placeholder="Ditvi"
+                        placeholder="e.g. Liam"
                         required
                       />
                     </div>
@@ -4976,6 +5171,46 @@ export default function AdminDashboardPage() {
                         placeholder="Pastel forest tones, sage, cream, or panda accents"
                       />
                     </div>
+                  </div>
+
+                  <div style={{ marginTop: '16px' }}>
+                    <label className={styles.eventLabel}>
+                      <span>Child Honoree Photo URL (Google Drive)</span>
+                      <span className={styles.eventLabelBadge}>Hero &amp; eCard</span>
+                    </label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input
+                        type="text"
+                        className={styles.eventInput}
+                        value={eventSettings.childPhotoUrl || ''}
+                        onChange={(e) => setEventSettings({ ...eventSettings, childPhotoUrl: e.target.value })}
+                        placeholder="https://lh3.googleusercontent.com/d/FILE_ID=w1200 or /api/photos/ID"
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('11')}
+                        className={styles.bambooBtnSecondary}
+                        style={{ whiteSpace: 'nowrap' }}
+                        title="Upload directly to your Google Drive in Media & Albums"
+                      >
+                        <PhotoLibraryIcon sx={{ fontSize: 16 }} />
+                        <span>Manage from Drive</span>
+                      </button>
+                    </div>
+                    {eventSettings.childPhotoUrl && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px', background: '#f5faf3', padding: '10px 14px', borderRadius: '12px', border: '1px solid #dce8d2' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={eventSettings.childPhotoUrl}
+                          alt="Child preview"
+                          style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #789b63' }}
+                        />
+                        <span style={{ fontSize: '0.84rem', color: '#294b35', fontWeight: 600 }}>
+                          Currently active child honoree photo displayed on Hero Section and Invitation eCard.
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -5171,7 +5406,7 @@ export default function AdminDashboardPage() {
                         className={styles.eventInput}
                         value={eventSettings.contactEmail}
                         onChange={(e) => setEventSettings({ ...eventSettings, contactEmail: e.target.value })}
-                        placeholder="family@ditvibirthday.com"
+                        placeholder="family@birthday.com"
                       />
                     </div>
                   </div>
@@ -5221,10 +5456,10 @@ export default function AdminDashboardPage() {
                         Turning {eventSettings.turningAge || '1'} Year Old
                       </span>
                       <h4 className={styles.previewStarTitle}>
-                        {eventSettings.eventTitle || "Ditvi's 1st Birthday Party"}
+                        {eventSettings.eventTitle || "1st Birthday Celebration Party"}
                       </h4>
                       <p className={styles.previewStarHonoree}>
-                        Honoring our sweet baby <strong>{eventSettings.childName || 'Ditvi'}</strong>
+                        Honoring our sweet baby <strong>{eventSettings.childName || 'Birthday Star'}</strong>
                       </p>
                     </div>
 
@@ -5325,7 +5560,7 @@ export default function AdminDashboardPage() {
                   <ParkIcon sx={{ fontSize: 26, color: '#294B35' }} />
                 </div>
                 <div>
-                  <h2 className={styles.wishHeroTitle}>Ditvi&apos;s Birthday Wish Wall</h2>
+                  <h2 className={styles.wishHeroTitle}>{eventSettings.childName || 'Birthday Star'}&apos;s Birthday Wish Wall</h2>
                   <p className={styles.wishHeroSub}>
                     Real-time guestbook blessings, heartfelt prayers, and panda love notes saved to PostgreSQL.
                   </p>
@@ -6605,11 +6840,11 @@ export default function AdminDashboardPage() {
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
                 <span style={{ background: '#edf6ea', color: '#294b35', padding: '8px 16px', borderRadius: '20px', fontWeight: 700, fontSize: '0.95rem', border: '1px solid #cbe3c6', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   <TagIcon sx={{ fontSize: 16, color: '#294b35' }} />
-                  <span>#DitviTurnsOne</span>
+                  <span>#{eventSettings.childName ? eventSettings.childName.replace(/\s+/g, '') : 'Baby'}TurnsOne</span>
                 </span>
                 <span style={{ background: '#edf6ea', color: '#294b35', padding: '8px 16px', borderRadius: '20px', fontWeight: 700, fontSize: '0.95rem', border: '1px solid #cbe3c6', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   <TagIcon sx={{ fontSize: 16, color: '#294b35' }} />
-                  <span>#DitviFirstBirthday</span>
+                  <span>#{eventSettings.childName ? eventSettings.childName.replace(/\s+/g, '') : 'Baby'}FirstBirthday</span>
                 </span>
                 <span style={{ background: '#edf6ea', color: '#294b35', padding: '8px 16px', borderRadius: '20px', fontWeight: 700, fontSize: '0.95rem', border: '1px solid #cbe3c6', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   <TagIcon sx={{ fontSize: 16, color: '#294b35' }} />
@@ -6837,7 +7072,7 @@ export default function AdminDashboardPage() {
                     value={emailSubject}
                     onChange={(e) => setEmailSubject(e.target.value)}
                     className={styles.emailInputStyled}
-                    placeholder="Ditvi's 1st Birthday Celebration Invitation"
+                    placeholder="1st Birthday Celebration Invitation"
                   />
                   <div style={{ marginTop: '4px', fontSize: '0.74rem', color: '#6e7e73' }}>
                     Clear, friendly subject lines guarantee higher inbox delivery.
@@ -6852,7 +7087,7 @@ export default function AdminDashboardPage() {
                       value={emailBirthdayPerson}
                       onChange={(e) => setEmailBirthdayPerson(e.target.value)}
                       className={styles.emailInputStyled}
-                      placeholder="Ditvi"
+                      placeholder="e.g. Liam"
                     />
                   </div>
 
@@ -6962,7 +7197,7 @@ export default function AdminDashboardPage() {
                         </div>
                         <div>
                           <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#294b35' }}>{emailHostName || 'Host Family'}</div>
-                          <div style={{ fontSize: '0.74rem', color: '#7a8c7e' }}>via host Gmail &bull; {emailSubject || "Ditvi's 1st Birthday Celebration"}</div>
+                          <div style={{ fontSize: '0.74rem', color: '#7a8c7e' }}>via host Gmail &bull; {emailSubject || "1st Birthday Celebration Celebration"}</div>
                         </div>
                       </div>
                       <span style={{ fontSize: '1.2rem' }}>🎂</span>
@@ -7380,6 +7615,583 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* Dedicated Section: Website & eCard Photos */}
+        {activeTab === 'page_photos' && (
+          <div className={styles.mediaSectionWrapper}>
+            {/* Hidden Direct File Input for Website & eCard tab */}
+            <input
+              type="file"
+              ref={websiteFileInputRef}
+              style={{ display: 'none' }}
+              multiple={websiteTargetSection === 'gallery'}
+              disabled={!driveStatus?.connected || isWebsiteDirectUploading}
+              accept="image/*,video/*"
+              onChange={(e) => {
+                handleWebsiteDirectUpload(e.target.files);
+                // Clear input so same file can be selected again
+                e.target.value = '';
+              }}
+            />
+
+            {/* Direct Upload Progress Banner */}
+            {isWebsiteDirectUploading && (
+              <div style={{
+                position: 'sticky',
+                top: '20px',
+                zIndex: 100,
+                background: 'linear-gradient(135deg, #294B35 0%, #3e6e4a 100%)',
+                color: '#ffffff',
+                padding: '14px 22px',
+                borderRadius: '14px',
+                marginBottom: '16px',
+                boxShadow: '0 8px 24px rgba(41, 75, 53, 0.28)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                fontWeight: 700,
+                fontSize: '0.94rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <CloudUploadIcon sx={{ fontSize: 24, animation: 'pulse 1.5s infinite' }} />
+                  <span>Compressing &amp; Uploading directly to your Google Drive folder... Please wait.</span>
+                </div>
+                <span style={{ fontSize: '0.8rem', background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '8px' }}>
+                  ⚡ Auto-WebP
+                </span>
+              </div>
+            )}
+            {/* Header */}
+            <div className={styles.sectionHeader} style={{ marginBottom: 0, justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #294B35 0%, #437351 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  boxShadow: '0 4px 10px rgba(41, 75, 53, 0.2)'
+                }}>
+                  <ImageIcon sx={{ fontSize: 20 }} />
+                </div>
+                <div>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#294B35' }}>Website &amp; eCard Photos</span>
+                  <div style={{ fontSize: '0.82rem', color: '#6e7e73', fontWeight: 500 }}>
+                    Manage photos displayed across the home page (Hero, Timeline, About) and Birthday Invitation eCards via Google Drive
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    fetchDrivePhotos();
+                    fetchEventSettings();
+                    checkDriveStatus();
+                  }}
+                  className={styles.bambooBtnSecondary}
+                >
+                  <RefreshIcon sx={{ fontSize: 16 }} />
+                  <span>Refresh Status</span>
+                </button>
+                <a
+                  href="/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.bambooBtnPrimary}
+                >
+                  <OpenInNewIcon sx={{ fontSize: 16 }} />
+                  <span>Preview / Page</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Google Drive Status Notification */}
+            {!driveStatus?.connected ? (
+              <div style={{ background: '#fff9e6', border: '1px solid #fed7aa', borderLeft: '4px solid #f59e0b', borderRadius: '12px', padding: '16px 20px', marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                <div>
+                  <div style={{ fontWeight: 700, color: '#78350f', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <WarningAmberIcon sx={{ fontSize: 20, color: '#f59e0b' }} />
+                    <span>Google Drive Connection Required</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.88rem', color: '#92400e', lineHeight: 1.5 }}>
+                    Connect your Google Drive account first to securely store and sync your child&apos;s photos and eCard invitation media.
+                  </p>
+                </div>
+                <a
+                  href="/api/google-drive/connect"
+                  className={styles.bambooBtnPrimary}
+                  style={{ background: '#d97706' }}
+                >
+                  <CloudUploadIcon sx={{ fontSize: 18 }} />
+                  <span>Connect Google Drive</span>
+                </a>
+              </div>
+            ) : (
+              <div style={{ background: '#edf7ed', border: '1px solid #c8e6c9', borderLeft: '4px solid #2e7d32', borderRadius: '12px', padding: '12px 18px', marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.86rem', color: '#1b5e20', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CheckCircleIcon sx={{ fontSize: 18, color: '#2e7d32' }} />
+                  <span>Google Drive Connected ({driveStatus.accountEmail || 'Host Account'}) &bull; Photos auto-compressed &amp; synced</span>
+                </span>
+                <span style={{ fontSize: '0.78rem', background: '#ffffff', color: '#2e7d32', padding: '3px 10px', borderRadius: '12px', fontWeight: 700, border: '1px solid #c8e6c9' }}>
+                  Cloud Storage Active
+                </span>
+              </div>
+            )}
+
+            {/* Section 1: Child Honoree Photo (Hero Section & Invitation eCard) */}
+            {(() => {
+              const driveChildPhoto = drivePhotos.find((p) => p.targetSection === 'child_photo');
+              const activeChildPhotoUrl = eventSettings.childPhotoUrl || (driveChildPhoto ? (driveChildPhoto.proxyUrl || driveChildPhoto.directUrl || driveChildPhoto.thumbnailLink) : '');
+
+              return (
+            <div style={{ background: '#ffffff', border: '1.5px solid #dce8d2', borderRadius: '18px', padding: '24px', marginTop: '20px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px', marginBottom: '20px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#294B35', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-heading)' }}>
+                    <span>👶 Child Honoree Photo</span>
+                    <span style={{ fontSize: '0.74rem', background: '#eaf4e7', color: '#294b35', padding: '3px 8px', borderRadius: '8px', fontWeight: 700 }}>
+                      Hero &amp; eCard Sync
+                    </span>
+                  </h3>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6e7e73' }}>
+                    This photo is displayed on the main Hero welcome banner, About portrait card, and personalized WhatsApp/downloadable eCards.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {activeChildPhotoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        showPandaConfirm(
+                          'Reset child photo back to the default panda mascot placeholder?',
+                          async () => {
+                            await fetch('/api/admin/event', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ ...eventSettings, childPhotoUrl: '' }),
+                            });
+                            if (driveChildPhoto) {
+                              await fetch(`/api/photos/${driveChildPhoto.id}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ targetSection: 'none' }),
+                              });
+                            }
+                            fetchEventSettings();
+                            fetchDrivePhotos();
+                            showPandaAlert('Child photo reset to default mascot placeholder.', 'Updated', 'info');
+                          },
+                          'Reset to Default?',
+                          'warning',
+                          'Reset'
+                        );
+                      }}
+                      className={styles.bambooBtnDanger}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                    >
+                      Reset to Default
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (guests.length > 0) {
+                        setSelectedEcardGuest(guests[0]);
+                      } else {
+                        setSelectedEcardGuest({ id: 0, title: 'Mr.', name: 'Sample Guest', mobile: '555-0199', invite_code: 'SAMPLE', rsvp_status: 'pending', invited: false });
+                      }
+                    }}
+                    className={styles.bambooBtnSecondary}
+                    style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                  >
+                    Preview eCard
+                  </button>
+                </div>
+              </div>
+
+              {/* Photo Preview & Upload Box */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '18px', background: '#f8faf7', padding: '16px 20px', borderRadius: '16px', border: '1px solid #e1ece0' }}>
+                  <div style={{
+                    width: '90px',
+                    height: '90px',
+                    borderRadius: '50%',
+                    border: '3px solid #789b63',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#ffffff',
+                    flexShrink: 0,
+                    position: 'relative',
+                    boxShadow: '0 4px 12px rgba(41, 75, 53, 0.12)'
+                  }}>
+                    {isWebsiteDirectUploading && websiteTargetSection === 'child_photo' ? (
+                      <div className={styles.skeletonLoaderPhoto} style={{ width: '100%', height: '100%', borderRadius: '50%', position: 'absolute', inset: 0, animation: 'pulse 1.2s infinite ease-in-out' }} />
+                    ) : activeChildPhotoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={activeChildPhotoUrl}
+                        alt="Child Honoree"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          if (driveChildPhoto?.id && !target.src.includes('/api/photos/')) {
+                            target.src = `/api/photos/${driveChildPhoto.id}`;
+                          }
+                        }}
+                      />
+                    ) : (
+                      <PartyPanda size={80} />
+                    )}
+                  </div>
+
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.98rem', color: '#294B35', fontFamily: 'var(--font-heading)' }}>
+                      {activeChildPhotoUrl ? 'Custom Photo Active' : 'Default Panda Placeholder'}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#6e7e73', marginTop: '2px' }}>
+                      {activeChildPhotoUrl ? 'Stored on Google Drive & live on website' : 'No photo uploaded yet. Mascot illustration displayed.'}
+                    </div>
+                    <div style={{ marginTop: '8px' }}>
+                      <span style={{ fontSize: '0.74rem', background: activeChildPhotoUrl ? '#dcfce7' : '#fef3c7', color: activeChildPhotoUrl ? '#166534' : '#92400e', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                        {activeChildPhotoUrl ? '✓ Synced with Hero & eCard' : 'Mascot Active'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upload Button for Child Photo */}
+                <div style={{ background: '#fafcfa', padding: '16px 20px', borderRadius: '16px', border: '1.5px dashed #d5e5d1' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#294b35', marginBottom: '6px' }}>
+                    Upload New Child Photo
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#6e7e73', marginBottom: '12px' }}>
+                    Auto-compresses to WebP &amp; uploads directly to your connected Google Drive folder.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!driveStatus?.connected) {
+                        showPandaAlert('Please connect Google Drive first above.', 'Drive Required', 'warning');
+                        return;
+                      }
+                      setWebsiteTargetSection('child_photo');
+                      websiteFileInputRef.current?.click();
+                    }}
+                    className={styles.bambooBtnPrimary}
+                    style={{ width: '100%', justifyContent: 'center' }}
+                  >
+                    <CloudUploadIcon sx={{ fontSize: 18 }} />
+                    <span>Upload Child Photo to Drive</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+              );
+            })()}
+
+            {/* Section 2: Timeline Milestones (1 - 5) */}
+            <div style={{ background: '#ffffff', border: '1.5px solid #dce8d2', borderRadius: '18px', padding: '24px', marginTop: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#294B35', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-heading)' }}>
+                    <span>🌿 Timeline Milestone Photos</span>
+                    <span style={{ fontSize: '0.74rem', background: '#eaf4e7', color: '#294b35', padding: '3px 8px', borderRadius: '8px', fontWeight: 700 }}>
+                      5 Growth Stages
+                    </span>
+                  </h3>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6e7e73' }}>
+                    Photos uploaded here populate the 5 growth milestones on the home page timeline.
+                  </p>
+                </div>
+              </div>
+
+              {/* 5 Milestone Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+                {[
+                  { num: 1, month: 'Month 1', label: 'Arrival Day' },
+                  { num: 2, month: 'Month 3', label: 'First Giggle' },
+                  { num: 3, month: 'Month 6', label: 'Solid Treats' },
+                  { num: 4, month: 'Month 9', label: 'Crawling Champ' },
+                  { num: 5, month: 'Month 12', label: 'First Steps' },
+                ].map((m) => {
+                  const assignedPhoto = drivePhotos.find((p) => p.targetSection === 'timeline' && p.milestoneIndex === m.num);
+
+                  return (
+                    <div key={m.num} style={{ background: '#f8faf7', border: '1px solid #e1ece0', borderRadius: '14px', padding: '14px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                      <div style={{ width: '70px', height: '70px', borderRadius: '12px', overflow: 'hidden', background: '#eef5ea', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px', border: '1px solid #dce8d2', position: 'relative' }}>
+                        {isWebsiteDirectUploading && websiteTargetSection === 'timeline' && websiteMilestoneIndex === m.num ? (
+                          <div className={styles.skeletonLoaderPhoto} style={{ width: '100%', height: '100%', borderRadius: '12px', position: 'absolute', inset: 0, animation: 'pulse 1.2s infinite ease-in-out' }} />
+                        ) : assignedPhoto ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={assignedPhoto.proxyUrl || assignedPhoto.directUrl || assignedPhoto.thumbnailLink}
+                            alt={m.label}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: '1.4rem' }}>🎋</span>
+                        )}
+                      </div>
+
+                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#294b35' }}>
+                        Milestone {m.num}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#6e7e73' }}>
+                        {m.month} &bull; {m.label}
+                      </div>
+
+                      <div style={{ marginTop: '8px', width: '100%' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!driveStatus?.connected) {
+                              showPandaAlert('Please connect Google Drive first above.', 'Drive Required', 'warning');
+                              return;
+                            }
+                            setWebsiteTargetSection('timeline');
+                            setWebsiteMilestoneIndex(m.num);
+                            websiteFileInputRef.current?.click();
+                          }}
+                          className={styles.bambooBtnSecondary}
+                          style={{ width: '100%', padding: '5px', fontSize: '0.74rem', justifyContent: 'center' }}
+                        >
+                          <CloudUploadIcon sx={{ fontSize: 13 }} />
+                          <span>{assignedPhoto ? 'Change Photo' : 'Upload Photo'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Section 3: / Page Gallery Photos Upload & Management */}
+            <div style={{ background: '#ffffff', border: '1.5px solid #dce8d2', borderRadius: '18px', padding: '24px', marginTop: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#294B35', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-heading)' }}>
+                    <PhotoLibraryIcon sx={{ color: '#294B35', fontSize: 22 }} />
+                    <span>📸 / Page Gallery Photos</span>
+                    <span style={{ fontSize: '0.74rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '8px', fontWeight: 700 }}>
+                      {drivePhotos.filter((p) => p.targetSection === 'gallery').length} Active on / Page
+                    </span>
+                  </h3>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6e7e73' }}>
+                    Upload and manage high-quality party photos that appear in the interactive Gallery on the home page (<code style={{ background: '#f1f5f9', padding: '2px 5px', borderRadius: '4px' }}>/</code>).
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!driveStatus?.connected) {
+                        showPandaAlert('Please connect Google Drive first above.', 'Drive Required', 'warning');
+                        return;
+                      }
+                      setWebsiteTargetSection('gallery');
+                      websiteFileInputRef.current?.click();
+                    }}
+                    className={styles.bambooBtnPrimary}
+                    style={{ fontSize: '0.84rem', padding: '8px 16px' }}
+                  >
+                    <CloudUploadIcon sx={{ fontSize: 16 }} />
+                    <span>Upload Gallery Photos</span>
+                  </button>
+                  <a
+                    href="/#gallery"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.bambooBtnSecondary}
+                    style={{ fontSize: '0.82rem', padding: '8px 14px' }}
+                  >
+                    <OpenInNewIcon sx={{ fontSize: 15 }} />
+                    <span>View Live Gallery</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Gallery Photos Grid with Skeleton Loader */}
+              {isWebsiteDirectUploading && websiteTargetSection === 'gallery' && (
+                <div style={{ marginBottom: '18px' }}>
+                  <SkeletonLoader variant="photo" count={3} />
+                </div>
+              )}
+              {drivePhotos.filter((p) => p.targetSection === 'gallery').length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '36px 20px', background: '#fafcfa', borderRadius: '14px', border: '1.5px dashed #dce8d2' }}>
+                  <div style={{ fontSize: '36px', marginBottom: '8px' }}>📸🐼</div>
+                  <div style={{ fontSize: '0.98rem', fontWeight: 800, color: '#294B35', marginBottom: '4px' }}>
+                    No Gallery Photos Uploaded Yet
+                  </div>
+                  <p style={{ fontSize: '0.82rem', color: '#6e7e73', maxWidth: '420px', margin: '0 auto 16px' }}>
+                    By default, the / page gallery remains clean and empty until you upload photos or assign existing Drive photos here.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!driveStatus?.connected) {
+                        showPandaAlert('Please connect Google Drive first above.', 'Drive Required', 'warning');
+                        return;
+                      }
+                      setWebsiteTargetSection('gallery');
+                      websiteFileInputRef.current?.click();
+                    }}
+                    className={styles.bambooBtnPrimary}
+                    style={{ fontSize: '0.82rem', padding: '8px 16px' }}
+                  >
+                    <CloudUploadIcon sx={{ fontSize: 16 }} />
+                    <span>Upload Photos to / Page Gallery</span>
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px' }}>
+                  {drivePhotos.filter((p) => p.targetSection === 'gallery').map((photo) => (
+                    <div key={photo.id} style={{ background: '#f8faf7', border: '1px solid #dce8d2', borderRadius: '12px', padding: '10px', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ width: '100%', height: '120px', borderRadius: '8px', overflow: 'hidden', background: '#eef5ea', marginBottom: '8px', position: 'relative' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={photo.proxyUrl || photo.directUrl || photo.thumbnailLink}
+                          alt={photo.caption || photo.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                        <span style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(3, 105, 161, 0.85)', color: '#ffffff', fontSize: '0.68rem', fontWeight: 700, padding: '2px 6px', borderRadius: '6px' }}>
+                          / Gallery
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#294B35', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '6px' }}>
+                        {photo.caption || photo.name}
+                      </div>
+
+                      {/* Dropdown to reassign or set to None */}
+                      <select
+                        value="gallery"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val.startsWith('timeline-')) {
+                            const mIdx = parseInt(val.replace('timeline-', ''), 10);
+                            handleAssignPhotoSection(photo.id, 'timeline', mIdx);
+                          } else {
+                            handleAssignPhotoSection(photo.id, val as any);
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '4px 6px',
+                          borderRadius: '6px',
+                          border: '1px solid #dce8d2',
+                          fontSize: '0.74rem',
+                          fontWeight: 600,
+                          color: '#294b35',
+                          background: '#ffffff',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="gallery">📸 Display in / Gallery</option>
+                        <option value="none">⚪ Remove from Gallery (Set to None)</option>
+                        <option value="child_photo">👶 Set Child Photo (Hero &amp; eCard)</option>
+                        <option value="timeline-1">🌿 Set as Timeline 1</option>
+                        <option value="timeline-2">🌿 Set as Timeline 2</option>
+                        <option value="timeline-3">🌿 Set as Timeline 3</option>
+                        <option value="timeline-4">🌿 Set as Timeline 4</option>
+                        <option value="timeline-5">🌿 Set as Timeline 5</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Section 4: Select or Re-assign Any Photo in Google Drive */}
+            <div style={{ background: '#ffffff', border: '1.5px solid #dce8d2', borderRadius: '18px', padding: '24px', marginTop: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#294B35', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-heading)' }}>
+                    <span>📸 Assign Google Drive Photos to Website Sections</span>
+                  </h3>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#6e7e73' }}>
+                    Choose any existing photo in your Google Drive folder and assign where it appears.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('11')}
+                  className={styles.bambooBtnSecondary}
+                  style={{ fontSize: '0.82rem' }}
+                >
+                  <PhotoLibraryIcon sx={{ fontSize: 15 }} />
+                  <span>Open Full Media &amp; Albums</span>
+                </button>
+              </div>
+
+              {drivePhotos.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '36px 20px', background: '#fafcfa', borderRadius: '12px', border: '1px dashed #dce8d2', color: '#6e7e73', fontSize: '0.88rem' }}>
+                  No photos uploaded to your Google Drive folder yet. Use the upload buttons above to add photos!
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px' }}>
+                  {drivePhotos.slice(0, 12).map((photo) => (
+                    <div key={photo.id} style={{ background: '#f8faf7', border: '1px solid #e1ece0', borderRadius: '12px', padding: '10px', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ width: '100%', height: '110px', borderRadius: '8px', overflow: 'hidden', background: '#eef5ea', marginBottom: '8px' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={photo.proxyUrl || photo.directUrl || photo.thumbnailLink}
+                          alt={photo.caption || photo.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+
+                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#294B35', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '6px' }}>
+                        {photo.caption || photo.name}
+                      </div>
+
+                      <select
+                        value={photo.targetSection === 'timeline' ? `timeline-${photo.milestoneIndex || 1}` : (photo.targetSection || 'none')}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val.startsWith('timeline-')) {
+                            const mIdx = parseInt(val.replace('timeline-', ''), 10);
+                            handleAssignPhotoSection(photo.id, 'timeline', mIdx);
+                          } else {
+                            handleAssignPhotoSection(photo.id, val as any);
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '4px 6px',
+                          borderRadius: '6px',
+                          border: '1px solid #dce8d2',
+                          fontSize: '0.74rem',
+                          fontWeight: 600,
+                          color: '#294b35',
+                          background: '#ffffff',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="none">⚪ None (Unassigned / Null)</option>
+                        <option value="gallery">📸 Gallery Photo (/ page)</option>
+                        <option value="child_photo">👶 Set Child Photo (Hero &amp; eCard)</option>
+                        <option value="timeline-1">🌿 Milestone 1</option>
+                        <option value="timeline-2">🌿 Milestone 2</option>
+                        <option value="timeline-3">🌿 Milestone 3</option>
+                        <option value="timeline-4">🌿 Milestone 4</option>
+                        <option value="timeline-5">🌿 Milestone 5</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Section 11: Media & Photo Albums (Google Drive) */}
         {/* Section 11: Media & Photo Albums (Google Drive Panda Redesign) */}
         {activeTab === '11' && (
@@ -7623,25 +8435,35 @@ export default function AdminDashboardPage() {
                 </span>
               </div>
 
-              {/* Dropzone with Bamboo Theme */}
+              {/* Dropzone with Bamboo Theme - Disabled if Drive is not connected */}
               <div
-                onClick={() => driveFileInputRef.current?.click()}
+                onClick={() => {
+                  if (!driveStatus?.connected) {
+                    showPandaAlert('Please connect your Google Drive first using the "Connect Google Drive" button above before uploading photos.', 'Google Drive Not Connected', 'warning');
+                    return;
+                  }
+                  driveFileInputRef.current?.click();
+                }}
                 className={styles.mediaDropzone}
+                style={{ opacity: driveStatus?.connected ? 1 : 0.65, cursor: driveStatus?.connected ? 'pointer' : 'not-allowed' }}
               >
                 <input
                   type="file"
                   ref={driveFileInputRef}
                   style={{ display: 'none' }}
                   multiple
+                  disabled={!driveStatus?.connected}
                   accept="image/*,video/*"
                   onChange={(e) => handleDriveFilesSelect(e.target.files)}
                 />
                 <CloudUploadIcon className={styles.mediaDropzoneIcon} />
                 <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#294b35', fontFamily: 'var(--font-heading)' }}>
-                  Click to select media or drag &amp; drop files here
+                  {driveStatus?.connected ? 'Click to select media or drag & drop files here' : '🔒 Connect Google Drive Above to Enable Photo & Video Uploads'}
                 </div>
                 <div style={{ fontSize: '0.84rem', color: '#6e7e73', marginTop: '6px' }}>
-                  Supports high-resolution JPG, PNG, WEBP, MP4, MOV, and HEIC up to 15MB each
+                  {driveStatus?.connected
+                    ? '⚡ Auto-compressed to high-efficiency WebP format for blazing-fast mobile & desktop loading'
+                    : 'Firstly connect your Google Drive account. Photos and videos will be saved directly to your cloud Drive.'}
                 </div>
               </div>
 
@@ -7689,6 +8511,71 @@ export default function AdminDashboardPage() {
 
               {/* Submit Form */}
               <form onSubmit={handleDriveUploadSubmit}>
+                {/* Upload Destination & Milestone Selector */}
+                <div style={{ background: '#f8faf7', border: '1.5px solid #dce8d2', borderRadius: '14px', padding: '16px 20px', marginBottom: '18px' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#294b35', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <AutoAwesomeIcon sx={{ fontSize: 18, color: '#789b63' }} />
+                    <span>Upload Destination &amp; Website Section Placement</span>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#4a5b4e', marginBottom: '6px' }}>
+                        Target Section:
+                      </label>
+                      <select
+                        value={driveTargetSection}
+                        onChange={(e) => setDriveTargetSection(e.target.value as any)}
+                        className={styles.titleSelect}
+                        style={{ width: '100%', padding: '9px 12px' }}
+                      >
+                        <option value="none">⚪ None (Unassigned / Storage only)</option>
+                        <option value="gallery">📸 Photo &amp; Video Gallery (/ page)</option>
+                        <option value="child_photo">👶 Child Honoree Photo (Hero &amp; eCard)</option>
+                        <option value="timeline">🌿 Timeline Growth Milestone (1 - 5)</option>
+                      </select>
+                    </div>
+
+                    {driveTargetSection === 'timeline' && (
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#4a5b4e', marginBottom: '6px' }}>
+                          Timeline Milestone Number:
+                        </label>
+                        <select
+                          value={driveMilestoneIndex}
+                          onChange={(e) => setDriveMilestoneIndex(Number(e.target.value))}
+                          className={styles.titleSelect}
+                          style={{ width: '100%', padding: '9px 12px' }}
+                        >
+                          <option value={1}>Milestone 1 (Month 1 - Arrival Day)</option>
+                          <option value={2}>Milestone 2 (Month 3 - First Giggle)</option>
+                          <option value={3}>Milestone 3 (Month 6 - Solid Treats)</option>
+                          <option value={4}>Milestone 4 (Month 9 - Crawling Champ)</option>
+                          <option value={5}>Milestone 5 (Month 12 - First Steps / Turning One)</option>
+                        </select>
+                      </div>
+                    )}
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#4a5b4e', marginBottom: '6px' }}>
+                        Caption / Title (Optional):
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Baby in fluffy panda suit"
+                        value={driveCaption}
+                        onChange={(e) => setDriveCaption(e.target.value)}
+                        className={styles.inputField}
+                        style={{ width: '100%', padding: '9px 12px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '10px', fontSize: '0.78rem', color: '#556b5a' }}>
+                    💡 <strong>Smart Placement:</strong> Uploading with &ldquo;Child Honoree Photo&rdquo; stores the file in your Google Drive and automatically updates the child&apos;s photo on both the <strong>Hero Section</strong> and the <strong>Invitation eCard</strong>.
+                  </div>
+                </div>
+
                 {driveUploadError && (
                   <div style={{ color: '#d32f2f', fontSize: '0.86rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px', background: '#fdf2f2', padding: '10px 14px', borderRadius: '10px', border: '1px solid #fecaca' }}>
                     <WarningAmberIcon sx={{ fontSize: 18 }} />
@@ -7706,12 +8593,12 @@ export default function AdminDashboardPage() {
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
                   <button
                     type="submit"
-                    disabled={isDriveUploading || driveUploadFiles.length === 0}
+                    disabled={isDriveUploading || driveUploadFiles.length === 0 || !driveStatus?.connected}
                     className={styles.bambooBtnPrimary}
                     style={{ padding: '11px 26px', fontSize: '0.94rem' }}
                   >
                     <CloudUploadIcon sx={{ fontSize: 18 }} />
-                    <span>{isDriveUploading ? 'Uploading to Google Drive...' : `Upload ${driveUploadFiles.length > 0 ? `${driveUploadFiles.length} ` : ''}File${driveUploadFiles.length > 1 ? 's' : ''}`}</span>
+                    <span>{!driveStatus?.connected ? 'Connect Drive First' : isDriveUploading ? 'Uploading to Google Drive...' : `Upload ${driveUploadFiles.length > 0 ? `${driveUploadFiles.length} ` : ''}File${driveUploadFiles.length > 1 ? 's' : ''}`}</span>
                   </button>
                 </div>
               </form>
@@ -7833,12 +8720,71 @@ export default function AdminDashboardPage() {
 
                           <div className={styles.mediaPhotoDetails}>
                             <div className={styles.mediaPhotoTitle} title={photo.caption || photo.name}>
-                              {photo.caption || photo.name.replace(/ditvi-birthday-.*?-(.+)/, '$1')}
+                              {photo.caption || photo.name.replace(/birthday-.*?-(.+)/, '$1')}
                             </div>
 
                             <div className={styles.mediaPhotoMeta}>
                               <span>📅 {formattedDate}</span>
                               {formattedSize && <span>💾 {formattedSize}</span>}
+                              {photo.targetSection ? (
+                                <span style={{
+                                  background: photo.targetSection === 'child_photo' ? '#fef3c7' : photo.targetSection === 'timeline' ? '#dcfce7' : '#e0f2fe',
+                                  color: photo.targetSection === 'child_photo' ? '#92400e' : photo.targetSection === 'timeline' ? '#166534' : '#075985',
+                                  borderRadius: '6px',
+                                  padding: '2px 6px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700
+                                }}>
+                                  {photo.targetSection === 'child_photo' ? '👶 Child Honoree' : photo.targetSection === 'timeline' ? `🌿 Timeline #${photo.milestoneIndex || 1}` : '📸 Gallery'}
+                                </span>
+                              ) : (
+                                <span style={{
+                                  background: '#f1f5f9',
+                                  color: '#64748b',
+                                  borderRadius: '6px',
+                                  padding: '2px 6px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 600
+                                }}>
+                                  ⚪ None (Unassigned)
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Section Quick Assignment Control */}
+                            <div style={{ marginTop: '8px', marginBottom: '8px' }}>
+                              <select
+                                value={photo.targetSection === 'timeline' ? `timeline-${photo.milestoneIndex || 1}` : (photo.targetSection || 'none')}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val.startsWith('timeline-')) {
+                                    const mIdx = parseInt(val.replace('timeline-', ''), 10);
+                                    handleAssignPhotoSection(photo.id, 'timeline', mIdx);
+                                  } else {
+                                    handleAssignPhotoSection(photo.id, val as any);
+                                  }
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '4px 6px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #dce8d2',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600,
+                                  color: '#294b35',
+                                  background: '#fafcfa',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <option value="none">⚪ None (Unassigned / Null)</option>
+                                <option value="gallery">📸 Display in / Gallery</option>
+                                <option value="child_photo">👶 Set as Child Photo (Hero &amp; eCard)</option>
+                                <option value="timeline-1">🌿 Set as Timeline Milestone 1</option>
+                                <option value="timeline-2">🌿 Set as Timeline Milestone 2</option>
+                                <option value="timeline-3">🌿 Set as Timeline Milestone 3</option>
+                                <option value="timeline-4">🌿 Set as Timeline Milestone 4</option>
+                                <option value="timeline-5">🌿 Set as Timeline Milestone 5</option>
+                              </select>
                             </div>
 
                             <div className={styles.mediaPhotoActionGroup}>
@@ -7924,15 +8870,26 @@ export default function AdminDashboardPage() {
                 <span className={`${styles.ecardBgPaw} ${styles.ecardPawBottomLeft}`} aria-hidden="true"><PetsIcon sx={{ fontSize: 28, color: 'rgba(217, 182, 111, 0.45)' }} /></span>
                 <span className={`${styles.ecardBgPaw} ${styles.ecardPawBottomRight}`} aria-hidden="true"><PetsIcon sx={{ fontSize: 28, color: 'rgba(217, 182, 111, 0.45)' }} /></span>
 
-                {/* Friendly Panda Mascot flanked by Balloon & Birthday Cake */}
+                {/* Child Photo & Friendly Panda Mascot */}
                 <div className={styles.ecardMascotWrap}>
-                  <PartyPanda size={125} />
+                  {eventSettings.childPhotoUrl ? (
+                    <div className={styles.ecardChildPhotoFrame}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={eventSettings.childPhotoUrl}
+                        alt={eventSettings.childName || 'Birthday Star'}
+                        className={styles.ecardChildPhotoImg}
+                        crossOrigin="anonymous"
+                      />
+                    </div>
+                  ) : null}
+                  <PartyPanda size={eventSettings.childPhotoUrl ? 100 : 125} />
                 </div>
 
                 {/* Event Heading - Requested Wording & Styling */}
                 <div className={styles.ecardInviteLead}>You Are Invited to</div>
                 <h2 className={styles.ecardEventTitle}>
-                  Ditvi&apos;s 1st Birthday <span>Party</span>
+                  {eventSettings.childName || 'Birthday Star'}&apos;s {eventSettings.turningAge || '1'}st Birthday <span>Party</span>
                 </h2>
 
                 {/* Guest Personalization */}
@@ -7944,7 +8901,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <p className={styles.ecardInvitationText}>
-                  Please join us for a fun afternoon celebrating Ditvi&apos;s first birthday with family, friends, and treats!
+                  Please join us for a fun afternoon celebrating {eventSettings.childName || 'Birthday Star'}&apos;s birthday with family, friends, and treats!
                 </p>
 
                 {/* Clean Modern Event Details Card */}
@@ -7966,7 +8923,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className={styles.ecardFooterLove}>
-                  Warmly, Ditvi &amp; Family
+                  Warmly, {eventSettings.childName || 'Birthday Star'} &amp; Family
                 </div>
                 <div className={styles.ecardFootnote}>
                   Please present this invitation code at arrival
@@ -8051,11 +9008,11 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <p className={styles.ecardInvitationText}>
-                  Thank you so much for joining us and making <strong>Ditvi&apos;s 1st Birthday</strong> so incredibly memorable, full of giggles, and joyous smiles! Your warm presence, sweet wishes, and love made the celebration complete.
+                  Thank you so much for joining us and making <strong>{eventSettings.childName || 'Birthday Star'}&apos;s 1st Birthday</strong> so incredibly memorable, full of giggles, and joyous smiles! Your warm presence, sweet wishes, and love made the celebration complete.
                 </p>
 
                 <div className={styles.ecardFooterLove}>
-                  Forever Grateful, Ditvi &amp; Family
+                  Forever Grateful, {eventSettings.childName || 'Birthday Star'} &amp; Family
                 </div>
                 <div className={styles.ecardFootnote}>
                   Thank you for being part of our special journey
@@ -8319,9 +9276,9 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Heading */}
-                <div className={styles.ecardInviteLead}>A Heartfelt Birthday Wish for Ditvi</div>
+                <div className={styles.ecardInviteLead}>A Heartfelt Birthday Wish</div>
                 <h2 className={styles.ecardEventTitle}>
-                  Ditvi&apos;s 1st Birthday <span>Keepsake</span>
+                  {eventSettings.childName || 'Birthday Star'}&apos;s 1st Birthday <span>Keepsake</span>
                 </h2>
 
                 {/* Author Info */}
@@ -8366,7 +9323,7 @@ export default function AdminDashboardPage() {
                     month: 'long',
                     day: 'numeric',
                     year: 'numeric',
-                  })} • Ditvi&apos;s Memory Wall
+                  })} • Memory Wall
                 </div>
               </div>
             </div>
@@ -8551,7 +9508,7 @@ export default function AdminDashboardPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                       <ParkIcon sx={{ fontSize: 18, color: '#075E54' }} />
                       <strong style={{ fontSize: '0.88rem', color: '#075E54' }}>
-                        Ditvi&apos;s 1st Birthday RSVP • Bamboo Grove
+                        {eventSettings.childName || 'Birthday Star'}&apos;s 1st Birthday RSVP • Bamboo Grove
                       </strong>
                     </div>
                     <div style={{ fontSize: '0.8rem', color: '#54656f', margin: '4px 0 8px 0', lineHeight: 1.4 }}>

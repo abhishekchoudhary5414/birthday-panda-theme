@@ -7,7 +7,7 @@ import { FloatingLeaves } from '@/components/FloatingLeaves';
 import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Amazon Product & Review Fetcher • Ditvi Birthday Store',
+  title: 'Amazon Product & Review Fetcher • Birthday Star Birthday Store',
   description: 'Paste any Amazon product URL to extract live images, pricing, ratings, and reviews.',
 };
 

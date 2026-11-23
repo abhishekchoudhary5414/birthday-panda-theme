@@ -66,6 +66,7 @@ const fortunesList: Fortune[] = [
 ];
 
 export const FortuneJar: React.FC = () => {
+  const [childName, setChildName] = useState<string>('Birthday Star');
   const [isShaking, setIsShaking] = useState(false);
   const [revealedFortune, setRevealedFortune] = useState<Fortune | null>(null);
   const [copied, setCopied] = useState(false);
@@ -94,7 +95,7 @@ export const FortuneJar: React.FC = () => {
 
   const handleCopy = () => {
     if (!revealedFortune || typeof window === 'undefined') return;
-    const text = `"${revealedFortune.text}" — Ditvi's Panda Birthday Fortune 🎋`;
+    const text = `"${revealedFortune.text}" — Panda Birthday Fortune 🎋`;
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(text);
     } else {
@@ -120,7 +121,7 @@ export const FortuneJar: React.FC = () => {
           </div>
           <h2 className="section-title">The Bamboo Fortune Jar</h2>
           <p className="section-subtitle">
-            Draw a bamboo fortune stick from Ditvi&apos;s magical jar to reveal an uplifting birthday blessing or wisdom for your day!
+            Draw a bamboo fortune stick from {childName}&apos;s magical jar to reveal an uplifting birthday blessing or wisdom for your day!
           </p>
         </div>
 
@@ -186,7 +187,7 @@ export const FortuneJar: React.FC = () => {
               </blockquote>
 
               <p className={styles['fortune-signature']}>
-                &mdash; Ditvi&apos;s 1st Birthday Bamboo Blessing
+                &mdash; {childName}&apos;s 1st Birthday Bamboo Blessing
               </p>
 
               <div className={styles['fortune-card-actions']}>

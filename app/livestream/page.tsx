@@ -25,7 +25,7 @@ export default function LiveStreamPage() {
   const [isPlayingPlaceholder, setIsPlayingPlaceholder] = useState<boolean>(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [eventData, setEventData] = useState({
-    childName: 'Ditvi',
+    childName: 'Birthday Star',
     eventDate: 'Saturday, December 12, 2026',
     eventTime: '4:00 PM CST',
   });
@@ -39,7 +39,7 @@ export default function LiveStreamPage() {
       .then((data) => {
         if (data?.event) {
           setEventData({
-            childName: data.event.childName || 'Ditvi',
+            childName: data.event.childName || 'Birthday Star',
             eventDate: data.event.eventDate || 'Saturday, December 12, 2026',
             eventTime: data.event.eventTime || '4:00 PM CST',
           });

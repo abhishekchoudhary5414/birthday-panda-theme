@@ -7,8 +7,8 @@ import { Footer } from '@/components/Footer';
 import { MusicPlayer } from '@/components/MusicPlayer';
 
 export const metadata: Metadata = {
-  title: "Ditvi's Birthday Photo & Video Gallery | Panda Celebration",
-  description: "Browse all precious photo and video memories from Ditvi's 1st birthday celebration.",
+  title: "Our Birthday Photo & Video Gallery | Panda Celebration",
+  description: "Browse all precious photo and video memories from Our 1st birthday celebration.",
 };
 
 export default function GalleryPage() {

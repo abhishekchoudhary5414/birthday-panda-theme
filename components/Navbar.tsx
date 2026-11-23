@@ -30,9 +30,9 @@ export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [eventData, setEventData] = useState({
-    childName: 'Ditvi',
+    childName: 'Birthday Star',
     turningAge: '1',
-    eventTitle: "Ditvi's 1st Birthday Party",
+    eventTitle: "1st Birthday Party",
   });
 
   // Fetch dynamic event settings from database
@@ -42,9 +42,9 @@ export const Navbar: React.FC = () => {
       .then((data) => {
         if (data && data.event) {
           setEventData({
-            childName: data.event.childName || 'Ditvi',
+            childName: data.event.childName || 'Birthday Star',
             turningAge: data.event.turningAge || '1',
-            eventTitle: data.event.eventTitle || "Ditvi's 1st Birthday Party",
+            eventTitle: data.event.eventTitle || "1st Birthday Party",
           });
         }
       })

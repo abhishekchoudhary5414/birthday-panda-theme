@@ -67,7 +67,7 @@ export const LiveStreamModal: React.FC = () => {
 
   if (!isOpen) return null;
 
-  const childName = eventData?.childName || 'Ditvi';
+  const childName = eventData?.childName || 'Birthday Star';
 
   return (
     <div

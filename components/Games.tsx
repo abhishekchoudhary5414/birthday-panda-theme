@@ -358,7 +358,7 @@ const BambooCatchGame: React.FC = () => {
           <div className={styles['catch-overlay']}>
             <Trophy size={36} color="var(--accent-gold)" />
             <h3>Game Over!</h3>
-            <p>You gathered <strong>{score}</strong> bamboo points for Ditvi&apos;s feast!</p>
+            <p>You gathered <strong>{score}</strong> bamboo points for the birthday feast!</p>
             <button type="button" onClick={startGame} className={`btn-primary ${styles['mt-2'] || 'mt-2'}`}>
               <span>Play Again</span>
             </button>
@@ -423,10 +423,10 @@ interface QuizQuestion {
 const quizQuestions: QuizQuestion[] = [
   {
     id: 1,
-    question: 'How many cute teeth does our birthday star Ditvi currently have?',
+    question: 'How many cute teeth does our birthday star currently have?',
     options: ['None yet', '2 bottom teeth', '4 cute teeth (2 top, 2 bottom)', '8 teeth'],
     correctIndex: 2,
-    explanation: 'Ditvi proudly shows off her 4 little front teeth whenever she giggles!',
+    explanation: 'Our birthday star proudly shows off her 4 little front teeth whenever she giggles!',
   },
   {
     id: 2,
@@ -437,10 +437,10 @@ const quizQuestions: QuizQuestion[] = [
   },
   {
     id: 3,
-    question: 'What is Ditvi’s all-time favorite afternoon treat?',
+    question: 'What is our birthday star’s all-time favorite afternoon treat?',
     options: ['Spicy noodles', 'Mashed avocado & sweet potato', 'Raw broccoli', 'Chocolate cake'],
     correctIndex: 1,
-    explanation: 'Ditvi could eat sweet potato and avocado mash for breakfast, lunch, and dinner!',
+    explanation: 'Our birthday star could eat sweet potato and avocado mash for breakfast, lunch, and dinner!',
   },
   {
     id: 4,
@@ -568,10 +568,10 @@ const PandaQuizGame: React.FC = () => {
           </p>
           <p className={styles['result-comment']}>
             {score === questions.length
-              ? '🌟 Perfect score! You are a certified Panda Master and Ditvi’s best friend!'
+              ? '🌟 Perfect score! You are a certified Panda Master and our best friend!'
               : score >= Math.ceil(questions.length / 2)
-              ? '🎋 Great job! You know your pandas and baby Ditvi super well!'
-              : '💚 Sweet effort! Ditvi thanks you for playing her birthday quiz!'}
+              ? '🎋 Great job! You know your pandas and birthday trivia super well!'
+              : '💚 Sweet effort! Thank you for playing the birthday quiz!'}
           </p>
 
           {/* Store Quiz Score to Database */}
@@ -800,6 +800,7 @@ const FindPandaGame: React.FC = () => {
 // MAIN GAMES SECTION WRAPPER
 // ----------------------------------------------------------------------
 export const Games: React.FC = () => {
+  const [childName, setChildName] = useState<string>('Birthday Star');
   const [activeGame, setActiveGame] = useState<GameType>('memory');
 
   return (

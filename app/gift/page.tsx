@@ -7,8 +7,8 @@ import { Footer } from '@/components/Footer';
 import { MusicPlayer } from '@/components/MusicPlayer';
 
 export const metadata: Metadata = {
-  title: "Ditvi's 1st Birthday Gift Registry | Wishlist & Keepsakes",
-  description: "Browse all curated gift wishlist ideas and keepsakes for Ditvi's 1st birthday celebration.",
+  title: "Our 1st Birthday Gift Registry | Wishlist & Keepsakes",
+  description: "Browse all curated gift wishlist ideas and keepsakes for Our 1st birthday celebration.",
 };
 
 export default function GiftPage() {

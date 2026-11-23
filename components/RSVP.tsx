@@ -65,8 +65,8 @@ export const RSVP: React.FC = () => {
     venueCity?: string;
     dressCode?: string;
   }>({
-    eventTitle: "Ditvi's 1st Birthday Party",
-    childName: 'Ditvi',
+    eventTitle: "1st Birthday Party",
+    childName: 'Birthday Star',
     turningAge: '1',
     eventDate: 'Saturday, December 12, 2026',
     eventTime: '3:30 PM – 7:30 PM (Cake cutting at 5:00 PM)',
@@ -138,7 +138,7 @@ export const RSVP: React.FC = () => {
                   email: cleanEmail,
                   guestsCount: data.rsvp.guests_count || 1,
                   message: isAttending
-                    ? `Warmest greetings, ${data.rsvp.full_name}! You are already confirmed IN for the party (${data.rsvp.guests_count || 1} guest). We can't wait to welcome you to Ditvi's 1st birthday!`
+                    ? `Warmest greetings, ${data.rsvp.full_name}! You are already confirmed IN for the party (${data.rsvp.guests_count || 1} guest). We can't wait to welcome you to the birthday celebration!`
                     : `Warmest greetings, ${data.rsvp.full_name}! We previously recorded your response that you are unable to attend. We will miss you dearly and appreciate your love!`,
                 });
               }
@@ -307,7 +307,7 @@ export const RSVP: React.FC = () => {
           </div>
           <h2 className="section-title">Birthday Invitation &amp; RSVP</h2>
           <p className="section-subtitle">
-            We would be so honored to have you share this special milestone with {eventData.childName || 'Ditvi'} and our family!
+            We would be so honored to have you share this special milestone with {eventData.childName || 'Birthday Star'} and our family!
           </p>
         </div>
 
@@ -320,7 +320,7 @@ export const RSVP: React.FC = () => {
               <span className={styles['invitation-ornament']}>🌿</span>
             </div>
 
-            <h3 className={styles['invitation-headline']}>{eventData.childName || 'Ditvi'}&apos;s {eventData.turningAge || '1'}st Birthday</h3>
+            <h3 className={styles['invitation-headline']}>{eventData.childName || 'Birthday Star'}&apos;s {eventData.turningAge || '1'}st Birthday</h3>
             <p className={styles['invitation-intro']}>
               &ldquo;Join our panda party in the bamboo grove for cake, cheerful laughter, and unforgettable celebration!&rdquo;
             </p>

@@ -3,11 +3,15 @@
 import styles from './Footer.module.css';
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Share2, Copy, Check, ArrowUp, Sparkles, MessageCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export const Footer: React.FC = () => {
+  const [childName, setChildName] = useState<string>('Birthday Star');
+  useEffect(() => {
+    fetch('/api/event').then(r => r.json()).then(d => { if (d?.event?.childName) setChildName(d.event.childName); }).catch(() => {});
+  }, []);
   const [copied, setCopied] = useState(false);
 
   const scrollToTop = () => {
@@ -40,7 +44,7 @@ export const Footer: React.FC = () => {
 
   const handleShareWhatsApp = () => {
     if (typeof window === 'undefined') return;
-    const text = encodeURIComponent("You're invited to Ditvi's 1st Birthday Panda Celebration! 🐼🎋 Check out the website & RSVP here: " + window.location.href);
+    const text = encodeURIComponent("You're invited to our 1st Birthday Panda Celebration! 🐼🎋 Check out the website & RSVP here: " + window.location.href);
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -48,8 +52,8 @@ export const Footer: React.FC = () => {
     if (typeof window === 'undefined') return;
     if (navigator?.share) {
       navigator.share({
-        title: "Ditvi's 1st Birthday - Panda & Bamboo Celebration",
-        text: "Celebrate Ditvi's 1st Birthday with us! 🐼🎋",
+        title: "1st Birthday - Panda & Bamboo Celebration",
+        text: "Celebrate our 1st Birthday with us! 🐼🎋",
         url: window.location.href,
       }).catch(() => {});
     } else {
@@ -65,7 +69,7 @@ export const Footer: React.FC = () => {
           <div className={styles['footer-brand']}>
             <span className={styles['footer-panda-logo']}>🐼</span>
             <div className={styles['footer-brand-text']}>
-              <h3 className={styles['footer-title']}>Ditvi&apos;s 1st Birthday</h3>
+              <h3 className={styles['footer-title']}>{childName}&apos;s 1st Birthday</h3>
               <p className={styles['footer-date']}>Saturday, December 12, 2026 &bull; Austin, Texas</p>
             </div>
           </div>
@@ -109,7 +113,7 @@ export const Footer: React.FC = () => {
         <div className={styles['footer-middle-row']}>
           <nav className={styles['footer-nav']} aria-label="Footer Navigation">
             <a href="#home" className={styles['footer-link']}>Home</a>
-            <a href="#about" className={styles['footer-link']}>About Ditvi</a>
+            <a href="#about" className={styles['footer-link']}>About {childName}</a>
             <a href="#timeline" className={styles['footer-link']}>Milestones</a>
             <a href="#gallery" className={styles['footer-link']}>Gallery</a>
             <a href="#rsvp" className={styles['footer-link']}>RSVP</a>
@@ -125,7 +129,7 @@ export const Footer: React.FC = () => {
           </nav>
 
           <div className={styles['footer-hashtags']}>
-            <span className={styles['hashtag-chip']}>#DitviTurnsOne</span>
+            <span className={styles['hashtag-chip']}>#{childName.replace(/\s+/g, '')}TurnsOne</span>
             <span className={styles['hashtag-chip']}>#PandaParty2026</span>
             <span className={styles['hashtag-chip']}>#BambooGroveCelebration</span>
           </div>
@@ -138,7 +142,7 @@ export const Footer: React.FC = () => {
           </p>
 
           <p className={styles['footer-copyright']}>
-            &copy; 2026 The Chen Family. Designed for Ditvi&apos;s Birthday Guests. &bull;{' '}
+            &copy; 2026 The Host Family. Designed for Birthday Guests. &bull;{' '}
             <a href="/privacy" style={{ color: '#526e57', textDecoration: 'underline', fontSize: '0.8rem', marginRight: '8px' }}>
               Privacy Policy
             </a>

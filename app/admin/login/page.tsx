@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
         <div className={styles.brandHeader}>
           <span className={styles.brandIcon}>🐼</span>
           <h1 className={styles.brandTitle}>Event Admin Console</h1>
-          <p className={styles.brandSubtitle}>Ditvi&apos;s 1st Birthday Celebration</p>
+          <p className={styles.brandSubtitle}>1st Birthday Celebration</p>
         </div>
 
         {error && (

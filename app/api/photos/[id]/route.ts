@@ -53,6 +53,71 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
  * DELETE /api/photos/[id]
  * Deletes a photo from customer's Google Drive and Neon PostgreSQL metadata.
  */
+export async function PATCH(req: NextRequest, { params }: RouteParams) {
+  try {
+    const token = req.cookies.get('admin_token')?.value;
+    const admin = token ? verifyToken(token) : null;
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ error: 'Missing file id' }, { status: 400 });
+    }
+
+    const body = await req.json();
+    const { targetSection, milestoneIndex, caption } = body;
+
+    // Handle null or 'none' / '' to unset target section
+    const newSection = (targetSection === 'none' || targetSection === null || targetSection === '') ? null : targetSection;
+    const newMilestone = newSection === 'timeline' ? (milestoneIndex !== undefined ? milestoneIndex : null) : null;
+
+    if (targetSection !== undefined) {
+      await sql`
+        UPDATE drive_photos 
+        SET 
+          target_section = ${newSection},
+          milestone_index = ${newMilestone},
+          caption = COALESCE(${caption}, caption),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE drive_file_id = ${id}
+      `;
+    } else {
+      await sql`
+        UPDATE drive_photos 
+        SET 
+          caption = COALESCE(${caption}, caption),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE drive_file_id = ${id}
+      `;
+    }
+
+    // If assigning as child photo / hero, also update event_settings
+    if (newSection === 'child_photo' || newSection === 'hero') {
+      const photoUrl = `https://lh3.googleusercontent.com/d/${id}=w1200`;
+      await sql`
+        INSERT INTO event_settings (key, value)
+        VALUES ('child_photo_url', ${photoUrl})
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+      `;
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Photo assignments updated successfully',
+    });
+  } catch (error: unknown) {
+    console.error('Update photo error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to update photo';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/photos/[id]
+ * Deletes a photo from customer's Google Drive and Neon PostgreSQL metadata.
+ */
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
     const token = req.cookies.get('admin_token')?.value;
