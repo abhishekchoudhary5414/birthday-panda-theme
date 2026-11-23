@@ -1,0 +1,218 @@
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 36, 26, 0.65);
+  backdrop-filter: blur(5px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modalCard {
+  background: linear-gradient(135deg, #ffffff 0%, #fbfdfa 100%);
+  border: 1px solid rgba(120, 155, 99, 0.35);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 20px 48px rgba(41, 75, 53, 0.22);
+  padding: 24px 24px 20px;
+  position: relative;
+  overflow: hidden;
+  animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.92) translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.pandaDecorTop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1.25rem;
+  margin-bottom: 12px;
+}
+
+.pandaBadge {
+  background: #edf6ea;
+  border: 1px solid #c8e4c3;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(41, 75, 53, 0.08);
+}
+
+.closeBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #f0f5ee;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #556b5a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+  background: #e1ede0;
+  color: #294b35;
+  transform: rotate(90deg);
+}
+
+.modalHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.iconWrap {
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f2f8f0;
+  border: 1px solid #d8eada;
+}
+
+.iconInfo {
+  color: #294b35;
+}
+
+.iconSuccess {
+  color: #2e7d32;
+}
+
+.iconWarning {
+  color: #d97706;
+}
+
+.iconDanger {
+  color: #dc2626;
+}
+
+.iconConfirm {
+  color: #789b63;
+}
+
+.modalTitle {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #294b35;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.modalBody {
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+.modalMessage {
+  font-size: 0.92rem;
+  color: #4a5b4e;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.modalFooter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.btnConfirm {
+  background: linear-gradient(135deg, #294b35 0%, #437351 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 24px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(41, 75, 53, 0.2);
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.btnConfirm:hover {
+  background: linear-gradient(135deg, #1e3825 0%, #365c41 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(41, 75, 53, 0.26);
+}
+
+.btnDanger {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 24px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.btnDanger:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+  transform: translateY(-1px);
+}
+
+.btnCancel {
+  background: #ffffff;
+  color: #4a5b4e;
+  border: 1px solid #d0e1cc;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 90px;
+}
+
+.btnCancel:hover {
+  background: #f2f7f0;
+  color: #294b35;
+  border-color: #b7d8b3;
+}

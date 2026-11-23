@@ -25,6 +25,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MusicPlayer } from '@/components/MusicPlayer';
 import { PeekingPanda } from '@/components/PandaIllustrations';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 
 interface PhotoItem {
   id: string;
@@ -219,11 +220,10 @@ export default function PhotosGalleryPage() {
             </div>
           </div>
 
-          {/* Loading Indicator */}
+          {/* Skeleton Loading State */}
           {isLoading && (
-            <div style={{ textAlign: 'center', padding: '70px 0', color: '#294B35' }}>
-              <RefreshCw size={40} className="animate-spin" style={{ margin: '0 auto 14px', display: 'block' }} />
-              <div style={{ fontWeight: 700, fontSize: '1.15rem' }}>Loading Photos from Google Drive...</div>
+            <div style={{ width: '100%', padding: '10px 0 40px' }}>
+              <SkeletonLoader variant="photo" count={8} />
             </div>
           )}
 
@@ -265,12 +265,17 @@ export default function PhotosGalleryPage() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={photo.proxyUrl || photo.directUrl}
+                        src={photo.directUrl || photo.proxyUrl || photo.thumbnailLink}
                         alt={photo.caption || photo.name}
                         loading="lazy"
                         className={styles.photoImg}
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = photo.directUrl;
+                          const target = e.target as HTMLImageElement;
+                          if (target.src !== photo.proxyUrl) {
+                            target.src = photo.proxyUrl;
+                          } else if (photo.thumbnailLink && target.src !== photo.thumbnailLink) {
+                            target.src = photo.thumbnailLink;
+                          }
                         }}
                       />
 
@@ -327,10 +332,6 @@ export default function PhotosGalleryPage() {
                       </p>
 
                       <div className={styles.photoMetaRow}>
-                        <span className={styles.uploaderTag}>
-                          <Heart size={12} fill="#789B63" color="#789B63" />
-                          <span>{photo.uploaderName || 'Ditvi Guest'}</span>
-                        </span>
                         <span>{dateStr}</span>
                       </div>
 
@@ -445,36 +446,29 @@ export default function PhotosGalleryPage() {
               ) : (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={currentLightboxPhoto.proxyUrl || currentLightboxPhoto.directUrl}
+                  src={currentLightboxPhoto.directUrl || currentLightboxPhoto.proxyUrl || currentLightboxPhoto.thumbnailLink}
                   alt={currentLightboxPhoto.caption || currentLightboxPhoto.name}
                   className={styles.lightboxFullImg}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (target.src !== currentLightboxPhoto.proxyUrl) {
+                      target.src = currentLightboxPhoto.proxyUrl;
+                    }
+                  }}
                 />
               )}
             </div>
 
             <div className={styles.lightboxFooter}>
               <div style={{ fontSize: '0.88rem', color: '#576b5c' }}>
-                Uploaded by <strong>{currentLightboxPhoto.uploaderName || 'Ditvi Guest'}</strong>
                 {currentLightboxPhoto.createdTime && (
                   <span>
-                    {' '}• {new Date(currentLightboxPhoto.createdTime).toLocaleString()}
+                    📅 {new Date(currentLightboxPhoto.createdTime).toLocaleString()}
                   </span>
                 )}
               </div>
 
               <div className={styles.lightboxActions}>
-                {currentLightboxPhoto.webViewLink && (
-                  <a
-                    href={currentLightboxPhoto.webViewLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.lightboxActionLink}
-                  >
-                    <ExternalLink size={14} />
-                    <span>Google Drive</span>
-                  </a>
-                )}
-
                 <a
                   href={currentLightboxPhoto.proxyUrl || currentLightboxPhoto.directUrl}
                   download={currentLightboxPhoto.name}

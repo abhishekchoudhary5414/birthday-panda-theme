@@ -600,13 +600,11 @@ export async function getDriveFileStream(
   size?: number;
 }> {
   let accessToken: string;
-  if (userId) {
-    try {
-      accessToken = await getCustomerAccessToken(userId);
-    } catch {
-      accessToken = await getLegacyAccessToken();
-    }
-  } else {
+  // If specific userId is given, try that first; otherwise try the active connected customer (userId 1 or from DB)
+  try {
+    const targetId = userId || 1;
+    accessToken = await getCustomerAccessToken(targetId);
+  } catch {
     accessToken = await getLegacyAccessToken();
   }
 

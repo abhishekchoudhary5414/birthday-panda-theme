@@ -76,6 +76,8 @@ import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import StarIcon from '@mui/icons-material/Star';
 import { CARD_BG_BASE64 } from './cardBgBase64';
 import { PartyPanda, BambooStalkDecoration } from '@/components/PandaIllustrations';
+import { CommonModal, ModalType } from '@/components/CommonModal';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 import styles from './dashboard.module.css';
 
 
@@ -369,6 +371,58 @@ export default function AdminDashboardPage() {
   const [isDeletingDrivePhoto, setIsDeletingDrivePhoto] = useState(false);
   const driveFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Panda Common Modal dialog state (replaces window.alert & window.confirm)
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    type: ModalType;
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showPandaAlert = useCallback((message: string, title = 'Notice', type: ModalType = 'info') => {
+    setModalConfig({
+      isOpen: true,
+      type,
+      title,
+      message,
+      confirmLabel: 'Understood',
+      onConfirm: () => setModalConfig((prev) => ({ ...prev, isOpen: false })),
+    });
+  }, []);
+
+  const showPandaConfirm = useCallback((
+    message: string,
+    onConfirmAction: () => void,
+    title = 'Confirm Action',
+    type: ModalType = 'confirm',
+    confirmLabel = 'Confirm',
+    cancelLabel = 'Cancel'
+  ) => {
+    setModalConfig({
+      isOpen: true,
+      type,
+      title,
+      message,
+      confirmLabel,
+      cancelLabel,
+      onConfirm: () => {
+        setModalConfig((prev) => ({ ...prev, isOpen: false }));
+        onConfirmAction();
+      },
+      onCancel: () => setModalConfig((prev) => ({ ...prev, isOpen: false })),
+    });
+  }, []);
+
   // Fetch photos from Google Drive
   const fetchDrivePhotos = useCallback(async () => {
     try {
@@ -421,9 +475,33 @@ export default function AdminDashboardPage() {
 
   // Disconnect customer Gmail
   const handleDisconnectGmail = async () => {
-    if (!window.confirm('Are you sure you want to disconnect your Gmail account? Guest records and invitation history will remain safely preserved.')) {
-      return;
-    }
+    showPandaConfirm(
+      'Are you sure you want to disconnect your Gmail account? Guest records and invitation history will remain safely preserved.',
+      async () => {
+        try {
+          setIsDisconnectingGmail(true);
+          const res = await fetch('/api/gmail/disconnect', { method: 'POST' });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setGmailToast({ type: 'success', message: data.message || 'Gmail disconnected.' });
+            checkGmailStatus();
+          } else {
+            setGmailToast({ type: 'error', message: data.error || 'Failed to disconnect Gmail.' });
+          }
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : 'Error disconnecting Gmail';
+          setGmailToast({ type: 'error', message: msg });
+        } finally {
+          setIsDisconnectingGmail(false);
+        }
+      },
+      'Disconnect Gmail?',
+      'danger',
+      'Disconnect'
+    );
+  };
+
+  const handleDisconnectGmailOld = async () => {
     try {
       setIsDisconnectingGmail(true);
       const res = await fetch('/api/gmail/disconnect', { method: 'POST' });
@@ -509,58 +587,66 @@ export default function AdminDashboardPage() {
   // Send Bulk Invitations Directly to Selected Guests via Gmail API
   const handleSendBulkInvitations = async () => {
     if (selectedGuestIds.length === 0) {
-      alert('Please select at least one guest with an email address to send invitations.');
+      showPandaAlert('Please select at least one guest with an email address to send invitations.', 'No Guests Selected', 'warning');
       return;
     }
 
     const selectedGuests = guests.filter((g) => selectedGuestIds.includes(g.id) && g.email && g.email.includes('@'));
     if (selectedGuests.length === 0) {
-      alert('None of the selected guests have a valid email address.');
+      showPandaAlert('None of the selected guests have a valid email address.', 'Invalid Emails', 'warning');
       return;
     }
 
-    if (!window.confirm(`Are you ready to send personalized birthday invitations directly to ${selectedGuests.length} selected guest(s)?`)) {
-      return;
-    }
+    showPandaConfirm(
+      `Are you ready to send personalized birthday invitations directly to ${selectedGuests.length} selected guest(s)?`,
+      async () => {
+        try {
+          setIsSendingInvitations(true);
+          setGmailToast(null);
 
-    try {
-      setIsSendingInvitations(true);
-      setGmailToast(null);
+          const res = await fetch('/api/invitations/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              guestIds: selectedGuestIds,
+              forceResend,
+              subject: emailSubject,
+              message: emailCustomMessage,
+              birthdayPersonName: emailBirthdayPerson,
+              birthdayDate: emailBirthdayDate,
+              birthdayTime: emailBirthdayTime,
+              birthdayLocation: emailBirthdayLocation,
+              hostName: emailHostName,
+            }),
+          });
 
-      const res = await fetch('/api/invitations/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          guestIds: selectedGuestIds,
-          forceResend,
-          subject: emailSubject,
-          message: emailCustomMessage,
-          birthdayPersonName: emailBirthdayPerson,
-          birthdayDate: emailBirthdayDate,
-          birthdayTime: emailBirthdayTime,
-          birthdayLocation: emailBirthdayLocation,
-          hostName: emailHostName,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setGmailToast({
-          type: 'success',
-          message: `Invitations sent! Sent: ${data.summary.sent}, Failed: ${data.summary.failed}, Skipped: ${data.summary.skipped}.`,
-        });
-        checkGmailStatus();
-        fetchGuests();
-        fetchInvitationHistory();
-      } else {
-        setGmailToast({ type: 'error', message: data.error || 'Failed to send invitations.' });
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error sending invitations';
-      setGmailToast({ type: 'error', message: msg });
-    } finally {
-      setIsSendingInvitations(false);
-    }
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setGmailToast({
+              type: 'success',
+              message: `Invitations processed! Sent: ${data.sent}, Skipped: ${data.skipped || 0}, Failed: ${data.failed || 0}`,
+            });
+            fetchGuests();
+            fetchInvitationHistory();
+            checkGmailStatus();
+            setSelectedGuestIds([]);
+          } else {
+            setGmailToast({
+              type: 'error',
+              message: data.error || 'Failed to send invitations.',
+            });
+          }
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : 'Error sending invitations';
+          setGmailToast({ type: 'error', message: msg });
+        } finally {
+          setIsSendingInvitations(false);
+        }
+      },
+      'Send Invitations?',
+      'confirm',
+      'Send Now'
+    );
   };
 
   // Retry a failed invitation
@@ -618,26 +704,31 @@ export default function AdminDashboardPage() {
 
   // Disconnect customer Google Drive
   const handleDisconnectDrive = async () => {
-    if (!window.confirm('Are you sure you want to disconnect your Google Drive? Your photos will remain safe in your Drive, but new uploads will stop until you reconnect.')) {
-      return;
-    }
-    try {
-      setIsDisconnectingDrive(true);
-      const res = await fetch('/api/google-drive/disconnect', { method: 'POST' });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setDriveToast({ type: 'success', message: data.message || 'Google Drive disconnected.' });
-        checkDriveStatus();
-        fetchDrivePhotos();
-      } else {
-        setDriveToast({ type: 'error', message: data.error || 'Failed to disconnect Google Drive.' });
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error disconnecting Drive';
-      setDriveToast({ type: 'error', message: msg });
-    } finally {
-      setIsDisconnectingDrive(false);
-    }
+    showPandaConfirm(
+      'Are you sure you want to disconnect your Google Drive? Your photos will remain safe in your Drive, but new uploads will stop until you reconnect.',
+      async () => {
+        try {
+          setIsDisconnectingDrive(true);
+          const res = await fetch('/api/google-drive/disconnect', { method: 'POST' });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setDriveToast({ type: 'success', message: data.message || 'Google Drive disconnected.' });
+            checkDriveStatus();
+            fetchDrivePhotos();
+          } else {
+            setDriveToast({ type: 'error', message: data.error || 'Failed to disconnect Google Drive.' });
+          }
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : 'Error disconnecting Drive';
+          setDriveToast({ type: 'error', message: msg });
+        } finally {
+          setIsDisconnectingDrive(false);
+        }
+      },
+      'Disconnect Drive?',
+      'danger',
+      'Disconnect'
+    );
   };
 
   // Handle files selected for drive upload
@@ -718,27 +809,31 @@ export default function AdminDashboardPage() {
 
   // Delete photo from Google Drive
   const handleDeleteDrivePhoto = async (photoId: string) => {
-    if (!confirm('Are you sure you want to delete this photo from Google Drive? This cannot be undone.')) {
-      return;
-    }
-
-    try {
-      setIsDeletingDrivePhoto(true);
-      setDeletingPhotoId(photoId);
-      const res = await fetch(`/api/photos/${photoId}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setDrivePhotos((prev) => prev.filter((p) => p.id !== photoId));
-      } else {
-        alert(data.error || 'Failed to delete photo');
-      }
-    } catch (err) {
-      console.error('Delete photo error:', err);
-      alert('An error occurred while deleting the photo');
-    } finally {
-      setIsDeletingDrivePhoto(false);
-      setDeletingPhotoId(null);
-    }
+    showPandaConfirm(
+      'Are you sure you want to delete this photo from Google Drive? This cannot be undone.',
+      async () => {
+        try {
+          setIsDeletingDrivePhoto(true);
+          setDeletingPhotoId(photoId);
+          const res = await fetch(`/api/photos/${photoId}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setDrivePhotos((prev) => prev.filter((p) => p.id !== photoId));
+          } else {
+            showPandaAlert(data.error || 'Failed to delete photo', 'Delete Failed', 'danger');
+          }
+        } catch (err) {
+          console.error('Delete photo error:', err);
+          showPandaAlert('An error occurred while deleting the photo', 'Error', 'danger');
+        } finally {
+          setIsDeletingDrivePhoto(false);
+          setDeletingPhotoId(null);
+        }
+      },
+      'Delete Photo?',
+      'danger',
+      'Delete'
+    );
   };
 
   // Copy direct link
@@ -863,15 +958,21 @@ export default function AdminDashboardPage() {
 
   // Delete gift from DB
   const handleDeleteGift = async (id: number) => {
-    if (!confirm('Are you sure you want to remove this gift from the registry?')) return;
-    try {
-      const res = await fetch(`/api/gifts?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setAdminGifts((prev) => prev.filter((g) => g.id !== id));
-      }
-    } catch (err) {
-      console.error('Delete gift error:', err);
-    }
+    showPandaConfirm(
+      'Are you sure you want to remove this gift from the registry?',
+      async () => {
+        try {
+          const res = await fetch(`/api/gifts?id=${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            setAdminGifts((prev) => prev.filter((g) => g.id !== id));
+          }
+        } catch (err) {
+          console.error('Delete gift error:', err);
+        }
+      },
+      'Remove Gift?',
+      'danger'
+    );
   };
 
   // Toggle Ordered status in DB
@@ -942,32 +1043,36 @@ export default function AdminDashboardPage() {
 
   // Delete Venue
   const handleDeleteVenue = async () => {
-    if (!confirm('Are you sure you want to delete the venue details? The public site and invitation will display "Venue to be announced soon".')) {
-      return;
-    }
-    try {
-      setIsDeletingVenue(true);
-      const res = await fetch('/api/admin/event', { method: 'DELETE' });
-      const data = await res.json();
-      if (res.ok) {
-        setEventSettings((prev) => ({
-          ...prev,
-          venueName: '',
-          venueAddress: '',
-          venueCity: '',
-          venueMapUrl: '',
-        }));
-        setEventAlert({ type: 'success', message: 'Venue successfully deleted and cleared from database!' });
-        setTimeout(() => setEventAlert(null), 4000);
-      } else {
-        setEventAlert({ type: 'error', message: data.error || 'Failed to delete venue' });
-      }
-    } catch (err) {
-      console.error('Delete venue error:', err);
-      setEventAlert({ type: 'error', message: 'An error occurred while deleting venue' });
-    } finally {
-      setIsDeletingVenue(false);
-    }
+    showPandaConfirm(
+      'Are you sure you want to delete the venue details? The public site and invitation will display "Venue to be announced soon".',
+      async () => {
+        try {
+          setIsDeletingVenue(true);
+          const res = await fetch('/api/admin/event', { method: 'DELETE' });
+          const data = await res.json();
+          if (res.ok) {
+            setEventSettings((prev) => ({
+              ...prev,
+              venueName: '',
+              venueAddress: '',
+              venueCity: '',
+              venueMapUrl: '',
+            }));
+            setEventAlert({ type: 'success', message: 'Venue successfully deleted and cleared from database!' });
+            setTimeout(() => setEventAlert(null), 4000);
+          } else {
+            setEventAlert({ type: 'error', message: data.error || 'Failed to delete venue' });
+          }
+        } catch (err) {
+          console.error('Delete venue error:', err);
+          setEventAlert({ type: 'error', message: 'An error occurred while deleting venue' });
+        } finally {
+          setIsDeletingVenue(false);
+        }
+      },
+      'Delete Venue?',
+      'danger'
+    );
   };
 
   // Load guests and stats
@@ -1054,13 +1159,32 @@ export default function AdminDashboardPage() {
 
   // Delete RSVP from Database
   const handleDeleteRsvp = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this RSVP response from the database?')) return;
+    showPandaConfirm(
+      'Are you sure you want to delete this RSVP response from the database?',
+      async () => {
+        try {
+          const res = await fetch(`/api/admin/rsvp?id=${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            fetchRsvps();
+            
+          } else {
+            showPandaAlert('Failed to delete RSVP', 'Error', 'danger');
+          }
+        } catch (err) {
+          console.error('Delete RSVP error:', err);
+        }
+      },
+      'Delete RSVP?',
+      'danger'
+    );
+  };
+  const handleDeleteRsvpOld = async (id: number) => {
     try {
       const res = await fetch(`/api/admin/rsvp?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
         fetchRsvps();
       } else {
-        alert('Failed to delete RSVP');
+        showPandaAlert('Failed to delete RSVP')
       }
     } catch (err) {
       console.error('Delete RSVP error:', err);
@@ -1070,7 +1194,7 @@ export default function AdminDashboardPage() {
   // Download RSVP Data as CSV
   const handleDownloadRsvpCsv = () => {
     if (rsvpsList.length === 0) {
-      alert('No RSVP data to export.');
+      showPandaAlert('No RSVP data to export.')
       return;
     }
     const headers = ['ID', 'Full Name', 'Phone', 'Email', 'Attending', 'Guests Count', 'Dietary Preference', 'Allergies', 'Personal Message', 'Submitted At'];
@@ -1101,7 +1225,7 @@ export default function AdminDashboardPage() {
   // Download RSVP Data as PDF Report - Themed & Styled for Bamboo Grove Context
   const handleDownloadRsvpPdf = async () => {
     if (rsvpsList.length === 0) {
-      alert('No RSVP data to export.');
+      showPandaAlert('No RSVP data to export.')
       return;
     }
     try {
@@ -1281,7 +1405,7 @@ export default function AdminDashboardPage() {
       doc.save(`Ditvi_Birthday_Official_RSVP_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Failed to export RSVP PDF:', err);
-      alert('Failed to generate RSVP PDF report.');
+      showPandaAlert('Failed to generate RSVP PDF report.')
     }
   };
 
@@ -1340,7 +1464,26 @@ export default function AdminDashboardPage() {
 
   // Delete Wish
   const handleDeleteWish = async (id: number) => {
-    if (!confirm('Are you sure you want to remove this birthday wish from the database?')) return;
+    showPandaConfirm(
+      'Are you sure you want to remove this birthday wish from the database?',
+      async () => {
+        try {
+          const res = await fetch(`/api/admin/wishes?id=${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            fetchWishes();
+            
+          } else {
+            showPandaAlert('Failed to delete wish', 'Error', 'danger');
+          }
+        } catch (err) {
+          console.error('Delete wish error:', err);
+        }
+      },
+      'Delete Wish?',
+      'danger'
+    );
+  };
+  const handleDeleteWishOld = async (id: number) => {
     try {
       setIsDeletingWish(true);
       const res = await fetch(`/api/admin/wishes?id=${id}`, { method: 'DELETE' });
@@ -1349,7 +1492,7 @@ export default function AdminDashboardPage() {
         setTimeout(() => setWishAlert(null), 3000);
         fetchWishes();
       } else {
-        alert('Failed to delete wish');
+        showPandaAlert('Failed to delete wish')
       }
     } catch (err) {
       console.error('Delete wish error:', err);
@@ -1459,7 +1602,7 @@ export default function AdminDashboardPage() {
       doc.save(`Ditvi_Birthday_Wishes_Keepsake_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Failed to generate wishes PDF:', err);
-      alert('Failed to generate PDF. Please try again.');
+      showPandaAlert('Failed to generate PDF. Please try again.')
     }
   };
 
@@ -1467,7 +1610,7 @@ export default function AdminDashboardPage() {
   // High-fidelity native vector PDF rendering ensuring instant, bulletproof generation with zero blank cards
   const handleDownloadWishesA4CardsPdf = async () => {
     if (wishesList.length === 0) {
-      alert('No wishes to download.');
+      showPandaAlert('No wishes to download.')
       return;
     }
 
@@ -1712,7 +1855,7 @@ export default function AdminDashboardPage() {
       doc.save(`Ditvi_Birthday_Wishes_4_Cards_A4_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Failed to generate 4-card A4 PDF:', err);
-      alert('Failed to generate A4 Cards PDF. Please try again.');
+      showPandaAlert('Failed to generate A4 Cards PDF. Please try again.')
     } finally {
       setIsGeneratingA4Pdf(false);
     }
@@ -1721,7 +1864,7 @@ export default function AdminDashboardPage() {
   // Download All Wishes Data as Excel/CSV Spreadsheet
   const handleDownloadWishesCsv = () => {
     if (wishesList.length === 0) {
-      alert('No wishes to export.');
+      showPandaAlert('No wishes to export.')
       return;
     }
     const headers = ['ID', 'Guest Name', 'Relationship', 'Phone Number', 'Birthday Message', 'Likes', 'Date Submitted'];
@@ -1861,7 +2004,7 @@ export default function AdminDashboardPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        alert(err.error || 'Failed to add guest');
+        showPandaAlert(err.error || 'Failed to add guest')
         return;
       }
 
@@ -2136,7 +2279,7 @@ export default function AdminDashboardPage() {
       doc.save(`Ditvi_Birthday_Guest_List_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Failed to generate PDF:', err);
-      alert('Could not generate PDF. Please try again.');
+      showPandaAlert('Could not generate PDF. Please try again.')
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -2193,7 +2336,7 @@ export default function AdminDashboardPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        alert(err.error || 'Failed to update guest');
+        showPandaAlert(err.error || 'Failed to update guest')
         return;
       }
 
@@ -2232,7 +2375,7 @@ export default function AdminDashboardPage() {
 
     const validOptions = newQuizOptions.map((o) => o.trim()).filter(Boolean);
     if (validOptions.length < 2) {
-      alert('Please provide at least 2 options for the quiz question.');
+      showPandaAlert('Please provide at least 2 options for the quiz question.')
       return;
     }
 
@@ -2251,7 +2394,7 @@ export default function AdminDashboardPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'Failed to add quiz question');
+        showPandaAlert(data.error || 'Failed to add quiz question')
         return;
       }
 
@@ -2287,7 +2430,7 @@ export default function AdminDashboardPage() {
 
     const validOptions = editQuizOptions.map((o) => o.trim()).filter(Boolean);
     if (validOptions.length < 2) {
-      alert('Please provide at least 2 options.');
+      showPandaAlert('Please provide at least 2 options.')
       return;
     }
 
@@ -2307,7 +2450,7 @@ export default function AdminDashboardPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'Failed to update quiz question');
+        showPandaAlert(data.error || 'Failed to update quiz question')
         return;
       }
 
@@ -2324,24 +2467,46 @@ export default function AdminDashboardPage() {
 
   // Delete Quiz Question
   const handleDeleteQuizQuestion = async (id: number) => {
-    if (!confirm('Are you sure you want to remove this quiz question?')) return;
-    try {
-      const res = await fetch(`/api/admin/quiz?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setQuizAlert({ type: 'success', message: 'Question removed.' });
-        setTimeout(() => setQuizAlert(null), 3000);
-        fetchQuizQuestions();
-      } else {
-        alert('Failed to delete question');
-      }
-    } catch (err) {
-      console.error('Delete quiz error:', err);
-    }
+    showPandaConfirm(
+      'Are you sure you want to remove this quiz question?',
+      async () => {
+        try {
+          const res = await fetch(`/api/admin/quiz?id=${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            setQuizAlert({ type: 'success', message: 'Question removed.' });
+            setTimeout(() => setQuizAlert(null), 3000);
+            fetchQuizQuestions();
+          } else {
+            showPandaAlert('Failed to delete question', 'Delete Failed', 'danger');
+          }
+        } catch (err) {
+          console.error('Delete quiz error:', err);
+        }
+      },
+      'Remove Question?',
+      'danger'
+    );
   };
 
   // Delete Quiz Submission from Database
   const handleDeleteQuizSubmission = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this score submission?')) return;
+    showPandaConfirm(
+      'Are you sure you want to delete this score submission?',
+      async () => {
+        try {
+          const res = await fetch(`/api/admin/quiz/submissions?id=${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            fetchQuizSubmissions();
+          }
+        } catch (err) {
+          console.error('Delete score error:', err);
+        }
+      },
+      'Delete Score?',
+      'danger'
+    );
+  };
+  const handleDeleteQuizSubmissionOld = async (id: number) => {
     try {
       const res = await fetch(`/api/admin/quiz/submissions?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -2476,7 +2641,7 @@ export default function AdminDashboardPage() {
       doc.save(`Ditvi_Quiz_${cleanName}_Report.pdf`);
     } catch (err) {
       console.error('Error generating single quiz PDF:', err);
-      alert('Failed to generate PDF for this person. Please try again.');
+      showPandaAlert('Failed to generate PDF for this person. Please try again.')
     } finally {
       setIsGeneratingQuizPdf(false);
     }
@@ -2645,7 +2810,7 @@ export default function AdminDashboardPage() {
       doc.save(`Ditvi_Birthday_All_Quiz_Submissions_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
       console.error('Error generating all quiz PDF:', err);
-      alert('Failed to generate master PDF report. Please try again.');
+      showPandaAlert('Failed to generate master PDF report. Please try again.')
     } finally {
       setIsGeneratingQuizPdf(false);
     }
@@ -6793,7 +6958,9 @@ export default function AdminDashboardPage() {
               </div>
 
               {historyLoading ? (
-                <div style={{ padding: '36px', textAlign: 'center', color: '#6e7e73' }}>Loading sending activity...</div>
+                <div style={{ padding: '16px 0' }}>
+                  <SkeletonLoader variant="table-row" count={4} />
+                </div>
               ) : invitationHistory.length === 0 ? (
                 <div style={{ padding: '36px', textAlign: 'center', color: '#6e7e73', background: '#fafdf9', borderRadius: '12px', border: '1px dashed #d5e5d1' }}>
                   No invitations sent yet. Select guests above to dispatch your invitations!
@@ -7364,14 +7531,8 @@ export default function AdminDashboardPage() {
 
               {/* Photo Cards Grid with Skeleton Loading */}
               {driveLoading && (
-                <div className={styles.mediaPhotoGrid}>
-                  {[...Array(6)].map((_, i) => (
-                    <div key={`drive-skel-${i}`} className={styles.skeletonCard} style={{ padding: '12px' }}>
-                      <div className={styles.skeletonBase} style={{ width: '100%', height: '170px', borderRadius: '12px', marginBottom: '12px' }} />
-                      <div className={styles.skeletonBase} style={{ width: '70%', height: '16px', marginBottom: '8px' }} />
-                      <div className={styles.skeletonBase} style={{ width: '45%', height: '12px' }} />
-                    </div>
-                  ))}
+                <div style={{ width: '100%' }}>
+                  <SkeletonLoader variant="photo" count={6} />
                 </div>
               )}
 
@@ -8465,6 +8626,18 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Global Panda Common Modal (Alert & Confirm Replacements) */}
+      <CommonModal
+        isOpen={modalConfig.isOpen}
+        type={modalConfig.type}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmLabel={modalConfig.confirmLabel}
+        cancelLabel={modalConfig.cancelLabel}
+        onConfirm={modalConfig.onConfirm}
+        onCancel={modalConfig.onCancel}
+      />
     </div>
   );
 }
