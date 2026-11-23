@@ -5,6 +5,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const {
+      title = 'Mr.',
       fullName,
       phone,
       email,
@@ -23,9 +24,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
     }
 
+    if (!email || !email.trim()) {
+      return NextResponse.json({ error: 'Email address is required' }, { status: 400 });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return NextResponse.json({ error: 'Please provide a valid email address' }, { status: 400 });
+    }
+
+    const cleanTitle = title ? title.trim() : 'Mr.';
     const trimmedName = fullName.trim();
     const trimmedPhone = phone.trim();
-    const trimmedEmail = email && email.trim() ? email.trim().toLowerCase() : null;
+    const trimmedEmail = email.trim().toLowerCase();
     const rsvpStatus = attending === 'yes' ? 'attending' : 'declined';
     const parsedGuestsCount = parseInt(guestsCount, 10) || 1;
 
@@ -33,6 +44,7 @@ export async function POST(req: NextRequest) {
     await sql`
       CREATE TABLE IF NOT EXISTS rsvps (
         id SERIAL PRIMARY KEY,
+        title VARCHAR(50) DEFAULT 'Mr.',
         full_name VARCHAR(255) NOT NULL,
         phone VARCHAR(50) NOT NULL,
         email VARCHAR(255),
@@ -45,20 +57,29 @@ export async function POST(req: NextRequest) {
       )
     `;
 
+    // Ensure title column exists in case table was created earlier
+    try {
+      await sql`ALTER TABLE rsvps ADD COLUMN IF NOT EXISTS title VARCHAR(50) DEFAULT 'Mr.'`;
+    } catch {
+      // ignore
+    }
+
     // 2. Disallow duplicate RSVP by email
     if (trimmedEmail) {
       const existingRsvp = await sql`
-        SELECT id, full_name, attending, guests_count, created_at FROM rsvps WHERE LOWER(email) = ${trimmedEmail} LIMIT 1
+        SELECT id, title, full_name, attending, guests_count, created_at FROM rsvps WHERE LOWER(email) = ${trimmedEmail} LIMIT 1
       `;
       if (existingRsvp && existingRsvp.length > 0) {
         const isAttending = existingRsvp[0].attending === 'yes';
+        const displayGreetingName = `${existingRsvp[0].title ? existingRsvp[0].title + ' ' : ''}${existingRsvp[0].full_name}`;
         return NextResponse.json(
           {
             error: isAttending
-              ? `Warm greetings! An RSVP has already been confirmed for ${existingRsvp[0].full_name} (${trimmedEmail}). You are happily ON THE GUEST LIST! We can't wait to celebrate together.`
-              : `Thank you for checking! An RSVP was previously received for ${existingRsvp[0].full_name} (${trimmedEmail}) indicating you are unable to attend. We will miss you dearly!`,
+              ? `Warm greetings! An RSVP has already been confirmed for ${displayGreetingName} (${trimmedEmail}). You are happily ON THE GUEST LIST! We can't wait to celebrate together.`
+              : `Thank you for checking! An RSVP was previously received for ${displayGreetingName} (${trimmedEmail}) indicating you are unable to attend. We will miss you dearly!`,
             isDuplicateEmail: true,
             attending: existingRsvp[0].attending,
+            title: existingRsvp[0].title,
             fullName: existingRsvp[0].full_name,
             email: trimmedEmail,
             guestsCount: existingRsvp[0].guests_count,
@@ -70,8 +91,9 @@ export async function POST(req: NextRequest) {
     }
 
     const inserted = await sql`
-      INSERT INTO rsvps (full_name, phone, email, attending, guests_count, dietary, allergies, message)
+      INSERT INTO rsvps (title, full_name, phone, email, attending, guests_count, dietary, allergies, message)
       VALUES (
+        ${cleanTitle},
         ${trimmedName},
         ${trimmedPhone},
         ${trimmedEmail},
@@ -95,7 +117,8 @@ export async function POST(req: NextRequest) {
       if (existing && existing.length > 0) {
         await sql`
           UPDATE guests
-          SET rsvp_status = ${rsvpStatus},
+          SET title = ${cleanTitle},
+              rsvp_status = ${rsvpStatus},
               email = COALESCE(${trimmedEmail}, email),
               notes = COALESCE(${message ? message.trim() : null}, notes)
           WHERE id = ${existing[0].id}
@@ -104,7 +127,7 @@ export async function POST(req: NextRequest) {
         const randomCode = 'DITVI-' + Math.floor(1000 + Math.random() * 9000);
         await sql`
           INSERT INTO guests (title, name, mobile, email, invite_code, rsvp_status, invited, notes)
-          VALUES ('Mr./Ms.', ${trimmedName}, ${trimmedPhone}, ${trimmedEmail}, ${randomCode}, ${rsvpStatus}, true, ${message ? message.trim() : null})
+          VALUES (${cleanTitle}, ${trimmedName}, ${trimmedPhone}, ${trimmedEmail}, ${randomCode}, ${rsvpStatus}, true, ${message ? message.trim() : null})
         `;
       }
     } catch (guestSyncErr) {

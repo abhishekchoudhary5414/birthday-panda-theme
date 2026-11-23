@@ -3583,8 +3583,9 @@ export default function AdminDashboardPage() {
                       }}
                     >
                       <option value="Mr.">Mr.</option>
-                      <option value="Miss">Miss</option>
                       <option value="Mrs.">Mrs.</option>
+                      <option value="Miss">Miss</option>
+                      <option value="Dr.">Dr.</option>
                     </select>
 
                     <input
@@ -7885,7 +7886,9 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setEditTitle(e.target.value)}
                 >
                   <option value="Mr.">Mr.</option>
+                  <option value="Mrs.">Mrs.</option>
                   <option value="Miss">Miss</option>
+                  <option value="Dr.">Dr.</option>
                 </select>
               </div>
 

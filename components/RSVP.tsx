@@ -9,6 +9,7 @@ import { PeekingPanda } from './PandaIllustrations';
 import confetti from 'canvas-confetti';
 
 interface RSVPFormData {
+  title: string;
   fullName: string;
   phone: string;
   email: string;
@@ -22,11 +23,13 @@ interface RSVPFormData {
 interface FormErrors {
   fullName?: string;
   phone?: string;
+  email?: string;
   attending?: string;
 }
 
 export const RSVP: React.FC = () => {
   const [formData, setFormData] = useState<RSVPFormData>({
+    title: 'Mr.',
     fullName: '',
     phone: '',
     email: '',
@@ -100,20 +103,23 @@ export const RSVP: React.FC = () => {
         if (hashQuery) params = new URLSearchParams(hashQuery);
       }
 
+      const titleParam = params.get('title');
       const nameParam = params.get('name') || params.get('fullName');
       const phoneParam = params.get('phone') || params.get('mobile') || params.get('number');
       const emailParam = params.get('email');
 
-      if (nameParam || phoneParam || emailParam) {
+      if (titleParam || nameParam || phoneParam || emailParam) {
         // If a new personalized link is opened, clear old local storage submission so they see the pre-filled form directly
         setSubmittedRSVP(null);
 
+        const cleanTitle = titleParam ? decodeURIComponent(titleParam).trim() : '';
         const cleanEmail = emailParam ? decodeURIComponent(emailParam).trim() : '';
         const cleanName = nameParam ? decodeURIComponent(nameParam).trim() : '';
         const cleanPhone = phoneParam ? decodeURIComponent(phoneParam).trim() : '';
 
         setFormData((prev) => ({
           ...prev,
+          title: cleanTitle || prev.title,
           fullName: cleanName || prev.fullName,
           phone: cleanPhone || prev.phone,
           email: cleanEmail || prev.email,
@@ -195,6 +201,12 @@ export const RSVP: React.FC = () => {
       errs.phone = 'Please provide a valid phone number.';
     }
 
+    if (!formData.email.trim()) {
+      errs.email = 'Please enter your email address.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      errs.email = 'Please provide a valid email address.';
+    }
+
     if (!formData.attending) {
       errs.attending = 'Please let us know if you can attend.';
     }
@@ -269,6 +281,7 @@ export const RSVP: React.FC = () => {
       // ignore
     }
     setFormData({
+      title: 'Mr.',
       fullName: '',
       phone: '',
       email: '',
@@ -495,22 +508,38 @@ export const RSVP: React.FC = () => {
               <form onSubmit={handleSubmit} className={styles['rsvp-form']} noValidate>
                 <div className={styles['form-header-badge']}>
                   <Sparkles size={16} />
-                  <span>Kindly RSVP by November 30, 2026</span>
+                  <span>Birthday Celebration: {eventData.eventDate || 'Saturday, December 12, 2026'}</span>
                 </div>
 
-                {/* Full Name */}
+                {/* Full Name with Title Select (including Dr) */}
                 <div className={styles['form-group']}>
                   <label htmlFor="fullName" className={styles['form-label']}>
-                    Your Full Name <span className={styles['req']}>*</span>
+                    Your Name <span className={styles['req']}>*</span>
                   </label>
-                  <input
-                    id="fullName"
-                    type="text"
-                    className={`${styles['form-input'] || 'form-input'} ${errors.fullName ? (styles['has-error'] || 'has-error') : ''}`}
-                    placeholder="e.g. Jessica Miller"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(90px, 120px) 1fr', gap: '10px' }}>
+                    <select
+                      id="title"
+                      aria-label="Title"
+                      className={styles['form-input']}
+                      style={{ fontWeight: 700, cursor: 'pointer', background: '#fafcfa' }}
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    >
+                      <option value="Mr.">Mr.</option>
+                      <option value="Mrs.">Mrs.</option>
+                      <option value="Miss">Miss</option>
+                      <option value="Dr.">Dr.</option>
+                    </select>
+
+                    <input
+                      id="fullName"
+                      type="text"
+                      className={`${styles['form-input'] || 'form-input'} ${errors.fullName ? (styles['has-error'] || 'has-error') : ''}`}
+                      placeholder="e.g. Jessica Miller"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    />
+                  </div>
                   {errors.fullName && <span className={styles['error-text']}>{errors.fullName}</span>}
                 </div>
 
@@ -533,16 +562,17 @@ export const RSVP: React.FC = () => {
 
                   <div className={styles['form-group']}>
                     <label htmlFor="email" className={styles['form-label']}>
-                      Email Address <span className={styles['opt']}>(Optional)</span>
+                      Email Address <span className={styles['req']}>*</span>
                     </label>
                     <input
                       id="email"
                       type="email"
-                      className={styles['form-input']}
+                      className={`${styles['form-input'] || 'form-input'} ${errors.email ? (styles['has-error'] || 'has-error') : ''}`}
                       placeholder="jessica@example.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     />
+                    {errors.email && <span className={styles['error-text']}>{errors.email}</span>}
                   </div>
                 </div>
 
