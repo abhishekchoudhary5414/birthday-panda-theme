@@ -10,7 +10,7 @@ export interface InvitationTemplateData {
 }
 
 /**
- * Replace dynamic template placeholders
+ * Replace dynamic template placeholders safely
  */
 export function renderTemplateText(template: string, data: InvitationTemplateData): string {
   return template
@@ -24,17 +24,24 @@ export function renderTemplateText(template: string, data: InvitationTemplateDat
 }
 
 /**
- * Generate Modern, Responsive HTML Email
+ * Clean, Elegant, High-Deliverability HTML Email Template
+ * Specifically crafted to maximize inbox placement:
+ * - Natural text-to-code ratio
+ * - No promotional spam keywords, spammy emojis or all-caps
+ * - Single unambiguous primary link to invitation website
+ * - Fully mobile-responsive, compatible with Gmail web & mobile apps
+ * - Clean panda & bamboo color scheme (#1B3824, #294B35, #F4F7F2)
  */
 export function generateInvitationHtml(data: InvitationTemplateData): string {
-  const customMsg = data.customMessage || "We would love to invite you to celebrate this magical milestone with us! Join us for a joyful day filled with laughter, delicious treats, games, and warm family moments.";
+  const customMsg = data.customMessage || "We would love for you to celebrate this special milestone with us! Join us for a joyful gathering with family, friends, and delicious birthday cake.";
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>You're Invited to ${data.birthdayPersonName}'s Birthday!</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Birthday Invitation: Celebrate with ${data.birthdayPersonName}</title>
   <style>
     body {
       margin: 0;
@@ -43,182 +50,171 @@ export function generateInvitationHtml(data: InvitationTemplateData): string {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       color: #2D3A30;
       -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+    }
+    table {
+      border-collapse: collapse;
     }
     .wrapper {
       width: 100%;
-      table-layout: fixed;
       background-color: #F8FAF7;
-      padding: 40px 0;
+      padding: 32px 12px;
     }
-    .main {
-      background-color: #FFFFFF;
+    .card {
+      max-width: 580px;
       margin: 0 auto;
-      max-width: 600px;
-      border-radius: 20px;
+      background-color: #FFFFFF;
+      border-radius: 16px;
+      border: 1px solid #E2EDE0;
       overflow: hidden;
-      border: 1px solid #E1ECE0;
-      box-shadow: 0 10px 30px rgba(41, 75, 53, 0.06);
+      box-shadow: 0 4px 18px rgba(41, 75, 53, 0.05);
     }
-    .header {
-      background: linear-gradient(135deg, #1B3824 0%, #294B35 60%, #437351 100%);
-      padding: 40px 30px;
+    .banner {
+      background: #1B3824;
+      padding: 32px 24px;
       text-align: center;
       color: #FFFFFF;
     }
-    .header-badge {
+    .banner-badge {
       display: inline-block;
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      padding: 5px 16px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 700;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 4px 14px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 600;
       letter-spacing: 0.5px;
-      margin-bottom: 12px;
-      color: #F5FAF3;
+      color: #E2EDE0;
+      margin-bottom: 10px;
     }
-    .header-title {
-      font-size: 28px;
-      font-weight: 800;
-      margin: 0 0 8px;
-      letter-spacing: -0.5px;
+    .banner-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 6px;
+      color: #FFFFFF;
+      letter-spacing: -0.3px;
     }
-    .content {
-      padding: 36px 32px;
+    .body-content {
+      padding: 32px 28px;
     }
     .greeting {
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 17px;
+      font-weight: 600;
       color: #1B3824;
-      margin-bottom: 14px;
-    }
-    .message {
-      font-size: 15px;
-      line-height: 1.65;
-      color: #4D5E51;
-      margin-bottom: 26px;
-    }
-    .event-card {
-      background-color: #F7FAF5;
-      border: 1px solid #DFEDE0;
-      border-radius: 16px;
-      padding: 22px;
-      margin-bottom: 30px;
-    }
-    .event-row {
-      display: flex;
       margin-bottom: 12px;
+    }
+    .paragraph {
+      font-size: 15px;
+      color: #405244;
+      margin-bottom: 22px;
+      line-height: 1.65;
+    }
+    .details-box {
+      background: #F4F7F2;
+      border-radius: 12px;
+      border: 1px solid #DFEDE0;
+      padding: 18px 20px;
+      margin: 22px 0 28px;
+    }
+    .detail-row {
       font-size: 14px;
-    }
-    .event-label {
-      width: 90px;
-      font-weight: 700;
-      color: #294B35;
-    }
-    .event-value {
-      flex: 1;
+      padding: 4px 0;
       color: #334437;
     }
-    .btn-container {
-      text-align: center;
-      margin: 32px 0 20px;
-    }
-    .btn {
+    .detail-label {
+      font-weight: 700;
+      color: #294B35;
       display: inline-block;
-      background: linear-gradient(135deg, #294B35 0%, #3e6b4d 100%);
+      width: 80px;
+    }
+    .btn-wrap {
+      text-align: center;
+      margin: 28px 0 16px;
+    }
+    .primary-btn {
+      display: inline-block;
+      background: #294B35;
       color: #FFFFFF !important;
       text-decoration: none;
-      padding: 14px 34px;
-      border-radius: 9999px;
-      font-size: 16px;
+      padding: 13px 32px;
+      border-radius: 28px;
+      font-size: 15px;
       font-weight: 700;
-      box-shadow: 0 4px 14px rgba(41, 75, 53, 0.25);
+      letter-spacing: 0.2px;
+    }
+    .footnote {
+      text-align: center;
+      font-size: 13px;
+      color: #718375;
+      margin-top: 18px;
     }
     .footer {
-      background-color: #FAFDF9;
-      padding: 24px 32px;
+      background: #FAFCF9;
+      border-top: 1px solid #EBF2EA;
+      padding: 22px 28px;
       text-align: center;
-      border-top: 1px solid #EAF2E8;
-      font-size: 13px;
-      color: #7A8E7E;
+      font-size: 12px;
+      color: #7E9282;
     }
   </style>
 </head>
 <body>
   <div class="wrapper">
-    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
-      <tr>
-        <td align="center">
-          <div class="main">
-            <!-- Header -->
-            <div class="header">
-              <div class="header-badge">🎋 You're Invited!</div>
-              <div style="font-size: 42px; line-height: 1; margin-bottom: 10px;">🐼🎂</div>
-              <h1 class="header-title">${data.birthdayPersonName}'s Birthday Party</h1>
-              <p style="margin: 0; font-size: 15px; color: #D5E5D1;">A celebration of smiles, laughter, and special memories</p>
-            </div>
+    <div class="card">
+      <!-- Top Header -->
+      <div class="banner">
+        <div class="banner-badge">Birthday Celebration</div>
+        <h1 class="banner-title">${data.birthdayPersonName}'s Birthday Party</h1>
+        <p style="margin: 0; font-size: 14px; color: #D5E5D1;">You are warmly invited to join our celebration</p>
+      </div>
 
-            <!-- Content -->
-            <div class="content">
-              <div class="greeting">Hi ${data.guestName},</div>
-              <div class="message">${customMsg}</div>
+      <!-- Main Body -->
+      <div class="body-content">
+        <div class="greeting">Hello ${data.guestName},</div>
+        <div class="paragraph">${customMsg}</div>
 
-              <!-- Event Details Card -->
-              <div class="event-card">
-                <table width="100%" border="0" cellspacing="0" cellpadding="6">
-                  <tr>
-                    <td width="90" style="font-weight: bold; color: #294B35; font-size: 14px;">📅 Date:</td>
-                    <td style="color: #334437; font-size: 14px; font-weight: 600;">${data.birthdayDate}</td>
-                  </tr>
-                  <tr>
-                    <td width="90" style="font-weight: bold; color: #294B35; font-size: 14px;">⏰ Time:</td>
-                    <td style="color: #334437; font-size: 14px;">${data.birthdayTime}</td>
-                  </tr>
-                  <tr>
-                    <td width="90" style="font-weight: bold; color: #294B35; font-size: 14px;">📍 Location:</td>
-                    <td style="color: #334437; font-size: 14px;">${data.birthdayLocation}</td>
-                  </tr>
-                </table>
-              </div>
+        <!-- Event Details -->
+        <div class="details-box">
+          <div class="detail-row"><span class="detail-label">Date:</span> ${data.birthdayDate}</div>
+          <div class="detail-row"><span class="detail-label">Time:</span> ${data.birthdayTime}</div>
+          <div class="detail-row"><span class="detail-label">Location:</span> ${data.birthdayLocation}</div>
+        </div>
 
-              <!-- Call to Action Button -->
-              <div class="btn-container">
-                <a href="${data.birthdayWebsiteUrl}" target="_blank" rel="noopener noreferrer" class="btn">
-                  View Website &amp; RSVP Online 🌿
-                </a>
-              </div>
+        <!-- Primary Action Link -->
+        <div class="btn-wrap">
+          <a href="${data.birthdayWebsiteUrl}" target="_blank" rel="noopener noreferrer" class="primary-btn">
+            View Invitation &amp; RSVP
+          </a>
+        </div>
 
-              <p style="text-align: center; font-size: 13px; color: #6E7E73; margin: 16px 0 0;">
-                Click above to explore photos, browse party games, send a wish, and confirm your RSVP!
-              </p>
-            </div>
+        <div class="footnote">
+          Please visit our celebration website to view party photos, send wishes, and confirm your attendance.
+        </div>
+      </div>
 
-            <!-- Footer -->
-            <div class="footer">
-              <p style="margin: 0 0 6px; font-weight: 600; color: #294B35;">Warm wishes,</p>
-              <p style="margin: 0 0 16px; font-size: 14px; font-weight: 700; color: #1B3824;">${data.hostName}</p>
-              <p style="margin: 0; font-size: 12px; color: #9AB0A0;">
-                Sent with love from the Birthday Celebration Website Platform &bull; <a href="${data.birthdayWebsiteUrl}" style="color: #294B35;">Visit Website</a>
-              </p>
-            </div>
-          </div>
-        </td>
-      </tr>
-    </table>
+      <!-- Footer -->
+      <div class="footer">
+        <p style="margin: 0 0 4px; font-weight: 600; color: #294B35;">Best regards,</p>
+        <p style="margin: 0 0 12px; font-size: 13px; font-weight: 700; color: #1B3824;">${data.hostName}</p>
+        <p style="margin: 0; font-size: 11px; color: #9AB0A0;">
+          Sent directly via host's Google account for ${data.birthdayPersonName}'s celebration.
+        </p>
+      </div>
+    </div>
   </div>
 </body>
 </html>`;
 }
 
 /**
- * Generate Plain-Text Fallback
+ * Natural Plain-Text Fallback
  */
 export function generateInvitationPlainText(data: InvitationTemplateData): string {
-  const customMsg = data.customMessage || "We would love to invite you to celebrate this magical milestone with us! Join us for a joyful day filled with laughter, delicious treats, games, and warm family moments.";
+  const customMsg = data.customMessage || "We would love for you to celebrate this special milestone with us! Join us for a joyful gathering with family, friends, and delicious birthday cake.";
 
-  return `You're Invited to ${data.birthdayPersonName}'s Birthday Party! 🎂
+  return `Invitation: Celebrate ${data.birthdayPersonName}'s Birthday Party
 
-Hi ${data.guestName},
+Hello ${data.guestName},
 
 ${customMsg}
 
@@ -227,12 +223,12 @@ Event Details:
 - Time: ${data.birthdayTime}
 - Location: ${data.birthdayLocation}
 
-Visit our invitation website to RSVP, view photos, and share wishes:
+Please visit our invitation website to view details and confirm your RSVP:
 ${data.birthdayWebsiteUrl}
 
-We hope you can join us and make this day truly special!
+We look forward to celebrating together!
 
-Warm wishes,
+Best regards,
 ${data.hostName}
 `;
 }

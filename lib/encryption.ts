@@ -5,9 +5,9 @@ import crypto from 'crypto';
  */
 
 function getEncryptionKey(): Buffer {
-  const hexKey = process.env.GOOGLE_DRIVE_TOKEN_ENCRYPTION_KEY;
+  const hexKey = process.env.GOOGLE_DRIVE_TOKEN_ENCRYPTION_KEY || process.env.GOOGLE_GMAIL_TOKEN_ENCRYPTION_KEY;
   if (!hexKey) {
-    throw new Error('GOOGLE_DRIVE_TOKEN_ENCRYPTION_KEY environment variable is missing.');
+    throw new Error('OAuth token encryption key is missing (GOOGLE_DRIVE_TOKEN_ENCRYPTION_KEY or GOOGLE_GMAIL_TOKEN_ENCRYPTION_KEY).');
   }
 
   // Key can be 32 bytes hex or raw string
