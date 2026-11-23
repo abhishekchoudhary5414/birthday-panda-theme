@@ -287,16 +287,6 @@ export default function AdminDashboardPage() {
   const [isDeletingVenue, setIsDeletingVenue] = useState(false);
   const [eventAlert, setEventAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Multi-User / Customer Accounts State
-  const [userAccounts, setUserAccounts] = useState<any[]>([]);
-  const [usersLoading, setUsersLoading] = useState(false);
-  const [newUserName, setNewUserName] = useState('');
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserPassword, setNewUserPassword] = useState('');
-  const [newUserRole, setNewUserRole] = useState('admin');
-  const [isCreatingUser, setIsCreatingUser] = useState(false);
-  const [userToast, setUserToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
   // Gmail & Invitations Management State
   const [gmailStatus, setGmailStatus] = useState<{
     connected: boolean;
@@ -348,20 +338,6 @@ export default function AdminDashboardPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [retryingHistoryId, setRetryingHistoryId] = useState<number | null>(null);
 
-  // Campaigns & Queue State
-  const [campaigns, setCampaigns] = useState<any[]>([]);
-  const [campaignsLoading, setCampaignsLoading] = useState(false);
-  const [campaignActionLoading, setCampaignActionLoading] = useState<number | null>(null);
-  const [minDelaySec, setMinDelaySec] = useState(10);
-  const [maxDelaySec, setMaxDelaySec] = useState(30);
-
-  // Opt-out / Suppression List State
-  const [optOutList, setOptOutList] = useState<any[]>([]);
-  const [optOutLoading, setOptOutLoading] = useState(false);
-  const [newOptOutEmail, setNewOptOutEmail] = useState('');
-  const [newOptOutReason, setNewOptOutReason] = useState('Unsubscribed by host');
-  const [isAddingOptOut, setIsAddingOptOut] = useState(false);
-
   // Google Drive Photos Management State
   const [drivePhotos, setDrivePhotos] = useState<AdminDrivePhoto[]>([]);
   const [driveLoading, setDriveLoading] = useState(false);
@@ -409,62 +385,6 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
-  // Fetch all user accounts and their Drive/Gmail statuses
-  const fetchUserAccounts = useCallback(async () => {
-    try {
-      setUsersLoading(true);
-      const res = await fetch('/api/admin/users');
-      const data = await res.json();
-      if (data.users) {
-        setUserAccounts(data.users);
-      }
-    } catch (err) {
-      console.error('Fetch users error:', err);
-    } finally {
-      setUsersLoading(false);
-    }
-  }, []);
-
-  // Create a new user/customer account
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUserName.trim() || !newUserEmail.trim() || !newUserPassword.trim()) {
-      setUserToast({ type: 'error', message: 'Name, email, and password are required.' });
-      return;
-    }
-
-    try {
-      setIsCreatingUser(true);
-      setUserToast(null);
-      const res = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newUserName.trim(),
-          email: newUserEmail.trim(),
-          password: newUserPassword.trim(),
-          role: newUserRole,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setUserToast({ type: 'success', message: data.message });
-        setNewUserName('');
-        setNewUserEmail('');
-        setNewUserPassword('');
-        fetchUserAccounts();
-      } else {
-        setUserToast({ type: 'error', message: data.error || 'Failed to create user account.' });
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error creating user';
-      setUserToast({ type: 'error', message: msg });
-    } finally {
-      setIsCreatingUser(false);
-    }
-  };
-
   // Check Gmail connection status
   const checkGmailStatus = useCallback(async () => {
     try {
@@ -498,111 +418,6 @@ export default function AdminDashboardPage() {
       setHistoryLoading(false);
     }
   }, []);
-
-  // Fetch Campaigns & Queue Progress
-  const fetchCampaigns = useCallback(async () => {
-    try {
-      setCampaignsLoading(true);
-      const res = await fetch('/api/invitations/campaigns');
-      const data = await res.json();
-      if (data.campaigns) {
-        setCampaigns(data.campaigns);
-      }
-    } catch (err) {
-      console.error('Failed to fetch campaigns:', err);
-    } finally {
-      setCampaignsLoading(false);
-    }
-  }, []);
-
-  // Fetch Opt-Out List
-  const fetchOptOuts = useCallback(async () => {
-    try {
-      setOptOutLoading(true);
-      const res = await fetch('/api/invitations/opt-out');
-      const data = await res.json();
-      if (data.optOuts) {
-        setOptOutList(data.optOuts);
-      }
-    } catch (err) {
-      console.error('Failed to fetch opt outs:', err);
-    } finally {
-      setOptOutLoading(false);
-    }
-  }, []);
-
-  // Campaign Action Handler (pause, resume, cancel)
-  const handleCampaignAction = async (campaignId: number, action: 'pause' | 'resume' | 'cancel') => {
-    try {
-      setCampaignActionLoading(campaignId);
-      const res = await fetch(`/api/invitations/campaigns/${campaignId}/action`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setGmailToast({ type: 'success', message: `Campaign #${campaignId} ${action}d successfully.` });
-        fetchCampaigns();
-      } else {
-        setGmailToast({ type: 'error', message: data.error || `Failed to ${action} campaign.` });
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Action failed';
-      setGmailToast({ type: 'error', message: msg });
-    } finally {
-      setCampaignActionLoading(null);
-    }
-  };
-
-  // Add Opt-Out Email
-  const handleAddOptOut = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newOptOutEmail.trim()) return;
-    try {
-      setIsAddingOptOut(true);
-      const res = await fetch('/api/invitations/opt-out', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: newOptOutEmail.trim(), reason: newOptOutReason }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setGmailToast({ type: 'success', message: data.message });
-        setNewOptOutEmail('');
-        fetchOptOuts();
-      } else {
-        setGmailToast({ type: 'error', message: data.error || 'Failed to add opt-out.' });
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to add opt-out';
-      setGmailToast({ type: 'error', message: msg });
-    } finally {
-      setIsAddingOptOut(false);
-    }
-  };
-
-  // Remove Opt-Out Email
-  const handleRemoveOptOut = async (email: string) => {
-    if (!window.confirm(`Remove ${email} from suppression list? They may receive invitations again.`)) return;
-    try {
-      const res = await fetch('/api/invitations/opt-out', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setGmailToast({ type: 'success', message: data.message });
-        fetchOptOuts();
-      } else {
-        setGmailToast({ type: 'error', message: data.error || 'Failed to remove opt-out.' });
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to remove opt-out';
-      setGmailToast({ type: 'error', message: msg });
-    }
-  };
 
   // Disconnect customer Gmail
   const handleDisconnectGmail = async () => {
@@ -691,7 +506,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Send Bulk Invitations to Selected Guests via Background Queue
+  // Send Bulk Invitations Directly to Selected Guests via Gmail API
   const handleSendBulkInvitations = async () => {
     if (selectedGuestIds.length === 0) {
       alert('Please select at least one guest with an email address to send invitations.');
@@ -704,7 +519,7 @@ export default function AdminDashboardPage() {
       return;
     }
 
-    if (!window.confirm(`Queue background sending for ${selectedGuests.length} selected guest(s) with randomized ${minDelaySec}s–${maxDelaySec}s delays?`)) {
+    if (!window.confirm(`Are you ready to send personalized birthday invitations directly to ${selectedGuests.length} selected guest(s)?`)) {
       return;
     }
 
@@ -712,25 +527,19 @@ export default function AdminDashboardPage() {
       setIsSendingInvitations(true);
       setGmailToast(null);
 
-      const res = await fetch('/api/invitations/campaigns', {
+      const res = await fetch('/api/invitations/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: `Birthday Invitations (${selectedGuests.length} guests)`,
+          guestIds: selectedGuestIds,
+          forceResend,
           subject: emailSubject,
-          customMessage: emailCustomMessage,
+          message: emailCustomMessage,
           birthdayPersonName: emailBirthdayPerson,
           birthdayDate: emailBirthdayDate,
           birthdayTime: emailBirthdayTime,
           birthdayLocation: emailBirthdayLocation,
           hostName: emailHostName,
-          minDelaySeconds: minDelaySec,
-          maxDelaySeconds: maxDelaySec,
-          recipients: selectedGuests.map((g) => ({
-            id: g.id,
-            name: g.name,
-            email: g.email,
-          })),
         }),
       });
 
@@ -738,16 +547,16 @@ export default function AdminDashboardPage() {
       if (res.ok && data.success) {
         setGmailToast({
           type: 'success',
-          message: data.message || `Created campaign #${data.campaignId} with ${data.totalEnqueued} queued emails!`,
+          message: `Invitations sent! Sent: ${data.summary.sent}, Failed: ${data.summary.failed}, Skipped: ${data.summary.skipped}.`,
         });
-        fetchCampaigns();
+        checkGmailStatus();
         fetchGuests();
         fetchInvitationHistory();
       } else {
-        setGmailToast({ type: 'error', message: data.error || 'Failed to enqueue invitations.' });
+        setGmailToast({ type: 'error', message: data.error || 'Failed to send invitations.' });
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error enqueuing invitations';
+      const msg = err instanceof Error ? err.message : 'Error sending invitations';
       setGmailToast({ type: 'error', message: msg });
     } finally {
       setIsSendingInvitations(false);
@@ -1993,8 +1802,6 @@ export default function AdminDashboardPage() {
       checkGmailStatus();
       fetchGuests();
       fetchInvitationHistory();
-      fetchCampaigns();
-      fetchOptOuts();
 
       // Check URL search params for Gmail OAuth success or error
       if (typeof window !== 'undefined') {
@@ -2009,9 +1816,6 @@ export default function AdminDashboardPage() {
           window.history.replaceState({}, '', '/admin?tab=8');
         }
       }
-    }
-    if (activeTab === 'users') {
-      fetchUserAccounts();
     }
     if (activeTab === '11') {
       fetchDrivePhotos();
@@ -3384,21 +3188,6 @@ export default function AdminDashboardPage() {
               <span className={styles.navItemText}>Email Invitations</span>
             </div>
             {gmailStatus?.connected && <span className={styles.navBadge} style={{ background: '#2e7d32' }}>Active</span>}
-          </button>
-
-          <button
-            type="button"
-            className={`${styles.navItem} ${activeTab === 'users' ? styles.active : ''}`}
-            onClick={() => {
-              setActiveTab('users');
-              setIsMobileSidebarOpen(false);
-            }}
-          >
-            <div className={styles.navItemLeft}>
-              <span className={styles.navIcon}><PeopleIcon sx={{ fontSize: 20 }} /></span>
-              <span className={styles.navItemText}>Customer Accounts</span>
-            </div>
-            {userAccounts.length > 0 && <span className={styles.navBadge}>{userAccounts.length}</span>}
           </button>
 
           <button
@@ -6376,234 +6165,6 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Section: Customer Accounts & Multi-Tenant Connection Manager */}
-        {activeTab === 'users' && (
-          <div>
-            <div className={styles.sectionHeader}>
-              <PeopleIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>Customer Accounts &amp; Multi-User OAuth Storage</span>
-            </div>
-
-            {userToast && (
-              <div style={{
-                padding: '12px 18px',
-                borderRadius: '10px',
-                marginBottom: '18px',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: userToast.type === 'success' ? '#edf7ed' : '#fdf2f2',
-                color: userToast.type === 'success' ? '#1e4620' : '#991b1b',
-                border: userToast.type === 'success' ? '1px solid #c8e6c9' : '1px solid #fecaca',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {userToast.type === 'success' ? <CheckCircleIcon sx={{ fontSize: 18 }} /> : <WarningAmberIcon sx={{ fontSize: 18 }} />}
-                  <span>{userToast.message}</span>
-                </div>
-                <button type="button" onClick={() => setUserToast(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700 }}>✕</button>
-              </div>
-            )}
-
-            {/* Create New Customer Account Card */}
-            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                <AddIcon sx={{ color: '#294B35' }} />
-                <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Add New Customer / Admin User</h3>
-              </div>
-              <p style={{ margin: '0 0 18px', color: '#6e7e73', fontSize: '0.86rem' }}>
-                Each customer has their own dedicated account, their own Google Drive media folder, and their own connected Gmail account.
-              </p>
-
-              <form onSubmit={handleCreateUser}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '16px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>Full Name</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. John Doe"
-                      value={newUserName}
-                      onChange={(e) => setNewUserName(e.target.value)}
-                      className={styles.filterInput}
-                      style={{ width: '100%' }}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>Login Email</label>
-                    <input
-                      type="email"
-                      placeholder="e.g. john@example.com"
-                      value={newUserEmail}
-                      onChange={(e) => setNewUserEmail(e.target.value)}
-                      className={styles.filterInput}
-                      style={{ width: '100%' }}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>Password</label>
-                    <input
-                      type="password"
-                      placeholder="Secure password"
-                      value={newUserPassword}
-                      onChange={(e) => setNewUserPassword(e.target.value)}
-                      className={styles.filterInput}
-                      style={{ width: '100%' }}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>Role</label>
-                    <select
-                      value={newUserRole}
-                      onChange={(e) => setNewUserRole(e.target.value)}
-                      className={styles.filterSelect}
-                      style={{ width: '100%' }}
-                    >
-                      <option value="admin">Customer Admin</option>
-                      <option value="superadmin">Super Admin</option>
-                    </select>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isCreatingUser}
-                  className={styles.btnPrimary}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 22px', fontSize: '0.88rem' }}
-                >
-                  <AddIcon sx={{ fontSize: 18 }} />
-                  <span>{isCreatingUser ? 'Creating User...' : 'Create Customer Account'}</span>
-                </button>
-              </form>
-            </div>
-
-            {/* List of Accounts with Drive & Gmail Status */}
-            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-                <div>
-                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>All Customer Accounts &amp; Connected Accounts</h3>
-                  <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.85rem' }}>
-                    Each customer can independently connect, reconnect, or disconnect their own Google Drive and Gmail accounts.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={fetchUserAccounts}
-                  className={styles.exportBtn}
-                  style={{ padding: '6px 14px', fontSize: '0.82rem' }}
-                >
-                  <RefreshIcon sx={{ fontSize: 16 }} />
-                  <span>Refresh Accounts</span>
-                </button>
-              </div>
-
-              {usersLoading ? (
-                <div style={{ padding: '30px', textAlign: 'center', color: '#6e7e73' }}>Loading customer accounts...</div>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '2px solid #edf4eb', color: '#6e7e73', fontSize: '0.78rem', textTransform: 'uppercase' }}>
-                        <th style={{ padding: '12px 10px' }}>User / Customer</th>
-                        <th style={{ padding: '12px 10px' }}>Role</th>
-                        <th style={{ padding: '12px 10px' }}>Google Drive Status</th>
-                        <th style={{ padding: '12px 10px' }}>Gmail Status</th>
-                        <th style={{ padding: '12px 10px', textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {userAccounts.map((u) => (
-                        <tr key={u.id} style={{ borderBottom: '1px solid #f2f7f1', background: u.isCurrentUser ? '#f8fbf7' : 'transparent' }}>
-                          <td style={{ padding: '12px 10px' }}>
-                            <div style={{ fontWeight: 700, color: '#294B35', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span>{u.name}</span>
-                              {u.isCurrentUser && (
-                                <span style={{ background: '#edf7ed', color: '#1e4620', fontSize: '0.72rem', padding: '1px 8px', borderRadius: '10px', fontWeight: 800 }}>
-                                  YOU (Logged In)
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: '#6e7e73' }}>{u.email}</div>
-                          </td>
-                          <td style={{ padding: '12px 10px' }}>
-                            <span style={{ textTransform: 'capitalize', background: '#f1f5f9', color: '#334155', padding: '3px 8px', borderRadius: '6px', fontSize: '0.76rem', fontWeight: 700 }}>
-                              {u.role}
-                            </span>
-                          </td>
-                          <td style={{ padding: '12px 10px' }}>
-                            {u.drive.connected ? (
-                              <div>
-                                <span style={{ background: '#edf7ed', color: '#1e4620', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  <CheckCircleIcon sx={{ fontSize: 13, color: '#2e7d32' }} /> Connected
-                                </span>
-                                <div style={{ fontSize: '0.78rem', color: '#294B35', marginTop: '2px', fontWeight: 600 }}>
-                                  {u.drive.accountEmail}
-                                </div>
-                              </div>
-                            ) : (
-                              <div>
-                                <span style={{ background: '#fff8e1', color: '#8d6e00', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  <WarningAmberIcon sx={{ fontSize: 13, color: '#f57f17' }} /> Not Connected
-                                </span>
-                                {u.isCurrentUser && (
-                                  <div style={{ marginTop: '4px' }}>
-                                    <a href="/api/google-drive/connect" style={{ fontSize: '0.78rem', color: '#294B35', fontWeight: 700, textDecoration: 'underline' }}>
-                                      Connect Drive →
-                                    </a>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </td>
-                          <td style={{ padding: '12px 10px' }}>
-                            {u.gmail.connected ? (
-                              <div>
-                                <span style={{ background: '#edf7ed', color: '#1e4620', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  <CheckCircleIcon sx={{ fontSize: 13, color: '#2e7d32' }} /> Connected
-                                </span>
-                                <div style={{ fontSize: '0.78rem', color: '#294B35', marginTop: '2px', fontWeight: 600 }}>
-                                  {u.gmail.accountEmail}
-                                </div>
-                              </div>
-                            ) : (
-                              <div>
-                                <span style={{ background: '#fff8e1', color: '#8d6e00', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  <WarningAmberIcon sx={{ fontSize: 13, color: '#f57f17' }} /> Not Connected
-                                </span>
-                                {u.isCurrentUser && (
-                                  <div style={{ marginTop: '4px' }}>
-                                    <a href="/api/gmail/connect" style={{ fontSize: '0.78rem', color: '#294B35', fontWeight: 700, textDecoration: 'underline' }}>
-                                      Connect Gmail →
-                                    </a>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </td>
-                          <td style={{ padding: '12px 10px', textAlign: 'right' }}>
-                            {u.isCurrentUser ? (
-                              <span style={{ fontSize: '0.8rem', color: '#6e7e73', fontStyle: 'italic' }}>
-                                Use sidebar tabs (8 &amp; 11) to manage
-                              </span>
-                            ) : (
-                              <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                                Managed by user
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Section 7: Live Streaming */}
         {activeTab === '7' && (
           <div>
@@ -6934,30 +6495,6 @@ export default function AdminDashboardPage() {
                     <span>Force resend to already sent guests</span>
                   </label>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.84rem', color: '#294B35', fontWeight: 600 }}>
-                    <span>Random Delay:</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={60}
-                      value={minDelaySec}
-                      onChange={(e) => setMinDelaySec(Number(e.target.value))}
-                      style={{ width: '45px', padding: '4px', borderRadius: '6px', border: '1px solid #cbe3c6', textAlign: 'center' }}
-                      title="Min delay in seconds"
-                    />
-                    <span>–</span>
-                    <input
-                      type="number"
-                      min={minDelaySec}
-                      max={120}
-                      value={maxDelaySec}
-                      onChange={(e) => setMaxDelaySec(Number(e.target.value))}
-                      style={{ width: '45px', padding: '4px', borderRadius: '6px', border: '1px solid #cbe3c6', textAlign: 'center' }}
-                      title="Max delay in seconds"
-                    />
-                    <span>sec</span>
-                  </div>
-
                   <button
                     type="button"
                     onClick={handleSendBulkInvitations}
@@ -6974,7 +6511,7 @@ export default function AdminDashboardPage() {
                     }}
                   >
                     <SendIcon sx={{ fontSize: 16 }} />
-                    <span>{isSendingInvitations ? 'Queueing...' : `Queue Invitations (${selectedGuestIds.length})`}</span>
+                    <span>{isSendingInvitations ? 'Sending Invitations...' : `Send Invitations (${selectedGuestIds.length})`}</span>
                   </button>
                 </div>
               </div>
@@ -7147,260 +6684,6 @@ export default function AdminDashboardPage() {
                   </table>
                 </div>
               )}
-            </div>
-
-            {/* Active Sending Campaigns & Background Queue Progress */}
-            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
-                <div>
-                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Background Sending Campaigns &amp; Queue</h3>
-                  <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.84rem' }}>
-                    Controlled batches with randomized 10s–30s delays, rate-limit backoff, and live pause/resume controls.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={fetchCampaigns}
-                  className={styles.exportBtn}
-                  style={{ padding: '6px 14px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <RefreshIcon sx={{ fontSize: 16 }} />
-                  <span>Refresh Queue</span>
-                </button>
-              </div>
-
-              {campaignsLoading && campaigns.length === 0 ? (
-                <div style={{ padding: '24px', textAlign: 'center', color: '#6e7e73' }}>Loading sending queues...</div>
-              ) : campaigns.length === 0 ? (
-                <div style={{ padding: '24px', textAlign: 'center', color: '#6e7e73', background: '#fafdf9', borderRadius: '10px', border: '1px dashed #d5e5d1' }}>
-                  No sending campaigns yet. Select guests above and click <strong>Queue Invitations</strong> to start a smart sending campaign.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {campaigns.map((camp) => {
-                    const stats = camp.stats || { total: 0, sent: 0, failed: 0, pending: 0, cancelled: 0, retrying: 0, progressPercent: 0 };
-                    return (
-                      <div
-                        key={camp.id}
-                        style={{
-                          border: '1px solid #edf4eb',
-                          borderRadius: '12px',
-                          padding: '16px 20px',
-                          background: camp.status === 'running' ? '#fafffa' : '#ffffff',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontWeight: 700, color: '#294B35', fontSize: '0.98rem' }}>
-                                #{camp.id} {camp.title || 'Birthday Invitation'}
-                              </span>
-                              <span
-                                style={{
-                                  padding: '2px 8px',
-                                  borderRadius: '12px',
-                                  fontSize: '0.72rem',
-                                  fontWeight: 700,
-                                  textTransform: 'uppercase',
-                                  background:
-                                    camp.status === 'running' ? '#edf7ed' :
-                                    camp.status === 'paused' ? '#fff8e1' :
-                                    camp.status === 'completed' ? '#f0fdf4' : '#fef2f2',
-                                  color:
-                                    camp.status === 'running' ? '#1e4620' :
-                                    camp.status === 'paused' ? '#b45309' :
-                                    camp.status === 'completed' ? '#166534' : '#991b1b',
-                                  border: `1px solid ${camp.status === 'running' ? '#bbf7d0' : camp.status === 'paused' ? '#fde68a' : '#e5e7eb'}`,
-                                }}
-                              >
-                                {camp.status}
-                              </span>
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: '#6e7e73', marginTop: '2px' }}>
-                              Subject: &ldquo;{camp.subject}&rdquo; &bull; Delays: {camp.min_delay_seconds || 10}s–{camp.max_delay_seconds || 30}s
-                              {camp.consecutive_rate_limits > 0 && (
-                                <span style={{ color: '#d97706', marginLeft: '6px', fontWeight: 600 }}>
-                                  (Rate limits detected: {camp.consecutive_rate_limits})
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Action Controls: Pause, Resume, Cancel */}
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            {camp.status === 'running' && (
-                              <button
-                                type="button"
-                                onClick={() => handleCampaignAction(camp.id, 'pause')}
-                                disabled={campaignActionLoading === camp.id}
-                                className={styles.exportBtn}
-                                style={{ padding: '5px 12px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px', borderColor: '#fde68a', color: '#b45309' }}
-                              >
-                                <PauseIcon sx={{ fontSize: 14 }} />
-                                <span>Pause</span>
-                              </button>
-                            )}
-                            {camp.status === 'paused' && (
-                              <button
-                                type="button"
-                                onClick={() => handleCampaignAction(camp.id, 'resume')}
-                                disabled={campaignActionLoading === camp.id}
-                                className={styles.exportBtn}
-                                style={{ padding: '5px 12px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px', borderColor: '#bbf7d0', color: '#166534' }}
-                              >
-                                <PlayArrowIcon sx={{ fontSize: 14 }} />
-                                <span>Resume</span>
-                              </button>
-                            )}
-                            {camp.status !== 'completed' && camp.status !== 'cancelled' && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (window.confirm(`Cancel queue for campaign #${camp.id}? Unsent emails will be halted.`)) {
-                                    handleCampaignAction(camp.id, 'cancel');
-                                  }
-                                }}
-                                disabled={campaignActionLoading === camp.id}
-                                className={styles.deleteBtn}
-                                style={{ padding: '5px 12px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                              >
-                                <CancelIcon sx={{ fontSize: 14 }} />
-                                <span>Cancel</span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div style={{ width: '100%', height: '8px', background: '#edf4eb', borderRadius: '4px', overflow: 'hidden', marginBottom: '10px' }}>
-                          <div
-                            style={{
-                              width: `${stats.progressPercent}%`,
-                              height: '100%',
-                              background: camp.status === 'completed' ? '#166534' : 'linear-gradient(90deg, #294B35, #437351)',
-                              transition: 'width 0.3s ease',
-                            }}
-                          />
-                        </div>
-
-                        {/* Stats Breakdown Chips */}
-                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '0.78rem', fontWeight: 600 }}>
-                          <span style={{ color: '#294B35' }}>Total: {stats.total}</span>
-                          <span style={{ color: '#166534' }}>Sent: {stats.sent}</span>
-                          <span style={{ color: '#d97706' }}>Pending: {stats.pending}</span>
-                          {stats.retrying > 0 && <span style={{ color: '#ea580c' }}>Retrying (Backoff): {stats.retrying}</span>}
-                          {stats.failed > 0 && <span style={{ color: '#dc2626' }}>Failed: {stats.failed}</span>}
-                          {stats.cancelled > 0 && <span style={{ color: '#6b7280' }}>Cancelled: {stats.cancelled}</span>}
-                          <span style={{ marginLeft: 'auto', color: '#4b5563' }}>{stats.progressPercent}% Processed</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Email Deliverability & Suppression / Opt-Out Management */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-              {/* Deliverability Diagnostics Card */}
-              <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                  <SecurityIcon sx={{ color: '#294B35', fontSize: 22 }} />
-                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.1rem', fontWeight: 700 }}>Email Deliverability Diagnostics</h3>
-                </div>
-                <div style={{ fontSize: '0.84rem', color: '#4a5b4e', lineHeight: 1.55 }}>
-                  <div style={{ background: '#f8faf7', padding: '12px', borderRadius: '8px', border: '1px solid #edf4eb', marginBottom: '12px' }}>
-                    <strong style={{ color: '#294B35' }}>Account Scope:</strong> Sending via authenticated host Gmail (<code>{gmailStatus?.accountEmail || 'Not Connected'}</code>).
-                  </div>
-                  <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <li>
-                      <strong>SPF / DKIM / DMARC:</strong> Google infrastructure automatically signs outbound Gmail messages. However, personal <code>@gmail.com</code> addresses cannot configure custom DNS SPF/DMARC policies.
-                    </li>
-                    <li>
-                      <strong>Sending Limits:</strong> Personal Gmail accounts are strictly capped at 500 emails/day; Google Workspace accounts allow up to 2,000/day.
-                    </li>
-                    <li>
-                      <strong>Spam Protection:</strong> The smart sending queue introduces 10s–30s randomized spacing to prevent Gmail burst rate limits and sender reputation penalties.
-                    </li>
-                    <li>
-                      <strong>Inbox Placement:</strong> Email delivery to the recipient inbox depends on recipient spam filters, engagement history, and domain reputation.
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Opt-Out / Suppression List Card */}
-              <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <BlockIcon sx={{ color: '#dc2626', fontSize: 20 }} />
-                    <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.1rem', fontWeight: 700 }}>Opt-Out Suppression List</h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={fetchOptOuts}
-                    className={styles.exportBtn}
-                    style={{ padding: '4px 10px', fontSize: '0.78rem' }}
-                  >
-                    Refresh
-                  </button>
-                </div>
-                <p style={{ margin: '0 0 12px', fontSize: '0.82rem', color: '#6e7e73' }}>
-                  Emails listed here are automatically suppressed and will never receive birthday invitations from this campaign.
-                </p>
-
-                {/* Form to add opt out */}
-                <form onSubmit={handleAddOptOut} style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
-                  <input
-                    type="email"
-                    value={newOptOutEmail}
-                    onChange={(e) => setNewOptOutEmail(e.target.value)}
-                    placeholder="Enter email to suppress..."
-                    className={styles.filterInput}
-                    style={{ flex: 1, padding: '7px 10px', fontSize: '0.82rem' }}
-                    required
-                  />
-                  <button
-                    type="submit"
-                    disabled={isAddingOptOut}
-                    className={styles.deleteBtn}
-                    style={{ padding: '7px 14px', fontSize: '0.82rem', whiteSpace: 'nowrap' }}
-                  >
-                    {isAddingOptOut ? 'Adding...' : 'Suppress'}
-                  </button>
-                </form>
-
-                {/* List of opt outs */}
-                <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid #f0f4ee', borderRadius: '8px' }}>
-                  {optOutLoading ? (
-                    <div style={{ padding: '16px', textAlign: 'center', fontSize: '0.82rem', color: '#6e7e73' }}>Loading suppression list...</div>
-                  ) : optOutList.length === 0 ? (
-                    <div style={{ padding: '16px', textAlign: 'center', fontSize: '0.82rem', color: '#6e7e73' }}>No suppressed email addresses.</div>
-                  ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                      <tbody>
-                        {optOutList.map((item) => (
-                          <tr key={item.id} style={{ borderBottom: '1px solid #f2f7f1' }}>
-                            <td style={{ padding: '8px 10px', fontWeight: 600, color: '#294B35' }}>
-                              {item.email}
-                              <div style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: 400 }}>{item.reason}</div>
-                            </td>
-                            <td style={{ padding: '8px 10px', textAlign: 'right' }}>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveOptOut(item.email)}
-                                style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '0.76rem', fontWeight: 700 }}
-                              >
-                                Remove
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              </div>
             </div>
 
             {/* Email Preview Modal */}
