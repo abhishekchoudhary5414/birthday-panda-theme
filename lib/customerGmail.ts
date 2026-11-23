@@ -311,18 +311,10 @@ export function createMimeMessage(params: {
 
   const subjectHeader = encodeHeader(subject);
 
-  // Generate unique RFC 2822 Message-ID
-  const domain = fromEmail.split('@')[1] || 'gmail.com';
-  const randomPart = Math.random().toString(36).substring(2, 10);
-  const messageId = `<invitation.${Date.now()}.${randomPart}@${domain}>`;
-  const dateHeader = new Date().toUTCString();
-
   const lines = [
     `From: ${fromHeader}`,
     `To: ${toHeader}`,
     `Subject: ${subjectHeader}`,
-    `Date: ${dateHeader}`,
-    `Message-ID: ${messageId}`,
     `MIME-Version: 1.0`,
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ];
@@ -335,13 +327,13 @@ export function createMimeMessage(params: {
     '',
     `--${boundary}`,
     `Content-Type: text/plain; charset="UTF-8"`,
-    `Content-Transfer-Encoding: 8bit`,
+    `Content-Transfer-Encoding: 7bit`,
     '',
     textBody,
     '',
     `--${boundary}`,
     `Content-Type: text/html; charset="UTF-8"`,
-    `Content-Transfer-Encoding: 8bit`,
+    `Content-Transfer-Encoding: 7bit`,
     '',
     htmlBody,
     '',
