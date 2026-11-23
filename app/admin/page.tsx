@@ -282,6 +282,57 @@ export default function AdminDashboardPage() {
   const [isDeletingVenue, setIsDeletingVenue] = useState(false);
   const [eventAlert, setEventAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Gmail & Invitations Management State
+  const [gmailStatus, setGmailStatus] = useState<{
+    connected: boolean;
+    accountEmail?: string | null;
+    connectedAt?: string | null;
+    errorMessage?: string | null;
+    stats?: {
+      totalGuests: number;
+      invitationsSent: number;
+      failedInvitations: number;
+      pendingInvitations: number;
+    };
+  } | null>(null);
+  const [isTestingGmail, setIsTestingGmail] = useState(false);
+  const [isDisconnectingGmail, setIsDisconnectingGmail] = useState(false);
+  const [gmailToast, setGmailToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Email template & customization state
+  const [emailSubject, setEmailSubject] = useState("You're Invited to My Birthday! 🎂");
+  const [emailCustomMessage, setEmailCustomMessage] = useState(
+    "We would love to invite you to celebrate this magical milestone with us! Join us for a joyful day filled with laughter, delicious treats, games, and warm family moments."
+  );
+  const [emailBirthdayPerson, setEmailBirthdayPerson] = useState('Ditvi');
+  const [emailBirthdayDate, setEmailBirthdayDate] = useState('Saturday, December 12, 2026');
+  const [emailBirthdayTime, setEmailBirthdayTime] = useState('3:30 PM - 7:30 PM CST');
+  const [emailBirthdayLocation, setEmailBirthdayLocation] = useState('Austin, TX');
+  const [emailHostName, setEmailHostName] = useState('Birthday Star Family');
+
+  // Selected guests for bulk invitation sending
+  const [selectedGuestIds, setSelectedGuestIds] = useState<number[]>([]);
+  const [isSendingInvitations, setIsSendingInvitations] = useState(false);
+  const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
+  const [forceResend, setForceResend] = useState(false);
+  const [invitationResults, setInvitationResults] = useState<{
+    summary?: { totalSelected: number; sent: number; failed: number; skipped: number };
+    results?: Array<{ guestId: number; name: string; email: string; status: string; error?: string }>;
+  } | null>(null);
+
+  // Email Preview Modal
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'html' | 'text'>('html');
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewPlainText, setPreviewPlainText] = useState('');
+  const [previewGuestName, setPreviewGuestName] = useState('Sample Guest');
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  // Invitation History
+  const [invitationHistory, setInvitationHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [retryingHistoryId, setRetryingHistoryId] = useState<number | null>(null);
+
   // Google Drive Photos Management State
   const [drivePhotos, setDrivePhotos] = useState<AdminDrivePhoto[]>([]);
   const [driveLoading, setDriveLoading] = useState(false);
@@ -329,7 +380,214 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
-  // Check Google Drive connection status
+  // Check Gmail connection status
+  const checkGmailStatus = useCallback(async () => {
+    try {
+      setIsTestingGmail(true);
+      const res = await fetch('/api/gmail/status');
+      const data = await res.json();
+      setGmailStatus(data);
+    } catch (err) {
+      console.error('Failed to check Gmail status:', err);
+      setGmailStatus({
+        connected: false,
+        errorMessage: 'Network error contacting Gmail status API',
+      });
+    } finally {
+      setIsTestingGmail(false);
+    }
+  }, []);
+
+  // Fetch Invitation History
+  const fetchInvitationHistory = useCallback(async () => {
+    try {
+      setHistoryLoading(true);
+      const res = await fetch('/api/invitations/history');
+      const data = await res.json();
+      if (data.history) {
+        setInvitationHistory(data.history);
+      }
+    } catch (err) {
+      console.error('Failed to fetch invitation history:', err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  // Disconnect customer Gmail
+  const handleDisconnectGmail = async () => {
+    if (!window.confirm('Are you sure you want to disconnect your Gmail account? Guest records and invitation history will remain safely preserved.')) {
+      return;
+    }
+    try {
+      setIsDisconnectingGmail(true);
+      const res = await fetch('/api/gmail/disconnect', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setGmailToast({ type: 'success', message: data.message || 'Gmail disconnected.' });
+        checkGmailStatus();
+      } else {
+        setGmailToast({ type: 'error', message: data.error || 'Failed to disconnect Gmail.' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error disconnecting Gmail';
+      setGmailToast({ type: 'error', message: msg });
+    } finally {
+      setIsDisconnectingGmail(false);
+    }
+  };
+
+  // Send Test Email to host's connected Gmail
+  const handleSendTestEmail = async () => {
+    try {
+      setIsSendingTestEmail(true);
+      setGmailToast(null);
+      const res = await fetch('/api/gmail/send-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: emailSubject,
+          message: emailCustomMessage,
+          birthdayPersonName: emailBirthdayPerson,
+          birthdayDate: emailBirthdayDate,
+          birthdayTime: emailBirthdayTime,
+          birthdayLocation: emailBirthdayLocation,
+          hostName: emailHostName,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setGmailToast({ type: 'success', message: data.message });
+      } else {
+        setGmailToast({ type: 'error', message: data.error || 'Failed to send test email.' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to send test email';
+      setGmailToast({ type: 'error', message: msg });
+    } finally {
+      setIsSendingTestEmail(false);
+    }
+  };
+
+  // Preview Email Modal Open
+  const handleOpenEmailPreview = async (guestId?: number) => {
+    try {
+      setPreviewLoading(true);
+      setIsPreviewOpen(true);
+      const res = await fetch('/api/invitations/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guestId,
+          subject: emailSubject,
+          message: emailCustomMessage,
+          birthdayPersonName: emailBirthdayPerson,
+          birthdayDate: emailBirthdayDate,
+          birthdayTime: emailBirthdayTime,
+          birthdayLocation: emailBirthdayLocation,
+          hostName: emailHostName,
+        }),
+      });
+      const data = await res.json();
+      if (data.preview) {
+        setPreviewHtml(data.preview.html);
+        setPreviewPlainText(data.preview.plainText);
+        setPreviewGuestName(data.preview.guestName);
+      }
+    } catch (err) {
+      console.error('Preview error:', err);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  // Send Bulk Invitations to Selected Guests
+  const handleSendBulkInvitations = async () => {
+    if (selectedGuestIds.length === 0) {
+      alert('Please select at least one guest with an email address to send invitations.');
+      return;
+    }
+    if (!window.confirm(`Are you ready to send personalized birthday invitations to ${selectedGuestIds.length} selected guest(s)?`)) {
+      return;
+    }
+
+    try {
+      setIsSendingInvitations(true);
+      setGmailToast(null);
+      setInvitationResults(null);
+
+      const res = await fetch('/api/invitations/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guestIds: selectedGuestIds,
+          forceResend,
+          subject: emailSubject,
+          message: emailCustomMessage,
+          birthdayPersonName: emailBirthdayPerson,
+          birthdayDate: emailBirthdayDate,
+          birthdayTime: emailBirthdayTime,
+          birthdayLocation: emailBirthdayLocation,
+          hostName: emailHostName,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setInvitationResults(data);
+        setGmailToast({
+          type: 'success',
+          message: `Invitations processed! Sent: ${data.summary.sent}, Failed: ${data.summary.failed}, Skipped: ${data.summary.skipped}.`,
+        });
+        checkGmailStatus();
+        fetchGuests();
+        fetchInvitationHistory();
+      } else {
+        setGmailToast({ type: 'error', message: data.error || 'Failed to send invitations.' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error sending invitations';
+      setGmailToast({ type: 'error', message: msg });
+    } finally {
+      setIsSendingInvitations(false);
+    }
+  };
+
+  // Retry a failed invitation
+  const handleRetryInvitation = async (historyItem: any) => {
+    try {
+      setRetryingHistoryId(historyItem.id);
+      const res = await fetch('/api/invitations/retry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          historyId: historyItem.id,
+          guestId: historyItem.guest_id,
+          subject: emailSubject,
+          message: emailCustomMessage,
+          birthdayPersonName: emailBirthdayPerson,
+          birthdayDate: emailBirthdayDate,
+          birthdayTime: emailBirthdayTime,
+          birthdayLocation: emailBirthdayLocation,
+          hostName: emailHostName,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setGmailToast({ type: 'success', message: data.message });
+        checkGmailStatus();
+        fetchGuests();
+        fetchInvitationHistory();
+      } else {
+        setGmailToast({ type: 'error', message: data.error || 'Failed to retry sending invitation.' });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Retry failed';
+      setGmailToast({ type: 'error', message: msg });
+    } finally {
+      setRetryingHistoryId(null);
+    }
+  };
   const checkDriveStatus = useCallback(async () => {
     try {
       setIsTestingDrive(true);
@@ -1529,6 +1787,25 @@ export default function AdminDashboardPage() {
     if (activeTab === '10') {
       fetchQuizQuestions();
       fetchQuizSubmissions();
+    }
+    if (activeTab === '8') {
+      checkGmailStatus();
+      fetchGuests();
+      fetchInvitationHistory();
+
+      // Check URL search params for Gmail OAuth success or error
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const gmailSuccess = params.get('gmail_success');
+        const gmailError = params.get('gmail_error');
+        if (gmailSuccess) {
+          setGmailToast({ type: 'success', message: gmailSuccess });
+          window.history.replaceState({}, '', '/admin?tab=8');
+        } else if (gmailError) {
+          setGmailToast({ type: 'error', message: gmailError });
+          window.history.replaceState({}, '', '/admin?tab=8');
+        }
+      }
     }
     if (activeTab === '11') {
       fetchDrivePhotos();
@@ -2893,6 +3170,21 @@ export default function AdminDashboardPage() {
             className={`${styles.navItem} ${activeTab === '8' ? styles.active : ''}`}
             onClick={() => {
               setActiveTab('8');
+              setIsMobileSidebarOpen(false);
+            }}
+          >
+            <div className={styles.navItemLeft}>
+              <span className={styles.navIcon}><EmailOutlinedIcon sx={{ fontSize: 20 }} /></span>
+              <span className={styles.navItemText}>Email Invitations</span>
+            </div>
+            {gmailStatus?.connected && <span className={styles.navBadge} style={{ background: '#2e7d32' }}>Active</span>}
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.navItem} ${activeTab === 'hashtags' ? styles.active : ''}`}
+            onClick={() => {
+              setActiveTab('hashtags');
               setIsMobileSidebarOpen(false);
             }}
           >
@@ -5889,8 +6181,8 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Section 8: Hashtag & Social Media */}
-        {activeTab === '8' && (
+        {/* Section: Official Event Hashtags */}
+        {activeTab === 'hashtags' && (
           <div>
             <div className={styles.sectionHeader}>
               <TagIcon sx={{ fontSize: 26, color: '#294B35' }} />
@@ -5921,6 +6213,587 @@ export default function AdminDashboardPage() {
                 </span>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Section 8: Gmail OAuth & Email Invitations */}
+        {activeTab === '8' && (
+          <div>
+            <div className={styles.sectionHeader}>
+              <EmailOutlinedIcon sx={{ fontSize: 26, color: '#294B35' }} />
+              <span>Email Invitations &amp; Gmail Integration</span>
+            </div>
+
+            {/* Gmail Connection Status Card */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              
+              {/* Toast message */}
+              {gmailToast && (
+                <div style={{
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  marginBottom: '18px',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: gmailToast.type === 'success' ? '#edf7ed' : '#fdf2f2',
+                  color: gmailToast.type === 'success' ? '#1e4620' : '#991b1b',
+                  border: gmailToast.type === 'success' ? '1px solid #c8e6c9' : '1px solid #fecaca',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {gmailToast.type === 'success' ? <CheckCircleIcon sx={{ fontSize: 18 }} /> : <WarningAmberIcon sx={{ fontSize: 18 }} />}
+                    <span>{gmailToast.message}</span>
+                  </div>
+                  <button type="button" onClick={() => setGmailToast(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700 }}>✕</button>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#eef6ec', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <EmailOutlinedIcon sx={{ color: '#294b35', fontSize: 28 }} />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.25rem', fontWeight: 700 }}>Host Gmail Integration</h3>
+                      {gmailStatus ? (
+                        gmailStatus.connected ? (
+                          <span style={{ background: '#edf7ed', color: '#1e4620', border: '1px solid #c8e6c9', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <CheckCircleIcon sx={{ fontSize: 14, color: '#2e7d32' }} /> Connected
+                          </span>
+                        ) : (
+                          <span style={{ background: '#fff8e1', color: '#8d6e00', border: '1px solid #ffe082', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <WarningAmberIcon sx={{ fontSize: 14, color: '#f57f17' }} /> Disconnected
+                          </span>
+                        )
+                      ) : (
+                        <span style={{ background: '#f5f5f5', color: '#666', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 600 }}>Checking...</span>
+                      )}
+                    </div>
+                    <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.88rem' }}>
+                      Send personalized HTML birthday invitation cards directly from your own Gmail account with one click.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  {gmailStatus?.connected ? (
+                    <>
+                      <a
+                        href="/api/gmail/connect"
+                        className={styles.exportBtn}
+                        style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                      >
+                        <RefreshIcon sx={{ fontSize: 16 }} />
+                        <span>Reconnect</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={handleDisconnectGmail}
+                        disabled={isDisconnectingGmail}
+                        className={styles.deleteBtn}
+                        style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                        <span>{isDisconnectingGmail ? 'Disconnecting...' : 'Disconnect'}</span>
+                      </button>
+                    </>
+                  ) : (
+                    <a
+                      href="/api/gmail/connect"
+                      className={styles.btnPrimary}
+                      style={{
+                        padding: '10px 22px',
+                        fontSize: '0.92rem',
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        textDecoration: 'none',
+                        background: 'linear-gradient(135deg, #294B35 0%, #437351 100%)',
+                        boxShadow: '0 4px 14px rgba(41, 75, 53, 0.22)',
+                      }}
+                    >
+                      <EmailOutlinedIcon sx={{ fontSize: 18 }} />
+                      <span>Connect Gmail</span>
+                    </a>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={checkGmailStatus}
+                    disabled={isTestingGmail}
+                    className={styles.exportBtn}
+                    style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <RefreshIcon sx={{ fontSize: 16, animation: isTestingGmail ? 'spin 1s linear infinite' : 'none' }} />
+                    <span>{isTestingGmail ? 'Checking...' : 'Refresh Status'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Statistics Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Connected Gmail</div>
+                  <div style={{ fontSize: '0.92rem', color: '#294b35', fontWeight: 700, marginTop: '2px', wordBreak: 'break-all' }}>
+                    {gmailStatus?.accountEmail || 'Not Connected'}
+                  </div>
+                </div>
+                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Total Guests</div>
+                  <div style={{ fontSize: '1.25rem', color: '#294b35', fontWeight: 800, marginTop: '2px' }}>
+                    {gmailStatus?.stats?.totalGuests ?? guests.length}
+                  </div>
+                </div>
+                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#2e7d32', fontWeight: 600 }}>Invitations Sent</div>
+                  <div style={{ fontSize: '1.25rem', color: '#2e7d32', fontWeight: 800, marginTop: '2px' }}>
+                    {gmailStatus?.stats?.invitationsSent ?? guests.filter(g => (g as any).invitation_status === 'sent').length}
+                  </div>
+                </div>
+                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#d97706', fontWeight: 600 }}>Pending</div>
+                  <div style={{ fontSize: '1.25rem', color: '#d97706', fontWeight: 800, marginTop: '2px' }}>
+                    {gmailStatus?.stats?.pendingInvitations ?? guests.filter(g => !(g as any).invitation_status || (g as any).invitation_status === 'pending').length}
+                  </div>
+                </div>
+                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#dc2626', fontWeight: 600 }}>Failed</div>
+                  <div style={{ fontSize: '1.25rem', color: '#dc2626', fontWeight: 800, marginTop: '2px' }}>
+                    {gmailStatus?.stats?.failedInvitations ?? guests.filter(g => (g as any).invitation_status === 'failed').length}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Email Personalization & Template Editor */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+                <EditIcon sx={{ color: '#294b35', fontSize: 22 }} />
+                <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Personalize Invitation Email Template</h3>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '18px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>Email Subject</label>
+                  <input
+                    type="text"
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    className={styles.filterInput}
+                    style={{ width: '100%' }}
+                    placeholder="Subject line with emoji..."
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>Host / Family Name</label>
+                  <input
+                    type="text"
+                    value={emailHostName}
+                    onChange={(e) => setEmailHostName(e.target.value)}
+                    className={styles.filterInput}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>
+                  Custom Invitation Message &bull; <span style={{ color: '#789b63', fontWeight: 600 }}>Supports variables: {'{{guest_name}}'}, {'{{birthday_person_name}}'}, {'{{birthday_date}}'}, {'{{birthday_website_url}}'}</span>
+                </label>
+                <textarea
+                  value={emailCustomMessage}
+                  onChange={(e) => setEmailCustomMessage(e.target.value)}
+                  className={styles.filterInput}
+                  rows={3}
+                  style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.88rem' }}
+                />
+              </div>
+
+              {/* Action Buttons: Preview & Send Test */}
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => handleOpenEmailPreview()}
+                  className={styles.exportBtn}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', fontSize: '0.88rem' }}
+                >
+                  <OpenInNewIcon sx={{ fontSize: 16 }} />
+                  <span>Preview Email (HTML &amp; Text)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSendTestEmail}
+                  disabled={isSendingTestEmail || !gmailStatus?.connected}
+                  className={styles.exportBtn}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', fontSize: '0.88rem' }}
+                >
+                  <SendIcon sx={{ fontSize: 16 }} />
+                  <span>{isSendingTestEmail ? 'Sending Test...' : 'Send Test Email to Myself'}</span>
+                </button>
+
+                {!gmailStatus?.connected && (
+                  <span style={{ fontSize: '0.82rem', color: '#d97706', fontWeight: 600 }}>
+                    ⚠️ Connect Gmail above to test or send invitations.
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Recipients Selection & Bulk Sending Table */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '18px' }}>
+                <div>
+                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Select Guests for Invitation</h3>
+                  <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.85rem' }}>
+                    Selected: <strong>{selectedGuestIds.length}</strong> of {guests.length} guest(s)
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allIds = guests.filter((g) => g.email && g.email.includes('@')).map((g) => g.id);
+                      setSelectedGuestIds(allIds);
+                    }}
+                    className={styles.exportBtn}
+                    style={{ padding: '7px 14px', fontSize: '0.82rem' }}
+                  >
+                    Select All With Email
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGuestIds([])}
+                    className={styles.exportBtn}
+                    style={{ padding: '7px 14px', fontSize: '0.82rem' }}
+                  >
+                    Deselect All
+                  </button>
+
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#294B35', fontWeight: 600, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={forceResend}
+                      onChange={(e) => setForceResend(e.target.checked)}
+                    />
+                    <span>Force resend to already sent guests</span>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={handleSendBulkInvitations}
+                    disabled={isSendingInvitations || selectedGuestIds.length === 0 || !gmailStatus?.connected}
+                    className={styles.btnPrimary}
+                    style={{
+                      padding: '9px 20px',
+                      fontSize: '0.88rem',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'linear-gradient(135deg, #294B35 0%, #3e6b4d 100%)',
+                    }}
+                  >
+                    <SendIcon sx={{ fontSize: 16 }} />
+                    <span>{isSendingInvitations ? 'Sending Invitations...' : `Send Invitations (${selectedGuestIds.length})`}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Table of Guests */}
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #edf4eb', color: '#6e7e73', fontSize: '0.8rem', textTransform: 'uppercase' }}>
+                      <th style={{ padding: '12px 10px', width: '40px' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedGuestIds.length > 0 && selectedGuestIds.length === guests.filter((g) => g.email).length}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedGuestIds(guests.filter((g) => g.email && g.email.includes('@')).map((g) => g.id));
+                            } else {
+                              setSelectedGuestIds([]);
+                            }
+                          }}
+                        />
+                      </th>
+                      <th style={{ padding: '12px 10px' }}>Guest Name</th>
+                      <th style={{ padding: '12px 10px' }}>Email Address</th>
+                      <th style={{ padding: '12px 10px' }}>Status</th>
+                      <th style={{ padding: '12px 10px', textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {guests.map((g) => {
+                      const isSelected = selectedGuestIds.includes(g.id);
+                      const invStatus = (g as any).invitation_status || 'pending';
+                      const hasEmail = Boolean(g.email && g.email.includes('@'));
+
+                      return (
+                        <tr key={g.id} style={{ borderBottom: '1px solid #f2f7f1', background: isSelected ? '#f5faf3' : 'transparent' }}>
+                          <td style={{ padding: '12px 10px' }}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              disabled={!hasEmail}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedGuestIds((prev) => [...prev, g.id]);
+                                } else {
+                                  setSelectedGuestIds((prev) => prev.filter((id) => id !== g.id));
+                                }
+                              }}
+                            />
+                          </td>
+                          <td style={{ padding: '12px 10px', fontWeight: 600, color: '#294B35' }}>
+                            {g.name}
+                          </td>
+                          <td style={{ padding: '12px 10px', color: hasEmail ? '#334437' : '#9ca3af' }}>
+                            {g.email || '(No email provided)'}
+                          </td>
+                          <td style={{ padding: '12px 10px' }}>
+                            {invStatus === 'sent' && (
+                              <span style={{ background: '#edf7ed', color: '#1e4620', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700 }}>
+                                Sent
+                              </span>
+                            )}
+                            {invStatus === 'failed' && (
+                              <span style={{ background: '#fef2f2', color: '#991b1b', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700 }}>
+                                Failed
+                              </span>
+                            )}
+                            {(invStatus === 'pending' || !invStatus) && (
+                              <span style={{ background: '#f3f4f6', color: '#4b5563', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 600 }}>
+                                Pending
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ padding: '12px 10px', textAlign: 'right' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEmailPreview(g.id)}
+                              className={styles.exportBtn}
+                              style={{ padding: '4px 10px', fontSize: '0.78rem' }}
+                            >
+                              Preview
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Invitation History Log Card */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Recent Invitation History Log</h3>
+                <button
+                  type="button"
+                  onClick={fetchInvitationHistory}
+                  className={styles.exportBtn}
+                  style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+                >
+                  <RefreshIcon sx={{ fontSize: 16 }} />
+                  <span>Refresh Log</span>
+                </button>
+              </div>
+
+              {historyLoading ? (
+                <div style={{ padding: '30px', textAlign: 'center', color: '#6e7e73' }}>Loading history...</div>
+              ) : invitationHistory.length === 0 ? (
+                <div style={{ padding: '30px', textAlign: 'center', color: '#6e7e73', background: '#fafdf9', borderRadius: '10px', border: '1px dashed #d5e5d1' }}>
+                  No invitations sent through Gmail yet. Select guests above to send your first batch!
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #edf4eb', color: '#6e7e73', fontSize: '0.78rem', textTransform: 'uppercase' }}>
+                        <th style={{ padding: '10px' }}>Recipient</th>
+                        <th style={{ padding: '10px' }}>Subject</th>
+                        <th style={{ padding: '10px' }}>Status</th>
+                        <th style={{ padding: '10px' }}>Sent Date</th>
+                        <th style={{ padding: '10px' }}>Message ID / Error</th>
+                        <th style={{ padding: '10px', textAlign: 'right' }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {invitationHistory.map((item) => (
+                        <tr key={item.id} style={{ borderBottom: '1px solid #f2f7f1' }}>
+                          <td style={{ padding: '10px', fontWeight: 600, color: '#294B35' }}>
+                            {item.guest_name || item.recipient_email}
+                            <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 400 }}>{item.recipient_email}</div>
+                          </td>
+                          <td style={{ padding: '10px', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {item.subject}
+                          </td>
+                          <td style={{ padding: '10px' }}>
+                            <span style={{
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              background: item.status === 'sent' ? '#edf7ed' : '#fef2f2',
+                              color: item.status === 'sent' ? '#1e4620' : '#991b1b',
+                            }}>
+                              {item.status.toUpperCase()}
+                            </span>
+                          </td>
+                          <td style={{ padding: '10px', color: '#6e7e73', fontSize: '0.8rem' }}>
+                            {item.sent_at ? new Date(item.sent_at).toLocaleString() : '-'}
+                          </td>
+                          <td style={{ padding: '10px', fontSize: '0.78rem', fontFamily: 'monospace', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {item.status === 'sent' ? item.gmail_message_id : (item.error_message || 'Failed')}
+                          </td>
+                          <td style={{ padding: '10px', textAlign: 'right' }}>
+                            {item.status === 'failed' && (
+                              <button
+                                type="button"
+                                onClick={() => handleRetryInvitation(item)}
+                                disabled={retryingHistoryId === item.id}
+                                className={styles.exportBtn}
+                                style={{ padding: '4px 10px', fontSize: '0.76rem' }}
+                              >
+                                {retryingHistoryId === item.id ? 'Retrying...' : 'Retry Send'}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Email Preview Modal */}
+            {isPreviewOpen && (
+              <div
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  backgroundColor: 'rgba(20, 36, 26, 0.6)',
+                  backdropFilter: 'blur(4px)',
+                  zIndex: 9999,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '20px',
+                }}
+              >
+                <div
+                  style={{
+                    background: '#FFFFFF',
+                    borderRadius: '20px',
+                    width: '100%',
+                    maxWidth: '680px',
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+                  }}
+                >
+                  <div style={{ padding: '18px 24px', borderBottom: '1px solid #edf4eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <EmailOutlinedIcon sx={{ color: '#294B35' }} />
+                      <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem' }}>
+                        Email Preview for <strong>{previewGuestName}</strong>
+                      </h3>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewMode('html')}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: '14px',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          border: '1px solid #cbe3c6',
+                          background: previewMode === 'html' ? '#294B35' : '#ffffff',
+                          color: previewMode === 'html' ? '#ffffff' : '#294B35',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        HTML View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewMode('text')}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: '14px',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          border: '1px solid #cbe3c6',
+                          background: previewMode === 'text' ? '#294B35' : '#ffffff',
+                          color: previewMode === 'text' ? '#ffffff' : '#294B35',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Plain Text
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsPreviewOpen(false)}
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6e7e73', marginLeft: '6px' }}
+                      >
+                        <CloseIcon />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ flex: 1, overflowY: 'auto', padding: '24px', background: '#F8FAF7' }}>
+                    {previewLoading ? (
+                      <div style={{ textAlign: 'center', padding: '40px', color: '#6e7e73' }}>Rendering preview...</div>
+                    ) : previewMode === 'html' ? (
+                      <div
+                        dangerouslySetInnerHTML={{ __html: previewHtml }}
+                        style={{ maxWidth: '600px', margin: '0 auto' }}
+                      />
+                    ) : (
+                      <pre style={{
+                        background: '#ffffff',
+                        padding: '20px',
+                        borderRadius: '12px',
+                        border: '1px solid #e1ece0',
+                        whiteSpace: 'pre-wrap',
+                        fontFamily: 'monospace',
+                        fontSize: '0.86rem',
+                        lineHeight: 1.6,
+                        color: '#294B35',
+                      }}>
+                        {previewPlainText}
+                      </pre>
+                    )}
+                  </div>
+
+                  <div style={{ padding: '14px 24px', borderTop: '1px solid #edf4eb', display: 'flex', justifyContent: 'flex-end', background: '#ffffff' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsPreviewOpen(false)}
+                      className={styles.exportBtn}
+                      style={{ padding: '8px 20px', fontSize: '0.88rem' }}
+                    >
+                      Close Preview
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
