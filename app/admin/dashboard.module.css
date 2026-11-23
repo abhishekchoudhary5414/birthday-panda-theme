@@ -992,8 +992,10 @@
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  padding: 20px;
+  padding: 16px;
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .modalCard {
@@ -1001,12 +1003,14 @@
   border-radius: 24px;
   max-width: 580px;
   width: 100%;
-  max-height: 94vh;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   overflow: hidden;
   box-shadow: 0 28px 60px rgba(18, 41, 26, 0.35);
   display: flex;
   flex-direction: column;
   border: 1px solid rgba(120, 155, 99, 0.3);
+  margin: auto;
 }
 
 .modalHeader {
@@ -1016,6 +1020,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
 .modalTitle {
@@ -1049,14 +1054,17 @@
 }
 
 .modalBody {
-  padding: 24px 20px;
+  padding: 20px 16px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   align-items: center;
   background: #f4f8f1;
   background-image: radial-gradient(#dce8d2 1.5px, transparent 1.5px);
   background-size: 20px 20px;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* ==========================================================================
@@ -1065,6 +1073,7 @@
 .ecardFrame {
   width: 100%;
   max-width: 440px;
+  box-sizing: border-box;
   background-color: #FAF7F0;
   background-image: url('/images/card-bg-paws.jpg');
   background-size: cover;
@@ -1077,6 +1086,7 @@
   text-align: center;
   position: relative;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 /* Bamboo Tree on left and right borders */
@@ -1280,6 +1290,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .downloadBtn {
@@ -1300,6 +1311,113 @@
 
 .downloadBtn:hover {
   background: #3C8D40;
+}
+
+/* Modal and eCard responsiveness across screen heights and widths */
+@media (max-height: 800px) {
+  .modalOverlay {
+    padding: 10px;
+  }
+  .modalCard {
+    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 20px);
+    border-radius: 18px;
+  }
+  .modalHeader {
+    padding: 12px 18px;
+  }
+  .modalFooter {
+    padding: 12px 18px;
+  }
+  .modalBody {
+    padding: 16px 12px;
+  }
+  .ecardFrame {
+    padding: 24px 18px 20px;
+  }
+  .ecardMascotWrap {
+    margin-bottom: 8px;
+  }
+  .ecardInviteLead {
+    font-size: 1.35rem;
+  }
+  .ecardEventTitle {
+    font-size: 1.55rem;
+    margin: 0 0 12px;
+  }
+  .ecardGuestSection {
+    margin-bottom: 12px;
+  }
+  .ecardGuestName {
+    font-size: 1.45rem;
+  }
+  .ecardInvitationText {
+    margin-bottom: 16px;
+    font-size: 0.88rem;
+  }
+  .ecardDetailsBox {
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 520px) {
+  .modalOverlay {
+    padding: 8px;
+  }
+  .modalCard {
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 16px;
+  }
+  .modalHeader {
+    padding: 12px 16px;
+  }
+  .modalTitle {
+    font-size: 1rem;
+  }
+  .modalFooter {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+  .modalFooter button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+  .modalBody {
+    padding: 16px 10px;
+  }
+  .ecardFrame {
+    padding: 24px 16px 20px;
+    border-radius: 16px;
+  }
+  .ecardInviteLead {
+    font-size: 1.35rem;
+  }
+  .ecardEventTitle {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+  }
+  .ecardGuestName {
+    font-size: 1.4rem;
+  }
+  .ecardInvitationText {
+    font-size: 0.86rem;
+    margin-bottom: 16px;
+  }
+  .ecardDetailsBox {
+    padding: 12px;
+    margin-bottom: 16px;
+    font-size: 0.84rem;
+  }
+  .ecardDetailRow {
+    font-size: 0.82rem;
+  }
+  .ecardFooterLove {
+    font-size: 1.3rem;
+  }
 }
 
 @keyframes fadeIn {
