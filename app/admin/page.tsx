@@ -139,6 +139,7 @@ interface AdminWish {
 
 interface AdminRSVP {
   id: number;
+  title?: string;
   full_name: string;
   phone: string;
   email?: string;
@@ -211,6 +212,7 @@ export default function AdminDashboardPage() {
 
   // CSV Bulk Import State
   const [guestAddMode, setGuestAddMode] = useState<'single' | 'csv'>('single');
+  const [guestViewMode, setGuestViewMode] = useState<'table' | 'cards'>('table');
   const [csvParsedGuests, setCsvParsedGuests] = useState<{ title: string; name: string; mobile: string; email: string }[]>([]);
   const [csvFileName, setCsvFileName] = useState('');
   const [isUploadingCsv, setIsUploadingCsv] = useState(false);
@@ -3453,84 +3455,45 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Section 3: Guest List Management - 100% Full Width Bamboo Grove Theme */}
+        {/* Section 3: Guest List Management - 100% Full Width Bamboo Grove Theme */}
         {activeTab === '3' && (
           <div style={{ width: '100%' }}>
             {/* Themed Hero Banner */}
-            <div
-              style={{
-                width: '100%',
-                background: 'linear-gradient(135deg, #183321 0%, #294B35 55%, #3c6e4a 100%)',
-                borderRadius: '20px',
-                padding: '28px 32px',
-                marginBottom: '24px',
-                color: '#ffffff',
-                boxShadow: '0 8px 24px rgba(41, 75, 53, 0.12)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '20px',
-                boxSizing: 'border-box',
-              }}
-            >
-              <div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)', padding: '5px 14px', borderRadius: '30px', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.5px', marginBottom: '10px', color: '#f0fdf4' }}>
+            <div className={styles.guestHeroBanner}>
+              <div className={styles.guestHeroContent}>
+                <div className={styles.guestHeroBadge}>
                   <ParkIcon sx={{ fontSize: 16, color: '#a3e635' }} />
                   <span>BAMBOO GROVE • OFFICIAL GUEST ROSTER</span>
                 </div>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 6px 0', color: '#ffffff', letterSpacing: '-0.3px' }}>
+                <h2 className={styles.guestHeroTitle}>
                   Guest List Management
                 </h2>
-                <p style={{ margin: 0, fontSize: '0.92rem', color: '#d1e7d6', maxWidth: '580px', lineHeight: 1.5 }}>
-                  Add invitees, trigger personalized WhatsApp invites with autofilled RSVP forms, generate birthday eCards, and track your party guests.
+                <p className={styles.guestHeroSubtitle}>
+                  Add invitees, trigger personalized WhatsApp invites with pre-filled RSVP links, generate birthday eCards, and track your party guests on any device.
                 </p>
               </div>
 
               {/* Stats badges */}
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <div style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '12px 20px', textAlign: 'center', minWidth: '100px' }}>
-                  <span style={{ fontSize: '0.74rem', color: '#d1e7d6', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>Total Guests</span>
-                  <span style={{ fontSize: '1.7rem', fontWeight: 800, color: '#ffffff' }}>{stats.totalGuests}</span>
+              <div className={styles.guestHeroStats}>
+                <div className={styles.guestHeroStatItem}>
+                  <span className={styles.guestHeroStatLabel}>Total Guests</span>
+                  <span className={styles.guestHeroStatValue}>{stats.totalGuests}</span>
                 </div>
-                <div style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '14px', padding: '12px 20px', textAlign: 'center', minWidth: '100px' }}>
-                  <span style={{ fontSize: '0.74rem', color: '#d1e7d6', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>RSVPs Saved</span>
-                  <span style={{ fontSize: '1.7rem', fontWeight: 800, color: '#a3e635' }}>{rsvpsList.length}</span>
+                <div className={styles.guestHeroStatItem}>
+                  <span className={styles.guestHeroStatLabel}>RSVPs Saved</span>
+                  <span className={styles.guestHeroStatValue} style={{ color: '#a3e635' }}>{rsvpsList.length}</span>
                 </div>
               </div>
             </div>
 
             {/* Guest Entry Box */}
-            <div
-              style={{
-                width: '100%',
-                background: '#ffffff',
-                border: '1.5px solid #dce8d2',
-                borderRadius: '18px',
-                padding: '24px',
-                marginBottom: '24px',
-                boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)',
-                boxSizing: 'border-box',
-              }}
-            >
+            <div className={styles.guestEntryBox}>
               {/* Tab Selector */}
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid #edf4ea', paddingBottom: '14px' }}>
+              <div className={styles.guestAddTabs}>
                 <button
                   type="button"
                   onClick={() => setGuestAddMode('single')}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '9px 18px',
-                    borderRadius: '10px',
-                    border: 'none',
-                    fontWeight: 700,
-                    fontSize: '0.88rem',
-                    cursor: 'pointer',
-                    background: guestAddMode === 'single' ? '#294B35' : '#f0f6ee',
-                    color: guestAddMode === 'single' ? '#ffffff' : '#4a5b4e',
-                    transition: 'all 0.2s',
-                  }}
+                  className={`${styles.guestAddTabBtn} ${guestAddMode === 'single' ? styles.activeTab : ''}`}
                 >
                   <AddIcon sx={{ fontSize: 18 }} />
                   <span>Add Single Guest</span>
@@ -3538,20 +3501,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setGuestAddMode('csv')}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '9px 18px',
-                    borderRadius: '10px',
-                    border: 'none',
-                    fontWeight: 700,
-                    fontSize: '0.88rem',
-                    cursor: 'pointer',
-                    background: guestAddMode === 'csv' ? '#294B35' : '#f0f6ee',
-                    color: guestAddMode === 'csv' ? '#ffffff' : '#4a5b4e',
-                    transition: 'all 0.2s',
-                  }}
+                  className={`${styles.guestAddTabBtn} ${guestAddMode === 'csv' ? styles.activeTab : ''}`}
                 >
                   <UploadFileIcon sx={{ fontSize: 18 }} />
                   <span>Bulk CSV Upload</span>
@@ -3565,22 +3515,12 @@ export default function AdminDashboardPage() {
                     <span>Quick Guest Entry</span>
                   </div>
 
-                  <form onSubmit={handleAddGuest} style={{ display: 'grid', gridTemplateColumns: '110px 1.2fr 1fr 1.2fr auto', gap: '12px', alignItems: 'center' }}>
+                  <form onSubmit={handleAddGuest} className={styles.guestFormGrid}>
                     <select
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
                       aria-label="Title"
-                      style={{
-                        padding: '11px 12px',
-                        borderRadius: '10px',
-                        border: '1.5px solid #d2ded0',
-                        background: '#fafcfa',
-                        color: '#294B35',
-                        fontWeight: 700,
-                        fontSize: '0.9rem',
-                        cursor: 'pointer',
-                        outline: 'none',
-                      }}
+                      className={styles.guestFormSelect}
                     >
                       <option value="Mr.">Mr.</option>
                       <option value="Mrs.">Mrs.</option>
@@ -3594,15 +3534,7 @@ export default function AdminDashboardPage() {
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
                       required
-                      style={{
-                        padding: '11px 14px',
-                        borderRadius: '10px',
-                        border: '1.5px solid #d2ded0',
-                        background: '#ffffff',
-                        fontSize: '0.92rem',
-                        color: '#294B35',
-                        outline: 'none',
-                      }}
+                      className={styles.guestFormInput}
                     />
 
                     <input
@@ -3611,15 +3543,7 @@ export default function AdminDashboardPage() {
                       value={newMobile}
                       onChange={(e) => setNewMobile(e.target.value)}
                       required
-                      style={{
-                        padding: '11px 14px',
-                        borderRadius: '10px',
-                        border: '1.5px solid #d2ded0',
-                        background: '#ffffff',
-                        fontSize: '0.92rem',
-                        color: '#294B35',
-                        outline: 'none',
-                      }}
+                      className={styles.guestFormInput}
                     />
 
                     <input
@@ -3627,35 +3551,13 @@ export default function AdminDashboardPage() {
                       placeholder="Email Address (Optional)"
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
-                      style={{
-                        padding: '11px 14px',
-                        borderRadius: '10px',
-                        border: '1.5px solid #d2ded0',
-                        background: '#ffffff',
-                        fontSize: '0.92rem',
-                        color: '#294B35',
-                        outline: 'none',
-                      }}
+                      className={styles.guestFormInput}
                     />
 
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      style={{
-                        padding: '11px 24px',
-                        borderRadius: '10px',
-                        border: 'none',
-                        background: 'linear-gradient(135deg, #294B35 0%, #3C8D40 100%)',
-                        color: '#ffffff',
-                        fontWeight: 800,
-                        fontSize: '0.92rem',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        whiteSpace: 'nowrap',
-                        boxShadow: '0 4px 12px rgba(41, 75, 53, 0.2)',
-                      }}
+                      className={styles.guestFormSubmitBtn}
                     >
                       <AddIcon sx={{ fontSize: 18 }} />
                       <span>{isSubmitting ? 'Adding...' : 'Add Guest'}</span>
@@ -3682,24 +3584,26 @@ export default function AdminDashboardPage() {
                       </button>
                     </div>
 
-                    <table className={styles.csvTableGuide}>
-                      <thead>
-                        <tr>
-                          <th>Title</th>
-                          <th>Name (Required)</th>
-                          <th>Mobile (Required)</th>
-                          <th>Email (Optional)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>Mr. / Miss / Mrs.</td>
-                          <td>Abhishek Choudhary</td>
-                          <td>9264248504</td>
-                          <td>guest@example.com</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <div style={{ overflowX: 'auto', width: '100%' }}>
+                      <table className={styles.csvTableGuide}>
+                        <thead>
+                          <tr>
+                            <th>Title</th>
+                            <th>Name (Required)</th>
+                            <th>Mobile (Required)</th>
+                            <th>Email (Optional)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>Mr. / Miss / Mrs. / Dr.</td>
+                            <td>Abhishek Choudhary</td>
+                            <td>9264248504</td>
+                            <td>guest@example.com</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   {/* CSV DropZone */}
@@ -3809,64 +3713,23 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Filter, Search & Export Bar */}
-            <div
-              style={{
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '14px',
-                marginBottom: '18px',
-                background: '#ffffff',
-                padding: '16px 20px',
-                borderRadius: '16px',
-                border: '1.5px solid #dce8d2',
-                boxSizing: 'border-box',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '280px' }}>
-                <div
-                  style={{
-                    position: 'relative',
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  <SearchIcon sx={{ position: 'absolute', left: '12px', fontSize: 19, color: '#7a8c7e' }} />
+            <div className={styles.guestToolbar}>
+              <div className={styles.guestSearchGroup}>
+                <div className={styles.guestSearchWrap}>
+                  <SearchIcon sx={{ position: 'absolute', left: '12px', fontSize: 19, color: '#7a8c7e', pointerEvents: 'none' }} />
                   <input
                     type="text"
                     placeholder="Search guests by name, phone, or email..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px 10px 38px',
-                      borderRadius: '10px',
-                      border: '1.5px solid #d2ded0',
-                      fontSize: '0.9rem',
-                      color: '#294B35',
-                      background: '#fafcfa',
-                      outline: 'none',
-                    }}
+                    className={styles.guestSearchInput}
                   />
                 </div>
 
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    border: '1.5px solid #d2ded0',
-                    background: '#fafcfa',
-                    color: '#294B35',
-                    fontWeight: 700,
-                    fontSize: '0.88rem',
-                    cursor: 'pointer',
-                    outline: 'none',
-                  }}
+                  className={styles.guestFilterSelect}
                 >
                   <option value="all">All Statuses</option>
                   <option value="pending">Pending RSVP</option>
@@ -3875,25 +3738,34 @@ export default function AdminDashboardPage() {
                 </select>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div className={styles.guestToolbarActions}>
+                {/* View Switcher: Table vs Cards */}
+                <div className={styles.guestViewSwitcher}>
+                  <button
+                    type="button"
+                    onClick={() => setGuestViewMode('table')}
+                    className={`${styles.guestViewBtn} ${guestViewMode === 'table' ? styles.active : ''}`}
+                    title="Table View"
+                  >
+                    <TableChartOutlinedIcon sx={{ fontSize: 16 }} />
+                    <span>Table</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGuestViewMode('cards')}
+                    className={`${styles.guestViewBtn} ${guestViewMode === 'cards' ? styles.active : ''}`}
+                    title="Card Grid View (Mobile Friendly)"
+                  >
+                    <ViewModuleIcon sx={{ fontSize: 16 }} />
+                    <span>Cards</span>
+                  </button>
+                </div>
+
                 <button
                   type="button"
                   onClick={handleDownloadPdf}
                   disabled={isGeneratingPdf || guests.length === 0}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 18px',
-                    borderRadius: '10px',
-                    border: '1.5px solid #dce8d2',
-                    background: '#ffffff',
-                    color: '#294B35',
-                    fontWeight: 700,
-                    fontSize: '0.88rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
+                  className={styles.guestExportBtn}
                 >
                   <PictureAsPdfIcon sx={{ fontSize: 18, color: '#d32f2f' }} />
                   <span>{isGeneratingPdf ? 'Generating...' : 'Download PDF List'}</span>
@@ -3901,244 +3773,440 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Themed Guest Table - 100% Full Width */}
-            <div
-              style={{
-                width: '100%',
-                background: '#ffffff',
-                border: '1.5px solid #dce8d2',
-                borderRadius: '18px',
-                overflow: 'hidden',
-                boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)',
-                boxSizing: 'border-box',
-              }}
-            >
-              <div className={styles.tableResponsive} style={{ width: '100%', overflowX: 'auto' }}>
-                <table className={styles.guestTable} style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: '#f5faf3', borderBottom: '1.5px solid #dce8d2' }}>
-                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px' }}>GUEST NAME</th>
-                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px' }}>MOBILE</th>
-                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px' }}>EMAIL</th>
-                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px' }}>INVITATION STATUS</th>
-                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px', textAlign: 'center' }}>CARDS &amp; INVITE</th>
-                      <th style={{ color: '#294B35', fontWeight: 800, padding: '14px 18px', textAlign: 'right' }}>ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      [...Array(5)].map((_, i) => (
-                        <tr key={`guest-skel-${i}`} style={{ borderBottom: '1px solid #edf4ea' }}>
-                          <td style={{ padding: '16px 18px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <div className={styles.skeletonBase} style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                <div className={styles.skeletonBase} style={{ width: '130px', height: '16px' }} />
-                                <div className={styles.skeletonBase} style={{ width: '80px', height: '12px' }} />
-                              </div>
-                            </div>
-                          </td>
-                          <td style={{ padding: '16px 18px' }}>
-                            <div className={styles.skeletonBase} style={{ width: '110px', height: '15px' }} />
-                          </td>
-                          <td style={{ padding: '16px 18px', textAlign: 'center' }}>
-                            <div className={styles.skeletonBase} style={{ width: '85px', height: '24px', borderRadius: '12px', margin: '0 auto' }} />
-                          </td>
-                          <td style={{ padding: '16px 18px', textAlign: 'center' }}>
-                            <div className={styles.skeletonBase} style={{ width: '70px', height: '16px', margin: '0 auto' }} />
-                          </td>
-                          <td style={{ padding: '16px 18px', textAlign: 'center' }}>
-                            <div className={styles.skeletonBase} style={{ width: '90px', height: '28px', borderRadius: '6px', margin: '0 auto' }} />
-                          </td>
-                          <td style={{ padding: '16px 18px', textAlign: 'right' }}>
-                            <div className={styles.skeletonBase} style={{ width: '80px', height: '28px', borderRadius: '6px', marginLeft: 'auto' }} />
-                          </td>
-                        </tr>
-                      ))
-                    ) : guests.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} style={{ textAlign: 'center', padding: '50px 20px' }}>
-                          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#eef6ec', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <SentimentSatisfiedAltIcon sx={{ fontSize: 32, color: '#3c8d40' }} />
+            {/* Display: Table View OR Responsive Cards Grid View */}
+            {guestViewMode === 'cards' ? (
+              /* Responsive Card Grid View */
+              <div style={{ width: '100%' }}>
+                {loading ? (
+                  <div className={styles.guestCardsContainer}>
+                    {[...Array(6)].map((_, i) => (
+                      <div key={`card-skel-${i}`} className={styles.guestCardBox}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div className={styles.skeletonBase} style={{ width: '42px', height: '42px', borderRadius: '50%' }} />
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                            <div className={styles.skeletonBase} style={{ width: '60%', height: '16px' }} />
+                            <div className={styles.skeletonBase} style={{ width: '40%', height: '12px' }} />
                           </div>
-                          <h4 style={{ margin: '0 0 6px', color: '#294B35', fontSize: '1.1rem' }}>No guests found</h4>
-                          <p style={{ margin: 0, color: '#7a8c7e', fontSize: '0.88rem' }}>
-                            Add your first guest above or import using CSV!
-                          </p>
-                        </td>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div className={styles.skeletonBase} style={{ width: '70%', height: '14px' }} />
+                          <div className={styles.skeletonBase} style={{ width: '85%', height: '14px' }} />
+                        </div>
+                        <div className={styles.skeletonBase} style={{ width: '100%', height: '36px', borderRadius: '8px' }} />
+                      </div>
+                    ))}
+                  </div>
+                ) : guests.length === 0 ? (
+                  <div className={styles.guestTableCard} style={{ padding: '50px 20px', textAlign: 'center' }}>
+                    <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#eef6ec', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <SentimentSatisfiedAltIcon sx={{ fontSize: 32, color: '#3c8d40' }} />
+                    </div>
+                    <h4 style={{ margin: '0 0 6px', color: '#294B35', fontSize: '1.1rem' }}>No guests found</h4>
+                    <p style={{ margin: 0, color: '#7a8c7e', fontSize: '0.88rem' }}>
+                      Add your first guest above or import using CSV!
+                    </p>
+                  </div>
+                ) : (
+                  <div className={styles.guestCardsContainer}>
+                    {guests.map((g) => (
+                      <div key={g.id} className={styles.guestCardBox}>
+                        <div className={styles.guestCardTop}>
+                          <div className={styles.guestCardIdentity}>
+                            <div className={styles.guestAvatar}>
+                              {(g.name || 'G')[0].toUpperCase()}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div className={styles.guestNameBadge} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {g.title ? `${g.title} ` : ''}{g.name}
+                              </div>
+                              <span className={styles.guestBadgeInvited} style={{ marginTop: '4px' }}>
+                                <CheckCircleIcon sx={{ fontSize: 13, color: '#2e7d32' }} />
+                                <span>Invited</span>
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(g)}
+                              className={styles.editBtn}
+                              title="Edit guest"
+                            >
+                              <EditIcon sx={{ fontSize: 16 }} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setGuestToDelete(g)}
+                              className={styles.actionBtn}
+                              title="Delete guest"
+                            >
+                              <DeleteOutlineIcon sx={{ fontSize: 17 }} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className={styles.guestCardDetails}>
+                          <div className={styles.guestCardDetailRow}>
+                            <PhoneIcon sx={{ fontSize: 16, color: '#3c8d40' }} />
+                            <span>{g.mobile}</span>
+                          </div>
+                          <div className={styles.guestCardDetailRow}>
+                            <EmailOutlinedIcon sx={{ fontSize: 16, color: '#789b63' }} />
+                            <span>{g.email || <span style={{ color: '#a0b1a4' }}>No email provided</span>}</span>
+                          </div>
+                        </div>
+
+                        <div className={styles.guestCardActionsRow}>
+                          <div className={styles.guestCardActionBtns}>
+                            <button
+                              type="button"
+                              onClick={() => openWhatsappModal(g)}
+                              className={styles.guestActionBtnWhatsapp}
+                              title="Send WhatsApp RSVP Link (Pre-filled)"
+                            >
+                              <WhatsAppIcon sx={{ fontSize: 15 }} />
+                              <span>WhatsApp</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setSelectedEcardGuest(g)}
+                              className={styles.guestActionBtnCard}
+                              title="Generate & View eCard"
+                            >
+                              <AutoAwesomeIcon sx={{ fontSize: 14, color: '#D9B66F' }} />
+                              <span>eCard</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setSelectedThankYouGuest(g)}
+                              className={styles.guestActionBtnCard}
+                              title="Generate & View Thank You Card"
+                            >
+                              <FavoriteIcon sx={{ fontSize: 14, color: '#e57373' }} />
+                              <span>Thank You</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Themed Guest Table - 100% Full Width Responsive */
+              <div className={styles.guestTableCard}>
+                <div className={styles.guestTableResponsive}>
+                  <table className={styles.guestThemedTable}>
+                    <thead>
+                      <tr style={{ background: '#f5faf3', borderBottom: '1.5px solid #dce8d2' }}>
+                        <th>GUEST NAME</th>
+                        <th>MOBILE</th>
+                        <th>EMAIL</th>
+                        <th>INVITATION STATUS</th>
+                        <th style={{ textAlign: 'center' }}>CARDS &amp; INVITE</th>
+                        <th style={{ textAlign: 'right' }}>ACTIONS</th>
                       </tr>
-                    ) : (
-                      guests.map((g) => (
-                        <tr key={g.id} style={{ borderBottom: '1px solid #edf4ea', transition: 'background 0.15s' }}>
-                          <td style={{ padding: '14px 18px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#eef6ec', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#294B35', fontWeight: 800, fontSize: '0.85rem' }}>
-                                {(g.name || 'G')[0].toUpperCase()}
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        [...Array(5)].map((_, i) => (
+                          <tr key={`guest-skel-${i}`} className={styles.guestRow}>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div className={styles.skeletonBase} style={{ width: '38px', height: '38px', borderRadius: '50%' }} />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                  <div className={styles.skeletonBase} style={{ width: '130px', height: '16px' }} />
+                                  <div className={styles.skeletonBase} style={{ width: '80px', height: '12px' }} />
+                                </div>
                               </div>
-                              <div>
-                                <strong style={{ color: '#203325', fontSize: '0.94rem' }}>
-                                  {g.title ? `${g.title} ` : ''}{g.name}
-                                </strong>
-                              </div>
+                            </td>
+                            <td>
+                              <div className={styles.skeletonBase} style={{ width: '110px', height: '15px' }} />
+                            </td>
+                            <td>
+                              <div className={styles.skeletonBase} style={{ width: '140px', height: '15px' }} />
+                            </td>
+                            <td>
+                              <div className={styles.skeletonBase} style={{ width: '85px', height: '24px', borderRadius: '12px' }} />
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <div className={styles.skeletonBase} style={{ width: '180px', height: '28px', borderRadius: '6px', margin: '0 auto' }} />
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <div className={styles.skeletonBase} style={{ width: '70px', height: '28px', borderRadius: '6px', marginLeft: 'auto' }} />
+                            </td>
+                          </tr>
+                        ))
+                      ) : guests.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: 'center', padding: '50px 20px' }}>
+                            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#eef6ec', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <SentimentSatisfiedAltIcon sx={{ fontSize: 32, color: '#3c8d40' }} />
                             </div>
-                          </td>
-                          <td style={{ padding: '14px 18px', color: '#3f5344', fontSize: '0.9rem' }}>
-                            {g.mobile}
-                          </td>
-                          <td style={{ padding: '14px 18px', color: '#5b6e60', fontSize: '0.88rem' }}>
-                            {g.email || <span style={{ color: '#a0b1a4' }}>—</span>}
-                          </td>
-                          <td style={{ padding: '14px 18px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '20px', background: '#edf7ed', color: '#1e4620', fontSize: '0.82rem', fontWeight: 700 }}>
-                              <CheckCircleIcon sx={{ fontSize: 14, color: '#2e7d32' }} />
-                              <span>Invited</span>
-                            </span>
-                          </td>
-                          <td style={{ padding: '14px 18px', textAlign: 'center' }}>
-                            <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
-                              <button
-                                type="button"
-                                onClick={() => openWhatsappModal(g)}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  padding: '6px 12px',
-                                  borderRadius: '8px',
-                                  border: 'none',
-                                  background: '#25D366',
-                                  color: '#ffffff',
-                                  fontWeight: 700,
-                                  fontSize: '0.82rem',
-                                  cursor: 'pointer',
-                                  boxShadow: '0 2px 6px rgba(37, 211, 102, 0.25)',
-                                }}
-                                title="Send WhatsApp RSVP Link (Pre-filled)"
-                              >
-                                <WhatsAppIcon sx={{ fontSize: 15 }} />
-                                <span>WhatsApp</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => setSelectedEcardGuest(g)}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '5px',
-                                  padding: '6px 12px',
-                                  borderRadius: '8px',
-                                  border: '1.5px solid #d2ded0',
-                                  background: '#ffffff',
-                                  color: '#294B35',
-                                  fontWeight: 700,
-                                  fontSize: '0.82rem',
-                                  cursor: 'pointer',
-                                }}
-                                title="Generate & View eCard"
-                              >
-                                <AutoAwesomeIcon sx={{ fontSize: 14, color: '#D9B66F' }} />
-                                <span>eCard</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => setSelectedThankYouGuest(g)}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '5px',
-                                  padding: '6px 12px',
-                                  borderRadius: '8px',
-                                  border: '1.5px solid #d2ded0',
-                                  background: '#ffffff',
-                                  color: '#294B35',
-                                  fontWeight: 700,
-                                  fontSize: '0.82rem',
-                                  cursor: 'pointer',
-                                }}
-                                title="Generate & View Thank You Card"
-                              >
-                                <FavoriteIcon sx={{ fontSize: 14, color: '#e57373' }} />
-                                <span>Thank You</span>
-                              </button>
-                            </div>
-                          </td>
-                          <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                            <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'flex-end' }}>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEdit(g)}
-                                className={styles.editBtn}
-                                title="Edit guest"
-                              >
-                                <EditIcon sx={{ fontSize: 16 }} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setGuestToDelete(g)}
-                                className={styles.actionBtn}
-                                title="Delete guest"
-                              >
-                                <DeleteOutlineIcon sx={{ fontSize: 17 }} />
-                              </button>
-                            </div>
+                            <h4 style={{ margin: '0 0 6px', color: '#294B35', fontSize: '1.1rem' }}>No guests found</h4>
+                            <p style={{ margin: 0, color: '#7a8c7e', fontSize: '0.88rem' }}>
+                              Add your first guest above or import using CSV!
+                            </p>
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        guests.map((g) => (
+                          <tr key={g.id} className={styles.guestRow}>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div className={styles.guestAvatar}>
+                                  {(g.name || 'G')[0].toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className={styles.guestNameBadge}>
+                                    {g.title ? `${g.title} ` : ''}{g.name}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <span className={styles.guestContactMeta}>{g.mobile}</span>
+                            </td>
+                            <td>
+                              <span className={styles.guestContactMeta}>{g.email || <span style={{ color: '#a0b1a4' }}>—</span>}</span>
+                            </td>
+                            <td>
+                              <span className={styles.guestBadgeInvited}>
+                                <CheckCircleIcon sx={{ fontSize: 14, color: '#2e7d32' }} />
+                                <span>Invited</span>
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <div className={styles.guestActionCluster} style={{ justifyContent: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => openWhatsappModal(g)}
+                                  className={styles.guestActionBtnWhatsapp}
+                                  title="Send WhatsApp RSVP Link (Pre-filled)"
+                                >
+                                  <WhatsAppIcon sx={{ fontSize: 15 }} />
+                                  <span>WhatsApp</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedEcardGuest(g)}
+                                  className={styles.guestActionBtnCard}
+                                  title="Generate & View eCard"
+                                >
+                                  <AutoAwesomeIcon sx={{ fontSize: 14, color: '#D9B66F' }} />
+                                  <span>eCard</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedThankYouGuest(g)}
+                                  className={styles.guestActionBtnCard}
+                                  title="Generate & View Thank You Card"
+                                >
+                                  <FavoriteIcon sx={{ fontSize: 14, color: '#e57373' }} />
+                                  <span>Thank You</span>
+                                </button>
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEdit(g)}
+                                  className={styles.editBtn}
+                                  title="Edit guest"
+                                >
+                                  <EditIcon sx={{ fontSize: 16 }} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setGuestToDelete(g)}
+                                  className={styles.actionBtn}
+                                  title="Delete guest"
+                                >
+                                  <DeleteOutlineIcon sx={{ fontSize: 17 }} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
-        {/* Overview Tab */}
+        {/* Section: Overview Dashboard - Fully Redesigned Panda Forest Command Center */}
         {activeTab === 'overview' && (
-          <div>
-            <div className={styles.sectionHeader}>
-              <DashboardIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>Event Overview &amp; Key Metrics</span>
-            </div>
-
-            {/* Quick Metrics Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #dce8d2', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-                <span style={{ fontSize: '0.82rem', color: '#6e7e73', fontWeight: 600 }}>Total Invited Guests</span>
-                <h3 style={{ fontSize: '1.8rem', color: '#294B35', marginTop: '4px' }}>{stats.totalGuests}</h3>
-                <span style={{ fontSize: '0.75rem', color: '#8e9e93' }}>Guest List</span>
-              </div>
-              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #dce8d2', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-                <span style={{ fontSize: '0.82rem', color: '#6e7e73', fontWeight: 600 }}>Confirmed RSVPs</span>
-                <h3 style={{ fontSize: '1.8rem', color: '#3C8D40', marginTop: '4px' }}>{stats.attending}</h3>
-                <span style={{ fontSize: '0.75rem', color: '#8e9e93' }}>RSVP Management</span>
-              </div>
-              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #dce8d2', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-                <span style={{ fontSize: '0.82rem', color: '#6e7e73', fontWeight: 600 }}>Birthday Wishes Received</span>
-                <h3 style={{ fontSize: '1.8rem', color: '#D9B66F', marginTop: '4px' }}>{wishesList.length}</h3>
-                <span style={{ fontSize: '0.75rem', color: '#8e9e93' }}>Wish Wall</span>
-              </div>
-              <div style={{ background: '#ffffff', padding: '20px', borderRadius: '14px', border: '1px solid #dce8d2', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-                <span style={{ fontSize: '0.82rem', color: '#6e7e73', fontWeight: 600 }}>Quiz Submissions</span>
-                <h3 style={{ fontSize: '1.8rem', color: '#2b5b84', marginTop: '4px' }}>{quizSubmissions.length}</h3>
-                <span style={{ fontSize: '0.75rem', color: '#8e9e93' }}>Quiz Responses</span>
-              </div>
-            </div>
-
-            {/* Event Summary Card */}
-            <div style={{ background: 'linear-gradient(135deg, #f7faf5 0%, #edf5eb 100%)', border: '1.5px solid #dce8d2', borderRadius: '16px', padding: '24px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                <div>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#dce8d2', color: '#294B35', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, marginBottom: '8px' }}>
-                    <CalendarMonthIcon sx={{ fontSize: 16 }} />
-                    {eventSettings.eventDate || 'Event Date Configured'}
-                  </span>
-                  <h2 style={{ fontSize: '1.4rem', color: '#294B35', fontWeight: 800, margin: '4px 0' }}>{eventSettings.eventTitle || "Ditvi's 1st Birthday Party"}</h2>
-                  <p style={{ color: '#576b5c', fontSize: '0.92rem', margin: 0 }}>
-                    <PlaceIcon sx={{ fontSize: 16, verticalAlign: 'middle', marginRight: '4px' }} />
-                    {eventSettings.venueName || 'Grand Blossom Banquet Hall'} • {eventSettings.eventTime || '6:30 PM Onwards'}
-                  </p>
+          <div className={styles.overviewContainer}>
+            {/* 1. Themed Command Center Hero */}
+            <div className={styles.overviewHero}>
+              <div className={styles.overviewHeroContent}>
+                <div className={styles.overviewPandaPill}>
+                  <SpaIcon sx={{ fontSize: 16, color: '#a3e635' }} />
+                  <span>PANDA FOREST • EVENT COMMAND CENTER</span>
                 </div>
+                <h1 className={styles.overviewHeroTitle}>
+                  Welcome back, Admin! 🎋
+                </h1>
+                <p className={styles.overviewHeroSubtitle}>
+                  Track real-time RSVPs, monitor guest list responses, manage birthday wishes, and keep every celebration detail in harmony.
+                </p>
+              </div>
+
+              <div className={styles.overviewHeroActions}>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('3')}
+                  className={styles.overviewHeroBtnPrimary}
+                >
+                  <AddIcon sx={{ fontSize: 18 }} />
+                  <span>Add Guest</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('8')}
+                  className={styles.overviewHeroBtnSecondary}
+                >
+                  <EmailOutlinedIcon sx={{ fontSize: 18 }} />
+                  <span>Email Invitations</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 2. Key Metrics & Vitals Grid */}
+            <div className={styles.overviewStatsGrid}>
+              {/* Total Guests */}
+              <div className={styles.overviewStatCard} onClick={() => setActiveTab('3')}>
+                <div className={styles.overviewStatTop}>
+                  <span className={styles.overviewStatLabel}>TOTAL GUESTS</span>
+                  <div className={styles.overviewStatIconBox} style={{ background: '#eef6ec', color: '#294B35' }}>
+                    <PeopleIcon sx={{ fontSize: 24 }} />
+                  </div>
+                </div>
+                <div>
+                  <h3 className={styles.overviewStatValue} style={{ color: '#294B35' }}>{stats.totalGuests}</h3>
+                </div>
+                <div className={styles.overviewStatFoot}>
+                  <span>In Guest Roster</span>
+                  <ChevronRightIcon sx={{ fontSize: 16 }} />
+                </div>
+              </div>
+
+              {/* Confirmed RSVPs */}
+              <div className={styles.overviewStatCard} onClick={() => setActiveTab('5')}>
+                <div className={styles.overviewStatTop}>
+                  <span className={styles.overviewStatLabel}>CONFIRMED ATTENDING</span>
+                  <div className={styles.overviewStatIconBox} style={{ background: '#edf7ed', color: '#2e7d32' }}>
+                    <HowToRegIcon sx={{ fontSize: 24 }} />
+                  </div>
+                </div>
+                <div>
+                  <h3 className={styles.overviewStatValue} style={{ color: '#2e7d32' }}>{stats.attending}</h3>
+                </div>
+                <div className={styles.overviewStatFoot}>
+                  <span>{stats.totalGuests > 0 ? `${Math.round((stats.attending / stats.totalGuests) * 100)}% attendance rate` : 'RSVP Management'}</span>
+                  <ChevronRightIcon sx={{ fontSize: 16 }} />
+                </div>
+              </div>
+
+              {/* Pending Responses */}
+              <div className={styles.overviewStatCard} onClick={() => setActiveTab('5')}>
+                <div className={styles.overviewStatTop}>
+                  <span className={styles.overviewStatLabel}>PENDING RSVPs</span>
+                  <div className={styles.overviewStatIconBox} style={{ background: '#fffbeb', color: '#b45309' }}>
+                    <HourglassEmptyIcon sx={{ fontSize: 24 }} />
+                  </div>
+                </div>
+                <div>
+                  <h3 className={styles.overviewStatValue} style={{ color: '#b45309' }}>{stats.pending}</h3>
+                </div>
+                <div className={styles.overviewStatFoot}>
+                  <span>Awaiting Guest Reply</span>
+                  <ChevronRightIcon sx={{ fontSize: 16 }} />
+                </div>
+              </div>
+
+              {/* Birthday Wishes */}
+              <div className={styles.overviewStatCard} onClick={() => setActiveTab('9')}>
+                <div className={styles.overviewStatTop}>
+                  <span className={styles.overviewStatLabel}>BIRTHDAY WISHES</span>
+                  <div className={styles.overviewStatIconBox} style={{ background: '#fef3c7', color: '#d97706' }}>
+                    <ChatBubbleOutlineIcon sx={{ fontSize: 24 }} />
+                  </div>
+                </div>
+                <div>
+                  <h3 className={styles.overviewStatValue} style={{ color: '#d97706' }}>{wishesList.length}</h3>
+                </div>
+                <div className={styles.overviewStatFoot}>
+                  <span>On Guestbook Wall</span>
+                  <ChevronRightIcon sx={{ fontSize: 16 }} />
+                </div>
+              </div>
+
+              {/* Quiz Responses */}
+              <div className={styles.overviewStatCard} onClick={() => setActiveTab('10')}>
+                <div className={styles.overviewStatTop}>
+                  <span className={styles.overviewStatLabel}>QUIZ RESPONSES</span>
+                  <div className={styles.overviewStatIconBox} style={{ background: '#eff6ff', color: '#1d4ed8' }}>
+                    <SportsEsportsIcon sx={{ fontSize: 24 }} />
+                  </div>
+                </div>
+                <div>
+                  <h3 className={styles.overviewStatValue} style={{ color: '#1d4ed8' }}>{quizSubmissions.length}</h3>
+                </div>
+                <div className={styles.overviewStatFoot}>
+                  <span>Guest Trivia Submissions</span>
+                  <ChevronRightIcon sx={{ fontSize: 16 }} />
+                </div>
+              </div>
+
+              {/* Drive Photos */}
+              <div className={styles.overviewStatCard} onClick={() => setActiveTab('11')}>
+                <div className={styles.overviewStatTop}>
+                  <span className={styles.overviewStatLabel}>PHOTOS &amp; MEDIA</span>
+                  <div className={styles.overviewStatIconBox} style={{ background: '#fdf2f8', color: '#db2777' }}>
+                    <PhotoLibraryIcon sx={{ fontSize: 24 }} />
+                  </div>
+                </div>
+                <div>
+                  <h3 className={styles.overviewStatValue} style={{ color: '#db2777' }}>{drivePhotos.length}</h3>
+                </div>
+                <div className={styles.overviewStatFoot}>
+                  <span>Synced in Google Drive</span>
+                  <ChevronRightIcon sx={{ fontSize: 16 }} />
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Event Spotlight Card */}
+            <div className={styles.overviewSpotlightCard}>
+              <div className={styles.overviewSpotlightInfo}>
+                <div className={styles.overviewDateBadge}>
+                  <CalendarMonthIcon sx={{ fontSize: 16 }} />
+                  <span>{eventSettings.eventDate || 'Saturday, December 12, 2026'}</span>
+                </div>
+                <h2 className={styles.overviewSpotlightTitle}>
+                  {eventSettings.eventTitle || "Ditvi's 1st Birthday Party"}
+                </h2>
+                <div className={styles.overviewSpotlightMeta}>
+                  <span className={styles.overviewSpotlightMetaItem}>
+                    <PlaceIcon sx={{ fontSize: 17, color: '#3c8d40' }} />
+                    <strong>Venue:</strong> {eventSettings.venueName || 'Grand Blossom Banquet Hall'}
+                  </span>
+                  <span className={styles.overviewSpotlightMetaItem}>
+                    <AccessTimeIcon sx={{ fontSize: 17, color: '#3c8d40' }} />
+                    <strong>Time:</strong> {eventSettings.eventTime || '3:30 PM – 7:30 PM'}
+                  </span>
+                </div>
+              </div>
+
+              <div>
                 <button
                   type="button"
                   onClick={() => setActiveTab('1')}
@@ -4146,83 +4214,243 @@ export default function AdminDashboardPage() {
                   style={{ whiteSpace: 'nowrap' }}
                 >
                   <EditIcon sx={{ fontSize: 18 }} />
-                  <span>Edit Event Details</span>
+                  <span>Edit Event Settings</span>
                 </button>
               </div>
             </div>
 
-            {/* Quick Navigation Hub */}
-            <h3 style={{ fontSize: '1.1rem', color: '#294B35', fontWeight: 700, marginBottom: '14px' }}>Console Quick Navigation</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-              <div
-                onClick={() => setActiveTab('1')}
-                style={{ background: '#ffffff', border: '1px solid #e3ece0', borderRadius: '12px', padding: '18px', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3c8d40')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e3ece0')}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                  <EventNoteIcon sx={{ color: '#3c8d40' }} />
-                  <span style={{ fontWeight: 700, color: '#294b35' }}>Event Details</span>
+            {/* 4. Live Activity Previews Grid */}
+            <div className={styles.overviewActivityGrid}>
+              {/* Recent RSVPs */}
+              <div className={styles.overviewActivityCard}>
+                <div className={styles.overviewActivityHeader}>
+                  <div className={styles.overviewActivityTitle}>
+                    <HowToRegIcon sx={{ fontSize: 20, color: '#294B35' }} />
+                    <span>Recent RSVP Submissions</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('5')}
+                    className={styles.overviewViewAllBtn}
+                  >
+                    <span>View All</span>
+                    <ChevronRightIcon sx={{ fontSize: 16 }} />
+                  </button>
                 </div>
-                <p style={{ fontSize: '0.84rem', color: '#6e7e73', margin: 0 }}>Update event title, dates, venue location, and contact numbers.</p>
+
+                {rsvpsList.length === 0 ? (
+                  <p style={{ color: '#7a8e80', fontSize: '0.88rem', margin: '8px 0', textAlign: 'center' }}>
+                    No RSVPs recorded yet. Share your RSVP link with guests!
+                  </p>
+                ) : (
+                  <div className={styles.overviewActivityList}>
+                    {rsvpsList.slice(0, 4).map((r) => (
+                      <div key={r.id} className={styles.overviewActivityItem}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#eef6ec', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.82rem', color: '#294B35', flexShrink: 0 }}>
+                            {(r.full_name || 'G')[0].toUpperCase()}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#203325', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {r.title ? `${r.title} ` : ''}{r.full_name}
+                            </div>
+                            <div style={{ fontSize: '0.78rem', color: '#6e7e73' }}>
+                              {r.phone || r.email || `${r.guests_count || 1} guest(s)`}
+                            </div>
+                          </div>
+                        </div>
+                        <span style={{
+                          padding: '3px 8px',
+                          borderRadius: '12px',
+                          fontSize: '0.74rem',
+                          fontWeight: 700,
+                          background: r.attending === 'attending' || r.attending === 'yes' ? '#edf7ed' : '#fef2f2',
+                          color: r.attending === 'attending' || r.attending === 'yes' ? '#1e4620' : '#991b1b',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {r.attending === 'attending' || r.attending === 'yes' ? 'Attending' : 'Declined'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div
-                onClick={() => setActiveTab('3')}
-                style={{ background: '#ffffff', border: '1px solid #e3ece0', borderRadius: '12px', padding: '18px', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3c8d40')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e3ece0')}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                  <PeopleIcon sx={{ color: '#3c8d40' }} />
-                  <span style={{ fontWeight: 700, color: '#294b35' }}>Guest List</span>
+              {/* Recent Birthday Wishes */}
+              <div className={styles.overviewActivityCard}>
+                <div className={styles.overviewActivityHeader}>
+                  <div className={styles.overviewActivityTitle}>
+                    <ChatBubbleOutlineIcon sx={{ fontSize: 20, color: '#294B35' }} />
+                    <span>Latest Birthday Wishes</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('9')}
+                    className={styles.overviewViewAllBtn}
+                  >
+                    <span>View All</span>
+                    <ChevronRightIcon sx={{ fontSize: 16 }} />
+                  </button>
                 </div>
-                <p style={{ fontSize: '0.84rem', color: '#6e7e73', margin: 0 }}>Add individual guests, bulk upload via CSV, edit and export.</p>
+
+                {wishesList.length === 0 ? (
+                  <p style={{ color: '#7a8e80', fontSize: '0.88rem', margin: '8px 0', textAlign: 'center' }}>
+                    No wishes left yet. Guests can submit wishes on the homepage!
+                  </p>
+                ) : (
+                  <div className={styles.overviewActivityList}>
+                    {wishesList.slice(0, 4).map((w) => (
+                      <div key={w.id} className={styles.overviewActivityItem}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.82rem', color: '#b45309', flexShrink: 0 }}>
+                            {(w.name || 'W')[0].toUpperCase()}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#203325', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {w.name}
+                            </div>
+                            <div style={{ fontSize: '0.78rem', color: '#6e7e73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '240px' }}>
+                              {w.message}
+                            </div>
+                          </div>
+                        </div>
+                        <span style={{ fontSize: '0.76rem', color: '#8e9e93', whiteSpace: 'nowrap' }}>
+                          {w.relation || 'Friend'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 5. Console Modules Navigation Hub */}
+            <div className={styles.overviewHubSection}>
+              <div className={styles.overviewHubHeader}>
+                <h3 className={styles.overviewHubTitle}>
+                  <DashboardIcon sx={{ fontSize: 22, color: '#294B35' }} />
+                  <span>Admin Console Management Hub</span>
+                </h3>
+                <span style={{ fontSize: '0.82rem', color: '#6e7e73' }}>Click any module to jump directly to its management tab</span>
               </div>
 
-              <div
-                onClick={() => setActiveTab('5')}
-                style={{ background: '#ffffff', border: '1px solid #e3ece0', borderRadius: '12px', padding: '18px', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3c8d40')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e3ece0')}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                  <HowToRegIcon sx={{ color: '#3c8d40' }} />
-                  <span style={{ fontWeight: 700, color: '#294b35' }}>RSVP Tracking</span>
+              <div className={styles.overviewHubGrid}>
+                {/* Event Details */}
+                <div className={styles.overviewModuleCard} onClick={() => setActiveTab('1')}>
+                  <div className={styles.overviewModuleTop}>
+                    <div className={styles.overviewModuleTitleGroup}>
+                      <EventNoteIcon sx={{ color: '#3c8d40', fontSize: 22 }} />
+                      <span className={styles.overviewModuleTitle}>Event Details</span>
+                    </div>
+                    <span className={styles.overviewModuleBadge}>Core</span>
+                  </div>
+                  <p className={styles.overviewModuleDesc}>
+                    Update party title, countdown date, venue address, schedule timing, and contact info.
+                  </p>
                 </div>
-                <p style={{ fontSize: '0.84rem', color: '#6e7e73', margin: 0 }}>Filter and review attending vs pending vs declined RSVPs.</p>
-              </div>
 
-              <div
-                onClick={() => setActiveTab('9')}
-                style={{ background: '#ffffff', border: '1px solid #e3ece0', borderRadius: '12px', padding: '18px', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3c8d40')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e3ece0')}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                  <ChatBubbleOutlineIcon sx={{ color: '#3c8d40' }} />
-                  <span style={{ fontWeight: 700, color: '#294b35' }}>Wish Wall</span>
+                {/* Guest List */}
+                <div className={styles.overviewModuleCard} onClick={() => setActiveTab('3')}>
+                  <div className={styles.overviewModuleTop}>
+                    <div className={styles.overviewModuleTitleGroup}>
+                      <PeopleIcon sx={{ color: '#3c8d40', fontSize: 22 }} />
+                      <span className={styles.overviewModuleTitle}>Guest List</span>
+                    </div>
+                    <span className={styles.overviewModuleBadge}>{stats.totalGuests} Guests</span>
+                  </div>
+                  <p className={styles.overviewModuleDesc}>
+                    Add invitees, bulk CSV upload, generate personal WhatsApp invites and birthday eCards.
+                  </p>
                 </div>
-                <p style={{ fontSize: '0.84rem', color: '#6e7e73', margin: 0 }}>View real guestbook wishes, download CSV/PDF, export cards.</p>
-              </div>
 
-              <div
-                onClick={() => setActiveTab('10')}
-                style={{ background: '#ffffff', border: '1px solid #e3ece0', borderRadius: '12px', padding: '18px', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#3c8d40')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e3ece0')}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                  <SportsEsportsIcon sx={{ color: '#3c8d40' }} />
-                  <span style={{ fontWeight: 700, color: '#294b35' }}>Birthday Quiz</span>
+                {/* RSVP Tracking */}
+                <div className={styles.overviewModuleCard} onClick={() => setActiveTab('5')}>
+                  <div className={styles.overviewModuleTop}>
+                    <div className={styles.overviewModuleTitleGroup}>
+                      <HowToRegIcon sx={{ color: '#3c8d40', fontSize: 22 }} />
+                      <span className={styles.overviewModuleTitle}>RSVP Tracking</span>
+                    </div>
+                    <span className={styles.overviewModuleBadge}>{stats.attending} Attending</span>
+                  </div>
+                  <p className={styles.overviewModuleDesc}>
+                    Review headcounts, dietary requirements, food allergies, and attendance responses.
+                  </p>
                 </div>
-                <p style={{ fontSize: '0.84rem', color: '#6e7e73', margin: 0 }}>Add trivia questions, view guest scores, export PDF reports.</p>
+
+                {/* Email Invitations */}
+                <div className={styles.overviewModuleCard} onClick={() => setActiveTab('8')}>
+                  <div className={styles.overviewModuleTop}>
+                    <div className={styles.overviewModuleTitleGroup}>
+                      <EmailOutlinedIcon sx={{ color: '#3c8d40', fontSize: 22 }} />
+                      <span className={styles.overviewModuleTitle}>Email Invitations</span>
+                    </div>
+                    <span className={styles.overviewModuleBadge}>Gmail API</span>
+                  </div>
+                  <p className={styles.overviewModuleDesc}>
+                    Send high-converting panda invitation emails, retry failed deliveries, and view history.
+                  </p>
+                </div>
+
+                {/* Wish Wall */}
+                <div className={styles.overviewModuleCard} onClick={() => setActiveTab('9')}>
+                  <div className={styles.overviewModuleTop}>
+                    <div className={styles.overviewModuleTitleGroup}>
+                      <ChatBubbleOutlineIcon sx={{ color: '#3c8d40', fontSize: 22 }} />
+                      <span className={styles.overviewModuleTitle}>Wish Wall</span>
+                    </div>
+                    <span className={styles.overviewModuleBadge}>{wishesList.length} Wishes</span>
+                  </div>
+                  <p className={styles.overviewModuleDesc}>
+                    Moderate guest wishes, download wishing cards, and export guestbook memories.
+                  </p>
+                </div>
+
+                {/* Birthday Quiz */}
+                <div className={styles.overviewModuleCard} onClick={() => setActiveTab('10')}>
+                  <div className={styles.overviewModuleTop}>
+                    <div className={styles.overviewModuleTitleGroup}>
+                      <SportsEsportsIcon sx={{ color: '#3c8d40', fontSize: 22 }} />
+                      <span className={styles.overviewModuleTitle}>Birthday Quiz</span>
+                    </div>
+                    <span className={styles.overviewModuleBadge}>{quizSubmissions.length} Played</span>
+                  </div>
+                  <p className={styles.overviewModuleDesc}>
+                    Create trivia questions, inspect guest answers and scores, and export leaderboard reports.
+                  </p>
+                </div>
+
+                {/* Media & Google Drive */}
+                <div className={styles.overviewModuleCard} onClick={() => setActiveTab('11')}>
+                  <div className={styles.overviewModuleTop}>
+                    <div className={styles.overviewModuleTitleGroup}>
+                      <PhotoLibraryIcon sx={{ color: '#3c8d40', fontSize: 22 }} />
+                      <span className={styles.overviewModuleTitle}>Media &amp; Albums</span>
+                    </div>
+                    <span className={styles.overviewModuleBadge}>{drivePhotos.length} Photos</span>
+                  </div>
+                  <p className={styles.overviewModuleDesc}>
+                    Sync with personal Google Drive, upload memory photos, and curate party galleries.
+                  </p>
+                </div>
+
+                {/* Gift Registry */}
+                <div className={styles.overviewModuleCard} onClick={() => setActiveTab('6')}>
+                  <div className={styles.overviewModuleTop}>
+                    <div className={styles.overviewModuleTitleGroup}>
+                      <CardGiftcardIcon sx={{ color: '#3c8d40', fontSize: 22 }} />
+                      <span className={styles.overviewModuleTitle}>Gift Registry</span>
+                    </div>
+                    <span className={styles.overviewModuleBadge}>{adminGifts.length} Gifts</span>
+                  </div>
+                  <p className={styles.overviewModuleDesc}>
+                    Manage curated birthday gift wishlists, add Amazon products, and track claims.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Section 10: Birthday Quiz Management */}
         {activeTab === '10' && (
           <div className={styles.quizContainer}>
             <div className={styles.sectionHeader}>
