@@ -64,8 +64,8 @@ export async function POST(req: NextRequest) {
 
     // 1. Verify user has a connected Gmail account
     const connRows = await sql`
-      SELECT id, email_address FROM gmail_connections 
-      WHERE user_id = ${userId} AND status = 'connected'
+      SELECT id, google_email, connected FROM gmail_connections 
+      WHERE user_id = ${userId} AND connected = TRUE
       LIMIT 1
     `;
 
