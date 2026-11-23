@@ -2399,3 +2399,440 @@
   border-bottom: 1px solid #f0f4ee;
 }
 
+
+
+/* ==========================================================================
+   Panda-Themed Email Invitation Redesign & Responsive UI
+   ========================================================================== */
+
+.emailSectionWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.emailHeroCard {
+  background: linear-gradient(135deg, #ffffff 0%, #f7fbf5 100%);
+  border: 1px solid rgba(120, 155, 99, 0.28);
+  border-radius: var(--radius-md, 20px);
+  padding: 24px 28px;
+  box-shadow: 0 8px 24px rgba(41, 75, 53, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.emailHeroCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(120, 155, 99, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.emailHeroHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.emailHeroLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.emailPandaAvatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #eaf4e7 0%, #d5e9cf 100%);
+  border: 2px solid #b8dab0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  box-shadow: 0 4px 12px rgba(41, 75, 53, 0.08);
+  flex-shrink: 0;
+}
+
+.emailHeroTitles h2 {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--deep-forest-green, #294b35);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.emailHeroTitles p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: var(--text-muted, #6e7e73);
+  font-weight: 500;
+}
+
+.emailHeroActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Status Badges */
+.statusBadgeConnected {
+  background: #ecf8ec;
+  color: #1e5927;
+  border: 1px solid #c2e5bf;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.statusBadgeDisconnected {
+  background: #fff9e6;
+  color: #8c6a1e;
+  border: 1px solid #fbe39f;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Stat Cards in Panda Theme */
+.emailStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.emailStatCard {
+  background: #ffffff;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid #e7efe5;
+  box-shadow: 0 2px 8px rgba(41, 75, 53, 0.03);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.emailStatCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(41, 75, 53, 0.08);
+  border-color: #bcd9b7;
+}
+
+.emailStatLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted, #6e7e73);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.emailStatValue {
+  font-size: 1.4rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  color: var(--deep-forest-green, #294b35);
+  margin-top: 6px;
+}
+
+/* Bento 2-Col Card Container */
+.emailBentoGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 1024px) {
+  .emailBentoGrid {
+    grid-template-columns: minmax(360px, 1fr) minmax(320px, 1fr);
+  }
+}
+
+/* Form & Template Card */
+.emailConfigCard {
+  background: #ffffff;
+  border: 1px solid rgba(120, 155, 99, 0.22);
+  border-radius: var(--radius-md, 20px);
+  padding: 24px;
+  box-shadow: 0 6px 20px rgba(41, 75, 53, 0.04);
+}
+
+.emailCardTitleBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #edf4ea;
+}
+
+.emailCardTitle {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--deep-forest-green, #294b35);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.emailFormGroup {
+  margin-bottom: 16px;
+}
+
+.emailFormLabel {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--deep-forest-green, #294b35);
+  margin-bottom: 6px;
+}
+
+.emailFormHelp {
+  font-size: 0.76rem;
+  color: var(--bamboo-leaf, #5d8049);
+  font-weight: 600;
+}
+
+.emailInputStyled {
+  width: 100%;
+  padding: 10px 14px;
+  background: #fbfdfa;
+  border: 1px solid #dbe6d7;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  color: #233327;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.emailInputStyled:focus {
+  background: #ffffff;
+  border-color: #789b63;
+  box-shadow: 0 0 0 3px rgba(120, 155, 99, 0.18);
+}
+
+/* Live Card Preview Box */
+.livePreviewSnippet {
+  background: #fbfdfa;
+  border: 1px solid #e2ece0;
+  border-radius: 14px;
+  padding: 18px;
+  margin-top: 18px;
+}
+
+.livePreviewHeader {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: #6e7e73;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.livePreviewEnvelope {
+  background: #ffffff;
+  border: 1px solid #dce8db;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+/* Bamboo Buttons */
+.bambooBtnPrimary {
+  background: linear-gradient(135deg, #294b35 0%, #437351 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  font-family: var(--font-heading);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(41, 75, 53, 0.18);
+  text-decoration: none;
+}
+
+.bambooBtnPrimary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1e3a28 0%, #355d40 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(41, 75, 53, 0.25);
+  color: #ffffff;
+}
+
+.bambooBtnPrimary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.bambooBtnSecondary {
+  background: #ffffff;
+  color: var(--deep-forest-green, #294b35);
+  border: 1px solid #d0e1cc;
+  border-radius: 12px;
+  padding: 9px 18px;
+  font-weight: 700;
+  font-size: 0.86rem;
+  font-family: var(--font-heading);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.bambooBtnSecondary:hover:not(:disabled) {
+  background: #f0f7ee;
+  border-color: #b8dab0;
+  color: #1e3a28;
+}
+
+.bambooBtnDanger {
+  background: #fdf2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 9px 18px;
+  font-weight: 700;
+  font-size: 0.86rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bambooBtnDanger:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+/* Guest Selection & Table */
+.emailTableCard {
+  background: #ffffff;
+  border: 1px solid rgba(120, 155, 99, 0.24);
+  border-radius: var(--radius-md, 20px);
+  padding: 24px;
+  box-shadow: 0 6px 20px rgba(41, 75, 53, 0.04);
+}
+
+.emailTableFilterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.emailTableResponsiveWrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  border: 1px solid #eef4ec;
+}
+
+.emailTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 620px;
+}
+
+.emailTable th {
+  background: #f4f8f2;
+  color: #354a3a;
+  padding: 12px 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid #e2ece0;
+}
+
+.emailTable td {
+  padding: 14px;
+  font-size: 0.88rem;
+  border-bottom: 1px solid #f1f6ef;
+  color: #233327;
+  vertical-align: middle;
+}
+
+.emailTable tr:last-child td {
+  border-bottom: none;
+}
+
+.emailTableRowSelected {
+  background: #f4f9f2 !important;
+}
+
+.emailTable tr:hover {
+  background: #fafdf9;
+}
+
+/* Mobile-Friendly Email Guest Card (for small screens when needed) */
+@media (max-width: 640px) {
+  .emailHeroHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .emailHeroActions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .emailHeroActions > * {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .emailStatsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .emailTableFilterBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

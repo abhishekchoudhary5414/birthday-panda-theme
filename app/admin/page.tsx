@@ -6227,84 +6227,127 @@ export default function AdminDashboardPage() {
         )}
 
         {/* Section 8: Gmail OAuth & Email Invitations */}
+        {/* Section 8: Gmail OAuth & Email Invitations (Panda Celebration Redesign) */}
         {activeTab === '8' && (
-          <div>
-            <div className={styles.sectionHeader}>
-              <EmailOutlinedIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>Email Invitations &amp; Gmail Integration</span>
-            </div>
-
-            {/* Gmail Connection Status Card */}
-            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
-              
-              {/* Toast message */}
-              {gmailToast && (
+          <div className={styles.emailSectionWrapper}>
+            {/* Header with Title & Panda Theme Details */}
+            <div className={styles.sectionHeader} style={{ marginBottom: 0, justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{
-                  padding: '12px 18px',
-                  borderRadius: '10px',
-                  marginBottom: '18px',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #294B35 0%, #437351 100%)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                  background: gmailToast.type === 'success' ? '#edf7ed' : '#fdf2f2',
-                  color: gmailToast.type === 'success' ? '#1e4620' : '#991b1b',
-                  border: gmailToast.type === 'success' ? '1px solid #c8e6c9' : '1px solid #fecaca',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  boxShadow: '0 4px 10px rgba(41, 75, 53, 0.2)'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {gmailToast.type === 'success' ? <CheckCircleIcon sx={{ fontSize: 18 }} /> : <WarningAmberIcon sx={{ fontSize: 18 }} />}
-                    <span>{gmailToast.message}</span>
-                  </div>
-                  <button type="button" onClick={() => setGmailToast(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 700 }}>✕</button>
+                  <EmailOutlinedIcon sx={{ fontSize: 20 }} />
                 </div>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: '#eef6ec', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <EmailOutlinedIcon sx={{ color: '#294b35', fontSize: 28 }} />
+                <div>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#294B35' }}>Panda Email Invitations</span>
+                  <div style={{ fontSize: '0.82rem', color: '#6e7e73', fontWeight: 500 }}>
+                    Send customized celebration cards directly from your connected host Gmail account
                   </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.25rem', fontWeight: 700 }}>Host Gmail Integration</h3>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  background: 'rgba(120, 155, 99, 0.12)',
+                  color: '#294B35',
+                  padding: '5px 12px',
+                  borderRadius: '16px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  border: '1px solid rgba(120, 155, 99, 0.25)'
+                }}>
+                  🐼 Panda Birthday Suite
+                </span>
+              </div>
+            </div>
+
+            {/* Toast feedback alerts */}
+            {gmailToast && (
+              <div style={{
+                padding: '12px 18px',
+                borderRadius: '14px',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: gmailToast.type === 'success' ? '#edf7ed' : '#fdf2f2',
+                color: gmailToast.type === 'success' ? '#1e4620' : '#991b1b',
+                border: gmailToast.type === 'success' ? '1px solid #c8e6c9' : '1px solid #fecaca',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.03)',
+                animation: 'fadeIn 0.2s ease-in-out'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {gmailToast.type === 'success' ? <CheckCircleIcon sx={{ fontSize: 20 }} /> : <WarningAmberIcon sx={{ fontSize: 20 }} />}
+                  <span>{gmailToast.message}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setGmailToast(null)}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', fontWeight: 800, fontSize: '1.1rem', padding: '0 4px' }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* 1. Host Gmail Connection Banner & Live Metrics */}
+            <div className={styles.emailHeroCard}>
+              <div className={styles.emailHeroHeader}>
+                <div className={styles.emailHeroLeft}>
+                  <div className={styles.emailPandaAvatar}>
+                    🐼
+                  </div>
+                  <div className={styles.emailHeroTitles}>
+                    <h2>
+                      <span>Host Gmail Connection</span>
                       {gmailStatus ? (
                         gmailStatus.connected ? (
-                          <span style={{ background: '#edf7ed', color: '#1e4620', border: '1px solid #c8e6c9', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <CheckCircleIcon sx={{ fontSize: 14, color: '#2e7d32' }} /> Connected
+                          <span className={styles.statusBadgeConnected}>
+                            <CheckCircleIcon sx={{ fontSize: 15 }} /> Connected
                           </span>
                         ) : (
-                          <span style={{ background: '#fff8e1', color: '#8d6e00', border: '1px solid #ffe082', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <WarningAmberIcon sx={{ fontSize: 14, color: '#f57f17' }} /> Disconnected
+                          <span className={styles.statusBadgeDisconnected}>
+                            <WarningAmberIcon sx={{ fontSize: 15 }} /> Setup Required
                           </span>
                         )
                       ) : (
-                        <span style={{ background: '#f5f5f5', color: '#666', borderRadius: '20px', padding: '3px 10px', fontSize: '0.78rem', fontWeight: 600 }}>Checking...</span>
+                        <span style={{ background: '#f5f5f5', color: '#666', borderRadius: '16px', padding: '3px 10px', fontSize: '0.76rem', fontWeight: 600 }}>Checking...</span>
                       )}
-                    </div>
-                    <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.88rem' }}>
-                      Send personalized HTML birthday invitation cards directly from your own Gmail account with one click.
+                    </h2>
+                    <p>
+                      {gmailStatus?.connected
+                        ? `Sending invitations via authenticated sender: ${gmailStatus.accountEmail || 'Host Gmail'}`
+                        : 'Connect your personal or family Gmail account to deliver personalized invitations.'}
                     </p>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <div className={styles.emailHeroActions}>
                   {gmailStatus?.connected ? (
                     <>
                       <a
                         href="/api/gmail/connect"
-                        className={styles.exportBtn}
-                        style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                        className={styles.bambooBtnSecondary}
                       >
                         <RefreshIcon sx={{ fontSize: 16 }} />
-                        <span>Reconnect</span>
+                        <span>Change Account</span>
                       </a>
                       <button
                         type="button"
                         onClick={handleDisconnectGmail}
                         disabled={isDisconnectingGmail}
-                        className={styles.deleteBtn}
-                        style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                        className={styles.bambooBtnDanger}
                       >
                         <DeleteOutlineIcon sx={{ fontSize: 16 }} />
                         <span>{isDisconnectingGmail ? 'Disconnecting...' : 'Disconnect'}</span>
@@ -6313,21 +6356,10 @@ export default function AdminDashboardPage() {
                   ) : (
                     <a
                       href="/api/gmail/connect"
-                      className={styles.btnPrimary}
-                      style={{
-                        padding: '10px 22px',
-                        fontSize: '0.92rem',
-                        fontWeight: 700,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        textDecoration: 'none',
-                        background: 'linear-gradient(135deg, #294B35 0%, #437351 100%)',
-                        boxShadow: '0 4px 14px rgba(41, 75, 53, 0.22)',
-                      }}
+                      className={styles.bambooBtnPrimary}
                     >
                       <EmailOutlinedIcon sx={{ fontSize: 18 }} />
-                      <span>Connect Gmail</span>
+                      <span>Connect Host Gmail</span>
                     </a>
                   )}
 
@@ -6335,8 +6367,7 @@ export default function AdminDashboardPage() {
                     type="button"
                     onClick={checkGmailStatus}
                     disabled={isTestingGmail}
-                    className={styles.exportBtn}
-                    style={{ padding: '8px 16px', fontSize: '0.86rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    className={styles.bambooBtnSecondary}
                   >
                     <RefreshIcon sx={{ fontSize: 16, animation: isTestingGmail ? 'spin 1s linear infinite' : 'none' }} />
                     <span>{isTestingGmail ? 'Checking...' : 'Refresh Status'}</span>
@@ -6344,123 +6375,263 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Statistics Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
-                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Connected Gmail</div>
-                  <div style={{ fontSize: '0.92rem', color: '#294b35', fontWeight: 700, marginTop: '2px', wordBreak: 'break-all' }}>
-                    {gmailStatus?.accountEmail || 'Not Connected'}
+              {/* Statistics Metrics Grid */}
+              <div className={styles.emailStatsGrid}>
+                <div className={styles.emailStatCard}>
+                  <div className={styles.emailStatLabel}>
+                    <EmailOutlinedIcon sx={{ fontSize: 16, color: '#789b63' }} />
+                    <span>Connected Sender</span>
+                  </div>
+                  <div className={styles.emailStatValue} style={{ fontSize: '1rem', wordBreak: 'break-all' }}>
+                    {gmailStatus?.accountEmail ? gmailStatus.accountEmail.split('@')[0] : 'None'}
+                    <span style={{ fontSize: '0.74rem', color: '#6e7e73', display: 'block', fontWeight: 500 }}>
+                      {gmailStatus?.accountEmail ? `@${gmailStatus.accountEmail.split('@')[1]}` : 'Disconnected'}
+                    </span>
                   </div>
                 </div>
-                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 600 }}>Total Guests</div>
-                  <div style={{ fontSize: '1.25rem', color: '#294b35', fontWeight: 800, marginTop: '2px' }}>
+
+                <div className={styles.emailStatCard}>
+                  <div className={styles.emailStatLabel}>
+                    <PeopleIcon sx={{ fontSize: 16, color: '#789b63' }} />
+                    <span>Total Guests</span>
+                  </div>
+                  <div className={styles.emailStatValue}>
                     {gmailStatus?.stats?.totalGuests ?? guests.length}
                   </div>
                 </div>
-                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#2e7d32', fontWeight: 600 }}>Invitations Sent</div>
-                  <div style={{ fontSize: '1.25rem', color: '#2e7d32', fontWeight: 800, marginTop: '2px' }}>
+
+                <div className={styles.emailStatCard}>
+                  <div className={styles.emailStatLabel}>
+                    <CheckCircleIcon sx={{ fontSize: 16, color: '#2e7d32' }} />
+                    <span>Invitations Sent</span>
+                  </div>
+                  <div className={styles.emailStatValue} style={{ color: '#2e7d32' }}>
                     {gmailStatus?.stats?.invitationsSent ?? guests.filter(g => (g as any).invitation_status === 'sent').length}
                   </div>
                 </div>
-                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#d97706', fontWeight: 600 }}>Pending</div>
-                  <div style={{ fontSize: '1.25rem', color: '#d97706', fontWeight: 800, marginTop: '2px' }}>
-                    {gmailStatus?.stats?.pendingInvitations ?? guests.filter(g => !(g as any).invitation_status || (g as any).invitation_status === 'pending').length}
+
+                <div className={styles.emailStatCard}>
+                  <div className={styles.emailStatLabel}>
+                    <WarningAmberIcon sx={{ fontSize: 16, color: '#d97706' }} />
+                    <span>Pending Invitations</span>
                   </div>
-                </div>
-                <div style={{ background: '#f8faf7', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf4eb' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#dc2626', fontWeight: 600 }}>Failed</div>
-                  <div style={{ fontSize: '1.25rem', color: '#dc2626', fontWeight: 800, marginTop: '2px' }}>
-                    {gmailStatus?.stats?.failedInvitations ?? guests.filter(g => (g as any).invitation_status === 'failed').length}
+                  <div className={styles.emailStatValue} style={{ color: '#d97706' }}>
+                    {gmailStatus?.stats?.pendingInvitations ?? guests.filter(g => !(g as any).invitation_status || (g as any).invitation_status === 'pending').length}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Email Personalization & Template Editor */}
-            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
-                <EditIcon sx={{ color: '#294b35', fontSize: 22 }} />
-                <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Personalize Invitation Email Template</h3>
-              </div>
+            {/* 2. Bento Grid: Template Customizer + Live Card Preview */}
+            <div className={styles.emailBentoGrid}>
+              {/* Left Column: Template Editor */}
+              <div className={styles.emailConfigCard}>
+                <div className={styles.emailCardTitleBar}>
+                  <h3 className={styles.emailCardTitle}>
+                    <EditIcon sx={{ color: '#294B35', fontSize: 20 }} />
+                    <span>Custom Template Details</span>
+                  </h3>
+                  <span style={{ fontSize: '0.78rem', color: '#5d8049', background: '#f1f8ee', padding: '3px 10px', borderRadius: '12px', fontWeight: 700 }}>
+                    🎋 Theme Aligned
+                  </span>
+                </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '18px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>Email Subject</label>
+                <div className={styles.emailFormGroup}>
+                  <label className={styles.emailFormLabel}>Email Subject Line</label>
                   <input
                     type="text"
                     value={emailSubject}
                     onChange={(e) => setEmailSubject(e.target.value)}
-                    className={styles.filterInput}
-                    style={{ width: '100%' }}
-                    placeholder="Subject line with emoji..."
+                    className={styles.emailInputStyled}
+                    placeholder="Ditvi's 1st Birthday Celebration Invitation"
                   />
+                  <div style={{ marginTop: '4px', fontSize: '0.74rem', color: '#6e7e73' }}>
+                    Clear, friendly subject lines guarantee higher inbox delivery.
+                  </div>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>Host / Family Name</label>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+                  <div className={styles.emailFormGroup}>
+                    <label className={styles.emailFormLabel}>Birthday Person</label>
+                    <input
+                      type="text"
+                      value={emailBirthdayPerson}
+                      onChange={(e) => setEmailBirthdayPerson(e.target.value)}
+                      className={styles.emailInputStyled}
+                      placeholder="Ditvi"
+                    />
+                  </div>
+
+                  <div className={styles.emailFormGroup}>
+                    <label className={styles.emailFormLabel}>Host / Family Name</label>
+                    <input
+                      type="text"
+                      value={emailHostName}
+                      onChange={(e) => setEmailHostName(e.target.value)}
+                      className={styles.emailInputStyled}
+                      placeholder="Abhishek & Family"
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+                  <div className={styles.emailFormGroup}>
+                    <label className={styles.emailFormLabel}>Date &amp; Day</label>
+                    <input
+                      type="text"
+                      value={emailBirthdayDate}
+                      onChange={(e) => setEmailBirthdayDate(e.target.value)}
+                      className={styles.emailInputStyled}
+                      placeholder="Saturday, December 12, 2026"
+                    />
+                  </div>
+
+                  <div className={styles.emailFormGroup}>
+                    <label className={styles.emailFormLabel}>Event Timing</label>
+                    <input
+                      type="text"
+                      value={emailBirthdayTime}
+                      onChange={(e) => setEmailBirthdayTime(e.target.value)}
+                      className={styles.emailInputStyled}
+                      placeholder="3:30 PM - 7:30 PM CST"
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.emailFormGroup}>
+                  <label className={styles.emailFormLabel}>Location / Venue</label>
                   <input
                     type="text"
-                    value={emailHostName}
-                    onChange={(e) => setEmailHostName(e.target.value)}
-                    className={styles.filterInput}
-                    style={{ width: '100%' }}
+                    value={emailBirthdayLocation}
+                    onChange={(e) => setEmailBirthdayLocation(e.target.value)}
+                    className={styles.emailInputStyled}
+                    placeholder="Austin, TX"
                   />
+                </div>
+
+                <div className={styles.emailFormGroup}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label className={styles.emailFormLabel} style={{ marginBottom: 0 }}>Custom Celebration Message</label>
+                    <span className={styles.emailFormHelp}>Variables: {'{{guest_name}}'}</span>
+                  </div>
+                  <textarea
+                    value={emailCustomMessage}
+                    onChange={(e) => setEmailCustomMessage(e.target.value)}
+                    className={styles.emailInputStyled}
+                    rows={3}
+                    style={{ resize: 'vertical' }}
+                    placeholder="We would love for you to celebrate this special milestone with us! Join us for a joyful gathering with family, friends, and delicious birthday cake."
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '18px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEmailPreview()}
+                    className={styles.bambooBtnSecondary}
+                  >
+                    <OpenInNewIcon sx={{ fontSize: 16 }} />
+                    <span>Preview Live Modal</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSendTestEmail}
+                    disabled={isSendingTestEmail || !gmailStatus?.connected}
+                    className={styles.bambooBtnSecondary}
+                  >
+                    <SendIcon sx={{ fontSize: 16 }} />
+                    <span>{isSendingTestEmail ? 'Sending...' : 'Send Test Email'}</span>
+                  </button>
                 </div>
               </div>
 
-              <div style={{ marginBottom: '18px' }}>
-                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#294B35', marginBottom: '6px' }}>
-                  Custom Invitation Message &bull; <span style={{ color: '#789b63', fontWeight: 600 }}>Supports variables: {'{{guest_name}}'}, {'{{birthday_person_name}}'}, {'{{birthday_date}}'}, {'{{birthday_website_url}}'}</span>
-                </label>
-                <textarea
-                  value={emailCustomMessage}
-                  onChange={(e) => setEmailCustomMessage(e.target.value)}
-                  className={styles.filterInput}
-                  rows={3}
-                  style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.88rem' }}
-                />
-              </div>
+              {/* Right Column: Live Responsive Envelope & Card Mockup */}
+              <div className={styles.emailConfigCard} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div className={styles.emailCardTitleBar}>
+                    <h3 className={styles.emailCardTitle}>
+                      <AutoAwesomeIcon sx={{ color: '#294B35', fontSize: 20 }} />
+                      <span>Live Invitation Card Mockup</span>
+                    </h3>
+                    <span style={{ fontSize: '0.74rem', background: '#eaf4e7', color: '#294b35', padding: '3px 8px', borderRadius: '8px', fontWeight: 700 }}>
+                      Mobile Responsive
+                    </span>
+                  </div>
 
-              {/* Action Buttons: Preview & Send Test */}
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => handleOpenEmailPreview()}
-                  className={styles.exportBtn}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', fontSize: '0.88rem' }}
-                >
-                  <OpenInNewIcon sx={{ fontSize: 16 }} />
-                  <span>Preview Email (HTML &amp; Text)</span>
-                </button>
+                  {/* Visual card mimicking recipient inbox view */}
+                  <div className={styles.livePreviewEnvelope}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #edf4eb', paddingBottom: '12px', marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#294B35', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
+                          {emailBirthdayPerson ? emailBirthdayPerson.charAt(0) : 'D'}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#294b35' }}>{emailHostName || 'Host Family'}</div>
+                          <div style={{ fontSize: '0.74rem', color: '#7a8c7e' }}>via host Gmail &bull; {emailSubject || "Ditvi's 1st Birthday Celebration"}</div>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: '1.2rem' }}>🎂</span>
+                    </div>
 
-                <button
-                  type="button"
-                  onClick={handleSendTestEmail}
-                  disabled={isSendingTestEmail || !gmailStatus?.connected}
-                  className={styles.exportBtn}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', fontSize: '0.88rem' }}
-                >
-                  <SendIcon sx={{ fontSize: 16 }} />
-                  <span>{isSendingTestEmail ? 'Sending Test...' : 'Send Test Email to Myself'}</span>
-                </button>
+                    <div style={{ background: '#f7faf6', border: '1px solid #dce8db', borderRadius: '12px', padding: '16px' }}>
+                      <div style={{ borderBottom: '2px solid #294b35', paddingBottom: '8px', marginBottom: '12px' }}>
+                        <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#1b3824', fontFamily: 'var(--font-heading)' }}>
+                          {emailBirthdayPerson}&apos;s 1st Birthday Celebration
+                        </div>
+                      </div>
 
-                {!gmailStatus?.connected && (
-                  <span style={{ fontSize: '0.82rem', color: '#d97706', fontWeight: 600 }}>
-                    ⚠️ Connect Gmail above to test or send invitations.
+                      <div style={{ fontSize: '0.86rem', color: '#233327', marginBottom: '10px' }}>
+                        Hello <strong>[Guest Name]</strong>,
+                      </div>
+
+                      <div style={{ fontSize: '0.82rem', color: '#445b49', lineHeight: 1.5, marginBottom: '14px' }}>
+                        {emailCustomMessage || "We would love for you to celebrate this special milestone with us! Join us for a joyful gathering with family, friends, and delicious birthday cake."}
+                      </div>
+
+                      <div style={{ background: '#ffffff', borderLeft: '3px solid #437351', borderRadius: '6px', padding: '10px 14px', marginBottom: '14px', fontSize: '0.8rem', color: '#233327' }}>
+                        <div><strong>📅 Date:</strong> {emailBirthdayDate}</div>
+                        <div style={{ margin: '3px 0' }}><strong>⏰ Time:</strong> {emailBirthdayTime}</div>
+                        <div><strong>📍 Venue:</strong> {emailBirthdayLocation}</div>
+                      </div>
+
+                      <div style={{ textAlign: 'center', margin: '14px 0 8px' }}>
+                        <div style={{
+                          display: 'inline-block',
+                          background: '#294B35',
+                          color: '#ffffff',
+                          padding: '9px 18px',
+                          borderRadius: '8px',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          boxShadow: '0 2px 8px rgba(41,75,53,0.15)'
+                        }}>
+                          Open Birthday Website &rarr;
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '16px', background: '#f8faf7', padding: '12px 14px', borderRadius: '10px', border: '1px solid #e7efe5', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '1.2rem' }}>💡</span>
+                  <span style={{ fontSize: '0.78rem', color: '#556b5a', lineHeight: 1.4 }}>
+                    Each invitation generates a unique RSVP card customized with the recipient&apos;s name and event details.
                   </span>
-                )}
+                </div>
               </div>
             </div>
 
-            {/* Recipients Selection & Bulk Sending Table */}
-            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '18px' }}>
+            {/* 3. Recipient Guest Selection & Batch Sending */}
+            <div className={styles.emailTableCard}>
+              <div className={styles.emailTableFilterBar}>
                 <div>
-                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Select Guests for Invitation</h3>
-                  <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.85rem' }}>
-                    Selected: <strong>{selectedGuestIds.length}</strong> of {guests.length} guest(s)
+                  <h3 className={styles.emailCardTitle}>
+                    <PeopleIcon sx={{ color: '#294B35', fontSize: 22 }} />
+                    <span>Select Guests for Birthday Invitations</span>
+                  </h3>
+                  <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.84rem' }}>
+                    Selected: <strong style={{ color: '#294B35' }}>{selectedGuestIds.length}</strong> of {guests.length} guest(s)
                   </p>
                 </div>
 
@@ -6471,8 +6642,8 @@ export default function AdminDashboardPage() {
                       const allIds = guests.filter((g) => g.email && g.email.includes('@')).map((g) => g.id);
                       setSelectedGuestIds(allIds);
                     }}
-                    className={styles.exportBtn}
-                    style={{ padding: '7px 14px', fontSize: '0.82rem' }}
+                    className={styles.bambooBtnSecondary}
+                    style={{ padding: '7px 14px', fontSize: '0.8rem' }}
                   >
                     Select All With Email
                   </button>
@@ -6480,35 +6651,27 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedGuestIds([])}
-                    className={styles.exportBtn}
-                    style={{ padding: '7px 14px', fontSize: '0.82rem' }}
+                    className={styles.bambooBtnSecondary}
+                    style={{ padding: '7px 14px', fontSize: '0.8rem' }}
                   >
                     Deselect All
                   </button>
 
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', color: '#294B35', fontWeight: 600, cursor: 'pointer' }}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: '#294B35', fontWeight: 600, cursor: 'pointer', background: '#f5faf3', padding: '6px 12px', borderRadius: '10px', border: '1px solid #dce8db' }}>
                     <input
                       type="checkbox"
                       checked={forceResend}
                       onChange={(e) => setForceResend(e.target.checked)}
                     />
-                    <span>Force resend to already sent guests</span>
+                    <span>Allow resend to &quot;Sent&quot;</span>
                   </label>
 
                   <button
                     type="button"
                     onClick={handleSendBulkInvitations}
                     disabled={isSendingInvitations || selectedGuestIds.length === 0 || !gmailStatus?.connected}
-                    className={styles.btnPrimary}
-                    style={{
-                      padding: '9px 20px',
-                      fontSize: '0.88rem',
-                      fontWeight: 700,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      background: 'linear-gradient(135deg, #294B35 0%, #3e6b4d 100%)',
-                    }}
+                    className={styles.bambooBtnPrimary}
+                    style={{ padding: '9px 20px', fontSize: '0.88rem' }}
                   >
                     <SendIcon sx={{ fontSize: 16 }} />
                     <span>{isSendingInvitations ? 'Sending Invitations...' : `Send Invitations (${selectedGuestIds.length})`}</span>
@@ -6516,15 +6679,15 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Table of Guests */}
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+              {/* Responsive Guests Table */}
+              <div className={styles.emailTableResponsiveWrapper}>
+                <table className={styles.emailTable}>
                   <thead>
-                    <tr style={{ borderBottom: '2px solid #edf4eb', color: '#6e7e73', fontSize: '0.8rem', textTransform: 'uppercase' }}>
-                      <th style={{ padding: '12px 10px', width: '40px' }}>
+                    <tr>
+                      <th style={{ width: '44px', textAlign: 'center' }}>
                         <input
                           type="checkbox"
-                          checked={selectedGuestIds.length > 0 && selectedGuestIds.length === guests.filter((g) => g.email).length}
+                          checked={selectedGuestIds.length > 0 && selectedGuestIds.length === guests.filter((g) => g.email && g.email.includes('@')).length}
                           onChange={(e) => {
                             if (e.target.checked) {
                               setSelectedGuestIds(guests.filter((g) => g.email && g.email.includes('@')).map((g) => g.id));
@@ -6534,124 +6697,135 @@ export default function AdminDashboardPage() {
                           }}
                         />
                       </th>
-                      <th style={{ padding: '12px 10px' }}>Guest Name</th>
-                      <th style={{ padding: '12px 10px' }}>Email Address</th>
-                      <th style={{ padding: '12px 10px' }}>Status</th>
-                      <th style={{ padding: '12px 10px', textAlign: 'right' }}>Actions</th>
+                      <th>Guest Name</th>
+                      <th>Email Address</th>
+                      <th>Invitation Status</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {guests.map((g) => {
-                      const isSelected = selectedGuestIds.includes(g.id);
-                      const invStatus = (g as any).invitation_status || 'pending';
-                      const hasEmail = Boolean(g.email && g.email.includes('@'));
+                    {guests.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', padding: '36px', color: '#6e7e73' }}>
+                          No guests found. Add guests in the Guest List tab to invite them.
+                        </td>
+                      </tr>
+                    ) : (
+                      guests.map((g) => {
+                        const isSelected = selectedGuestIds.includes(g.id);
+                        const invStatus = (g as any).invitation_status || 'pending';
+                        const hasEmail = Boolean(g.email && g.email.includes('@'));
 
-                      return (
-                        <tr key={g.id} style={{ borderBottom: '1px solid #f2f7f1', background: isSelected ? '#f5faf3' : 'transparent' }}>
-                          <td style={{ padding: '12px 10px' }}>
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              disabled={!hasEmail}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedGuestIds((prev) => [...prev, g.id]);
-                                } else {
-                                  setSelectedGuestIds((prev) => prev.filter((id) => id !== g.id));
-                                }
-                              }}
-                            />
-                          </td>
-                          <td style={{ padding: '12px 10px', fontWeight: 600, color: '#294B35' }}>
-                            {g.name}
-                          </td>
-                          <td style={{ padding: '12px 10px', color: hasEmail ? '#334437' : '#9ca3af' }}>
-                            {g.email || '(No email provided)'}
-                          </td>
-                          <td style={{ padding: '12px 10px' }}>
-                            {invStatus === 'sent' && (
-                              <span style={{ background: '#edf7ed', color: '#1e4620', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700 }}>
-                                Sent
-                              </span>
-                            )}
-                            {invStatus === 'failed' && (
-                              <span style={{ background: '#fef2f2', color: '#991b1b', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700 }}>
-                                Failed
-                              </span>
-                            )}
-                            {(invStatus === 'pending' || !invStatus) && (
-                              <span style={{ background: '#f3f4f6', color: '#4b5563', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 600 }}>
-                                Pending
-                              </span>
-                            )}
-                          </td>
-                          <td style={{ padding: '12px 10px', textAlign: 'right' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEmailPreview(g.id)}
-                              className={styles.exportBtn}
-                              style={{ padding: '4px 10px', fontSize: '0.78rem' }}
-                            >
-                              Preview
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                        return (
+                          <tr key={g.id} className={isSelected ? styles.emailTableRowSelected : ''}>
+                            <td style={{ textAlign: 'center' }}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                disabled={!hasEmail}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedGuestIds((prev) => [...prev, g.id]);
+                                  } else {
+                                    setSelectedGuestIds((prev) => prev.filter((id) => id !== g.id));
+                                  }
+                                }}
+                              />
+                            </td>
+                            <td style={{ fontWeight: 700, color: '#294B35' }}>
+                              {g.name}
+                            </td>
+                            <td style={{ color: hasEmail ? '#334437' : '#9ca3af', fontStyle: hasEmail ? 'normal' : 'italic' }}>
+                              {g.email || 'No email specified'}
+                            </td>
+                            <td>
+                              {invStatus === 'sent' && (
+                                <span style={{ background: '#edf7ed', color: '#1e4620', padding: '4px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <CheckCircleIcon sx={{ fontSize: 13 }} /> Sent
+                                </span>
+                              )}
+                              {invStatus === 'failed' && (
+                                <span style={{ background: '#fef2f2', color: '#991b1b', padding: '4px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <WarningAmberIcon sx={{ fontSize: 13 }} /> Failed
+                                </span>
+                              )}
+                              {(invStatus === 'pending' || !invStatus) && (
+                                <span style={{ background: '#f3f4f6', color: '#4b5563', padding: '4px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 600 }}>
+                                  Pending
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEmailPreview(g.id)}
+                                className={styles.bambooBtnSecondary}
+                                style={{ padding: '4px 12px', fontSize: '0.76rem' }}
+                              >
+                                Preview
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
 
-            {/* Invitation History Log Card */}
-            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', marginBottom: '24px', boxShadow: '0 4px 16px rgba(41, 75, 53, 0.04)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>Recent Invitation History Log</h3>
+            {/* 4. Invitation History Log */}
+            <div className={styles.emailTableCard}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                <h3 className={styles.emailCardTitle}>
+                  <AccessTimeIcon sx={{ color: '#294B35', fontSize: 20 }} />
+                  <span>Recent Invitation Activity Log</span>
+                </h3>
                 <button
                   type="button"
                   onClick={fetchInvitationHistory}
-                  className={styles.exportBtn}
-                  style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+                  className={styles.bambooBtnSecondary}
+                  style={{ padding: '6px 14px', fontSize: '0.8rem' }}
                 >
                   <RefreshIcon sx={{ fontSize: 16 }} />
-                  <span>Refresh Log</span>
+                  <span>Refresh Activity</span>
                 </button>
               </div>
 
               {historyLoading ? (
-                <div style={{ padding: '30px', textAlign: 'center', color: '#6e7e73' }}>Loading history...</div>
+                <div style={{ padding: '36px', textAlign: 'center', color: '#6e7e73' }}>Loading sending activity...</div>
               ) : invitationHistory.length === 0 ? (
-                <div style={{ padding: '30px', textAlign: 'center', color: '#6e7e73', background: '#fafdf9', borderRadius: '10px', border: '1px dashed #d5e5d1' }}>
-                  No invitations sent through Gmail yet. Select guests above to send your first batch!
+                <div style={{ padding: '36px', textAlign: 'center', color: '#6e7e73', background: '#fafdf9', borderRadius: '12px', border: '1px dashed #d5e5d1' }}>
+                  No invitations sent yet. Select guests above to dispatch your invitations!
                 </div>
               ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                <div className={styles.emailTableResponsiveWrapper}>
+                  <table className={styles.emailTable}>
                     <thead>
-                      <tr style={{ borderBottom: '2px solid #edf4eb', color: '#6e7e73', fontSize: '0.78rem', textTransform: 'uppercase' }}>
-                        <th style={{ padding: '10px' }}>Recipient</th>
-                        <th style={{ padding: '10px' }}>Subject</th>
-                        <th style={{ padding: '10px' }}>Status</th>
-                        <th style={{ padding: '10px' }}>Sent Date</th>
-                        <th style={{ padding: '10px' }}>Message ID / Error</th>
-                        <th style={{ padding: '10px', textAlign: 'right' }}>Action</th>
+                      <tr>
+                        <th>Recipient</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Sent Time</th>
+                        <th>Gmail Reference</th>
+                        <th style={{ textAlign: 'right' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {invitationHistory.map((item) => (
-                        <tr key={item.id} style={{ borderBottom: '1px solid #f2f7f1' }}>
-                          <td style={{ padding: '10px', fontWeight: 600, color: '#294B35' }}>
+                        <tr key={item.id}>
+                          <td style={{ fontWeight: 700, color: '#294B35' }}>
                             {item.guest_name || item.recipient_email}
-                            <div style={{ fontSize: '0.78rem', color: '#6e7e73', fontWeight: 400 }}>{item.recipient_email}</div>
+                            <div style={{ fontSize: '0.76rem', color: '#6e7e73', fontWeight: 400 }}>{item.recipient_email}</div>
                           </td>
-                          <td style={{ padding: '10px', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <td style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {item.subject}
                           </td>
-                          <td style={{ padding: '10px' }}>
+                          <td>
                             <span style={{
-                              padding: '2px 8px',
+                              padding: '3px 9px',
                               borderRadius: '10px',
-                              fontSize: '0.75rem',
+                              fontSize: '0.74rem',
                               fontWeight: 700,
                               background: item.status === 'sent' ? '#edf7ed' : '#fef2f2',
                               color: item.status === 'sent' ? '#1e4620' : '#991b1b',
@@ -6659,22 +6833,22 @@ export default function AdminDashboardPage() {
                               {item.status.toUpperCase()}
                             </span>
                           </td>
-                          <td style={{ padding: '10px', color: '#6e7e73', fontSize: '0.8rem' }}>
+                          <td style={{ color: '#6e7e73', fontSize: '0.8rem' }}>
                             {item.sent_at ? new Date(item.sent_at).toLocaleString() : '-'}
                           </td>
-                          <td style={{ padding: '10px', fontSize: '0.78rem', fontFamily: 'monospace', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <td style={{ fontSize: '0.76rem', fontFamily: 'monospace', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', color: '#556b5a' }}>
                             {item.status === 'sent' ? item.gmail_message_id : (item.error_message || 'Failed')}
                           </td>
-                          <td style={{ padding: '10px', textAlign: 'right' }}>
+                          <td style={{ textAlign: 'right' }}>
                             {item.status === 'failed' && (
                               <button
                                 type="button"
                                 onClick={() => handleRetryInvitation(item)}
                                 disabled={retryingHistoryId === item.id}
-                                className={styles.exportBtn}
+                                className={styles.bambooBtnSecondary}
                                 style={{ padding: '4px 10px', fontSize: '0.76rem' }}
                               >
-                                {retryingHistoryId === item.id ? 'Retrying...' : 'Retry Send'}
+                                {retryingHistoryId === item.id ? 'Retrying...' : 'Retry'}
                               </button>
                             )}
                           </td>
@@ -6686,19 +6860,19 @@ export default function AdminDashboardPage() {
               )}
             </div>
 
-            {/* Email Preview Modal */}
+            {/* 5. Responsive Email Preview Modal */}
             {isPreviewOpen && (
               <div
                 style={{
                   position: 'fixed',
                   inset: 0,
-                  backgroundColor: 'rgba(20, 36, 26, 0.6)',
-                  backdropFilter: 'blur(4px)',
+                  backgroundColor: 'rgba(20, 36, 26, 0.65)',
+                  backdropFilter: 'blur(5px)',
                   zIndex: 9999,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '20px',
+                  padding: '16px',
                 }}
               >
                 <div
@@ -6706,18 +6880,19 @@ export default function AdminDashboardPage() {
                     background: '#FFFFFF',
                     borderRadius: '20px',
                     width: '100%',
-                    maxWidth: '680px',
+                    maxWidth: '700px',
                     maxHeight: '90vh',
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+                    boxShadow: '0 24px 48px rgba(0,0,0,0.24)',
+                    border: '1px solid rgba(120, 155, 99, 0.3)',
                   }}
                 >
-                  <div style={{ padding: '18px 24px', borderBottom: '1px solid #edf4eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ padding: '16px 20px', borderBottom: '1px solid #edf4eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fcfdfb' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <EmailOutlinedIcon sx={{ color: '#294B35' }} />
-                      <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem' }}>
+                      <span style={{ fontSize: '1.2rem' }}>💌</span>
+                      <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.1rem', fontWeight: 800 }}>
                         Email Preview for <strong>{previewGuestName}</strong>
                       </h3>
                     </div>
@@ -6727,14 +6902,15 @@ export default function AdminDashboardPage() {
                         type="button"
                         onClick={() => setPreviewMode('html')}
                         style={{
-                          padding: '5px 12px',
-                          borderRadius: '14px',
+                          padding: '6px 14px',
+                          borderRadius: '12px',
                           fontSize: '0.78rem',
                           fontWeight: 700,
                           border: '1px solid #cbe3c6',
                           background: previewMode === 'html' ? '#294B35' : '#ffffff',
                           color: previewMode === 'html' ? '#ffffff' : '#294B35',
                           cursor: 'pointer',
+                          transition: 'all 0.2s',
                         }}
                       >
                         HTML View
@@ -6743,14 +6919,15 @@ export default function AdminDashboardPage() {
                         type="button"
                         onClick={() => setPreviewMode('text')}
                         style={{
-                          padding: '5px 12px',
-                          borderRadius: '14px',
+                          padding: '6px 14px',
+                          borderRadius: '12px',
                           fontSize: '0.78rem',
                           fontWeight: 700,
                           border: '1px solid #cbe3c6',
                           background: previewMode === 'text' ? '#294B35' : '#ffffff',
                           color: previewMode === 'text' ? '#ffffff' : '#294B35',
                           cursor: 'pointer',
+                          transition: 'all 0.2s',
                         }}
                       >
                         Plain Text
@@ -6759,14 +6936,14 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setIsPreviewOpen(false)}
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6e7e73', marginLeft: '6px' }}
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6e7e73', marginLeft: '6px', display: 'flex', alignItems: 'center' }}
                       >
                         <CloseIcon />
                       </button>
                     </div>
                   </div>
 
-                  <div style={{ flex: 1, overflowY: 'auto', padding: '24px', background: '#F8FAF7' }}>
+                  <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#F8FAF7' }}>
                     {previewLoading ? (
                       <div style={{ textAlign: 'center', padding: '40px', color: '#6e7e73' }}>Rendering preview...</div>
                     ) : previewMode === 'html' ? (
@@ -6777,12 +6954,12 @@ export default function AdminDashboardPage() {
                     ) : (
                       <pre style={{
                         background: '#ffffff',
-                        padding: '20px',
+                        padding: '18px',
                         borderRadius: '12px',
                         border: '1px solid #e1ece0',
                         whiteSpace: 'pre-wrap',
                         fontFamily: 'monospace',
-                        fontSize: '0.86rem',
+                        fontSize: '0.85rem',
                         lineHeight: 1.6,
                         color: '#294B35',
                       }}>
@@ -6791,12 +6968,12 @@ export default function AdminDashboardPage() {
                     )}
                   </div>
 
-                  <div style={{ padding: '14px 24px', borderTop: '1px solid #edf4eb', display: 'flex', justifyContent: 'flex-end', background: '#ffffff' }}>
+                  <div style={{ padding: '14px 20px', borderTop: '1px solid #edf4eb', display: 'flex', justifyContent: 'flex-end', background: '#ffffff' }}>
                     <button
                       type="button"
                       onClick={() => setIsPreviewOpen(false)}
-                      className={styles.exportBtn}
-                      style={{ padding: '8px 20px', fontSize: '0.88rem' }}
+                      className={styles.bambooBtnPrimary}
+                      style={{ padding: '8px 22px', fontSize: '0.86rem' }}
                     >
                       Close Preview
                     </button>

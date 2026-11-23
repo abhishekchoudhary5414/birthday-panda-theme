@@ -342,11 +342,7 @@ export function createMimeMessage(params: {
   );
 
   const rawMime = lines.join('\r\n');
-  return Buffer.from(rawMime, 'utf8')
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  return Buffer.from(rawMime, 'utf8').toString('base64url');
 }
 
 /**
