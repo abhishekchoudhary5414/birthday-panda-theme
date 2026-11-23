@@ -1,10 +1,22 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { getCached, setCached } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
+const CACHE_KEY = 'public_event_details';
+
 export async function GET() {
   try {
+    const cached = getCached(CACHE_KEY, 60000);
+    if (cached) {
+      return NextResponse.json(cached, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
+      });
+    }
+
     const rows = await sql`SELECT key, value FROM event_settings`;
     const settingsMap: Record<string, string> = {};
     rows.forEach((r: any) => {
@@ -28,7 +40,14 @@ export async function GET() {
       childPhotoUrl: settingsMap['child_photo_url'] || '',
     };
 
-    return NextResponse.json({ success: true, event: eventDetails });
+    const payload = { success: true, event: eventDetails };
+    setCached(CACHE_KEY, payload);
+
+    return NextResponse.json(payload, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
   } catch (error: unknown) {
     console.error('Fetch public event details error:', error);
     return NextResponse.json(

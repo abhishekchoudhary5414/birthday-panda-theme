@@ -1,52 +1,14 @@
 .gallery-section {
-          background: #FFFFFF;
-          position: relative;
-        }
+  background: #FFFFFF;
+  position: relative;
+}
 
-        /* Tabs */
-        .album-tabs-container {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-wrap: wrap;
-          gap: 10px;
-          margin-bottom: 40px;
-        }
-
-        .album-tab {
-          font-family: var(--font-heading);
-          font-size: 0.95rem;
-          font-weight: 600;
-          padding: 10px 22px;
-          border-radius: var(--radius-full);
-          background: var(--cream-bg);
-          color: var(--text-secondary);
-          border: 1px solid rgba(120, 155, 99, 0.25);
-          transition: all var(--transition-fast);
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .album-tab:hover {
-          background: var(--soft-sage);
-          color: var(--deep-forest-green);
-          border-color: var(--bamboo-green);
-        }
-
-        .album-tab.active {
-          background: linear-gradient(135deg, var(--bamboo-green) 0%, var(--deep-forest-green) 100%);
-          color: #FFFFFF;
-          border-color: transparent;
-          box-shadow: 0 4px 14px rgba(41, 75, 53, 0.2);
-        }
-
-        /* Grid */
-        .gallery-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 24px;
-        }
+/* Grid */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
 
         .gallery-card {
           border-radius: var(--radius-lg);

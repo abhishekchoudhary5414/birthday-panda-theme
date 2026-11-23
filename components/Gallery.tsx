@@ -2,9 +2,8 @@
 
 import styles from './Gallery.module.css';
 
-
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Maximize2, X, ChevronLeft, ChevronRight, Play, Film, Image as ImageIcon, UploadCloud } from 'lucide-react';
+import { Sparkles, Maximize2, X, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { PeekingPanda } from './PandaIllustrations';
 
 interface GalleryItem {

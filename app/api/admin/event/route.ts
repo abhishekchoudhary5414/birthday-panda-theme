@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { invalidateCache } from '@/lib/cache';
 
 function checkAuth(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value;
@@ -98,6 +99,8 @@ export async function POST(req: NextRequest) {
         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
       `;
     }
+
+    invalidateCache('public_event_details');
 
     return NextResponse.json({ success: true, message: 'Event details saved successfully' });
   } catch (error: unknown) {

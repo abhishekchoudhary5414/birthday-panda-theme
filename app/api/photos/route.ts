@@ -7,8 +7,11 @@ import {
 } from '@/lib/customerDrive';
 import { sql } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { getCached, setCached, invalidateCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
+
+const CACHE_KEY = 'public_drive_photos';
 
 /**
  * GET /api/photos
@@ -19,6 +22,18 @@ export async function GET(req: NextRequest) {
   try {
     const token = req.cookies.get('admin_token')?.value;
     const admin = token ? verifyToken(token) : null;
+
+    // For public requests, serve from fast memory cache if fresh
+    if (!admin) {
+      const cached = getCached(CACHE_KEY, 60000);
+      if (cached) {
+        return NextResponse.json(cached, {
+          headers: {
+            'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          },
+        });
+      }
+    }
 
     // Determine target customer userId:
     // 1. If admin is logged in, use admin.id
@@ -69,11 +84,21 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({
+    const responsePayload = {
       success: true,
       photos,
       count: photos.length,
       warning: driveError,
+    };
+
+    if (!admin) {
+      setCached(CACHE_KEY, responsePayload);
+    }
+
+    return NextResponse.json(responsePayload, {
+      headers: {
+        'Cache-Control': admin ? 'no-store' : 'public, s-maxage=60, stale-while-revalidate=300',
+      },
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal Server Error';
@@ -216,6 +241,9 @@ export async function POST(req: NextRequest) {
         console.warn('Failed to update event_settings with child_photo_url:', settingsErr);
       }
     }
+
+    // Invalidate public photos cache so changes appear immediately
+    invalidateCache('public_drive_photos');
 
     return NextResponse.json({
       success: true,

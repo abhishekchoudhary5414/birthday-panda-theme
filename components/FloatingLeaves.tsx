@@ -45,13 +45,14 @@ export const FloatingLeaves: React.FC = () => {
   const [isEnabled, setIsEnabled] = useState(true);
 
   useEffect(() => {
-    // Generate gentle bamboo leaf particles
-    const leafCount = 26;
+    // Generate gentle bamboo leaf particles (12 particles is plenty for soft ambient feel and smooth 60fps)
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const leafCount = isMobile ? 8 : 14;
     const generated: Leaf[] = Array.from({ length: leafCount }, (_, i) => ({
       id: i,
       left: Math.random() * 95,
       size: 16 + Math.random() * 18,
-      duration: 12 + Math.random() * 14,
+      duration: 14 + Math.random() * 12,
       delay: Math.random() * 8,
       swayDelay: Math.random() * 3,
       rotation: Math.random() * 360,
@@ -59,23 +60,22 @@ export const FloatingLeaves: React.FC = () => {
     }));
     setLeaves(generated);
 
-    // Decorative panda paw prints wandering across background
-    const pawPositions = [
-      { left: 3, top: 12, size: 28, rotation: 25 },
-      { left: 6, top: 18, size: 28, rotation: 35 },
-      { left: 91, top: 15, size: 30, rotation: -20 },
-      { left: 88, top: 22, size: 30, rotation: -30 },
-      { left: 12, top: 38, size: 32, rotation: 15 },
-      { left: 15, top: 45, size: 32, rotation: 25 },
-      { left: 84, top: 42, size: 26, rotation: -15 },
-      { left: 87, top: 50, size: 26, rotation: -5 },
-      { left: 5, top: 68, size: 34, rotation: 40 },
-      { left: 8, top: 75, size: 34, rotation: 50 },
-      { left: 90, top: 72, size: 30, rotation: -25 },
-      { left: 93, top: 80, size: 30, rotation: -35 },
-      { left: 14, top: 88, size: 32, rotation: 20 },
-      { left: 82, top: 92, size: 28, rotation: -10 },
-    ];
+    // Decorative panda paw prints wandering across background (subtle and lightweight)
+    const pawPositions = isMobile 
+      ? [
+          { left: 4, top: 18, size: 24, rotation: 30 },
+          { left: 88, top: 35, size: 24, rotation: -25 },
+          { left: 8, top: 65, size: 26, rotation: 35 },
+          { left: 86, top: 85, size: 24, rotation: -20 },
+        ]
+      : [
+          { left: 3, top: 12, size: 28, rotation: 25 },
+          { left: 91, top: 15, size: 30, rotation: -20 },
+          { left: 12, top: 38, size: 32, rotation: 15 },
+          { left: 84, top: 42, size: 26, rotation: -15 },
+          { left: 5, top: 68, size: 34, rotation: 40 },
+          { left: 90, top: 72, size: 30, rotation: -25 },
+        ];
 
     setPaws(
       pawPositions.map((pos, id) => ({
@@ -84,8 +84,8 @@ export const FloatingLeaves: React.FC = () => {
         top: pos.top,
         size: pos.size,
         rotation: pos.rotation,
-        opacity: 0.16 + (id % 3) * 0.05,
-        pulseDelay: (id * 0.7) % 4,
+        opacity: 0.14 + (id % 3) * 0.04,
+        pulseDelay: (id * 0.8) % 4,
       }))
     );
   }, []);
@@ -140,6 +140,14 @@ export const FloatingLeaves: React.FC = () => {
         ))}
       </div>
       <div className={styles['floating-leaves-container']} aria-hidden="true">
+        <svg style={{ position: 'absolute', width: 0, height: 0 }} aria-hidden="true">
+          <defs>
+            <linearGradient id="sharedLeafGrad" x1="0" y1="0" x2="24" y2="38" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#A3C58E" />
+              <stop offset="1" stopColor="#5D8049" />
+            </linearGradient>
+          </defs>
+        </svg>
         {leaves.map((leaf) => (
           <div
             key={leaf.id}
@@ -163,7 +171,7 @@ export const FloatingLeaves: React.FC = () => {
             >
               <path
                 d="M12 0 C1 12 1 26 12 38 C23 26 23 12 12 0 Z"
-                fill="url(#leafGrad)"
+                fill="url(#sharedLeafGrad)"
               />
               <path
                 d="M12 2 L12 36"
@@ -171,12 +179,6 @@ export const FloatingLeaves: React.FC = () => {
                 strokeWidth="1"
                 opacity="0.6"
               />
-              <defs>
-                <linearGradient id="leafGrad" x1="0" y1="0" x2="24" y2="38" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#A3C58E" />
-                  <stop offset="1" stopColor="#5D8049" />
-                </linearGradient>
-              </defs>
             </svg>
           </div>
         ))}
