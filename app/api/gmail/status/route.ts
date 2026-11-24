@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
         COUNT(CASE WHEN invitation_status = 'failed' THEN 1 END)::int as failed_count,
         COUNT(CASE WHEN invitation_status = 'pending' OR invitation_status IS NULL THEN 1 END)::int as pending_count
       FROM guests
-      WHERE (user_id = ${admin.id} OR user_id IS NULL)
+      WHERE user_id = ${admin.id}
     `;
 
     const stats = guestCounts[0] || {

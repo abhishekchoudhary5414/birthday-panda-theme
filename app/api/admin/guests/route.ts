@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
       const searchPattern = `%${search}%`;
       guests = await sql`
         SELECT * FROM guests
-        WHERE (name ILIKE ${searchPattern} OR mobile ILIKE ${searchPattern} OR email ILIKE ${searchPattern} OR invite_code ILIKE ${searchPattern})
+        WHERE user_id = ${admin.id}
+          AND (name ILIKE ${searchPattern} OR mobile ILIKE ${searchPattern} OR email ILIKE ${searchPattern} OR invite_code ILIKE ${searchPattern})
           AND rsvp_status = ${status}
         ORDER BY id DESC
       `;
@@ -32,18 +33,21 @@ export async function GET(req: NextRequest) {
       const searchPattern = `%${search}%`;
       guests = await sql`
         SELECT * FROM guests
-        WHERE name ILIKE ${searchPattern} OR mobile ILIKE ${searchPattern} OR email ILIKE ${searchPattern} OR invite_code ILIKE ${searchPattern}
+        WHERE user_id = ${admin.id}
+          AND (name ILIKE ${searchPattern} OR mobile ILIKE ${searchPattern} OR email ILIKE ${searchPattern} OR invite_code ILIKE ${searchPattern})
         ORDER BY id DESC
       `;
     } else if (status !== 'all') {
       guests = await sql`
         SELECT * FROM guests
-        WHERE rsvp_status = ${status}
+        WHERE user_id = ${admin.id}
+          AND rsvp_status = ${status}
         ORDER BY id DESC
       `;
     } else {
       guests = await sql`
         SELECT * FROM guests
+        WHERE user_id = ${admin.id}
         ORDER BY id DESC
       `;
     }
@@ -89,8 +93,8 @@ export async function POST(req: NextRequest) {
         const randomCode = 'PANDA-' + Math.floor(1000 + Math.random() * 9000);
 
         const res = await sql`
-          INSERT INTO guests (title, name, mobile, email, invite_code, rsvp_status, invited)
-          VALUES (${title}, ${name}, ${mobile}, ${email}, ${randomCode}, 'pending', true)
+          INSERT INTO guests (title, name, mobile, email, invite_code, rsvp_status, invited, user_id)
+          VALUES (${title}, ${name}, ${mobile}, ${email}, ${randomCode}, 'pending', true, ${admin.id})
           RETURNING *
         `;
         if (res.length > 0) {
@@ -117,8 +121,8 @@ export async function POST(req: NextRequest) {
     const randomCode = 'PANDA-' + Math.floor(1000 + Math.random() * 9000);
 
     const inserted = await sql`
-      INSERT INTO guests (title, name, mobile, email, invite_code, rsvp_status, invited)
-      VALUES (${title}, ${name.trim()}, ${mobile.trim()}, ${email?.trim() || null}, ${randomCode}, 'pending', true)
+      INSERT INTO guests (title, name, mobile, email, invite_code, rsvp_status, invited, user_id)
+      VALUES (${title}, ${name.trim()}, ${mobile.trim()}, ${email?.trim() || null}, ${randomCode}, 'pending', true, ${admin.id})
       RETURNING *
     `;
 
@@ -148,7 +152,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     await sql`
-      DELETE FROM guests WHERE id = ${parseInt(id, 10)}
+      DELETE FROM guests WHERE id = ${parseInt(id, 10)} AND user_id = ${admin.id}
     `;
 
     return NextResponse.json({ success: true });
@@ -184,7 +188,7 @@ export async function PATCH(req: NextRequest) {
         name = COALESCE(${name}, name),
         mobile = COALESCE(${mobile}, mobile),
         email = COALESCE(${email}, email)
-      WHERE id = ${parseInt(id, 10)}
+      WHERE id = ${parseInt(id, 10)} AND user_id = ${admin.id}
       RETURNING *
     `;
 

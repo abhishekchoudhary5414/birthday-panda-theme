@@ -1,13 +1,25 @@
-import { NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
+import { sql, getDefaultOwnerUserId } from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const token = req.cookies.get('admin_token')?.value;
+    const admin = token ? verifyToken(token) : null;
+    const { searchParams } = new URL(req.url);
+    const queryUserId = searchParams.get('userId');
+
+    let targetUserId = admin?.id || (queryUserId ? Number(queryUserId) : null);
+    if (!targetUserId) {
+      targetUserId = await getDefaultOwnerUserId();
+    }
+
     const rows = await sql`
       SELECT id, question, options, correct_index, explanation, order_num
       FROM quiz_questions
+      WHERE user_id = ${targetUserId}
       ORDER BY order_num ASC, id ASC
     `;
 

@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const rows = await sql`SELECT key, value FROM event_settings`;
+    const rows = await sql`SELECT key, value FROM event_settings WHERE user_id = ${admin.id}`;
     const settingsMap: Record<string, string> = {};
     rows.forEach((r: any) => {
       settingsMap[r.key] = r.value || '';
@@ -94,9 +94,9 @@ export async function POST(req: NextRequest) {
 
     for (const item of entries) {
       await sql`
-        INSERT INTO event_settings (key, value)
-        VALUES (${item.key}, ${item.value})
-        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+        INSERT INTO event_settings (key, value, user_id)
+        VALUES (${item.key}, ${item.value}, ${admin.id})
+        ON CONFLICT (key, user_id) DO UPDATE SET value = EXCLUDED.value
       `;
     }
 
@@ -124,6 +124,7 @@ export async function DELETE(req: NextRequest) {
       UPDATE event_settings
       SET value = ''
       WHERE key IN ('venue_name', 'venue_address', 'venue_city', 'venue_map_url')
+        AND user_id = ${admin.id}
     `;
 
     return NextResponse.json({ success: true, message: 'Venue details deleted successfully from database' });

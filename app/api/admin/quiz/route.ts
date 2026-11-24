@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
     const rows = await sql`
       SELECT id, question, options, correct_index, explanation, order_num, created_at
       FROM quiz_questions
+      WHERE user_id = ${admin.id}
       ORDER BY order_num ASC, id ASC
     `;
 
@@ -63,17 +64,18 @@ export async function POST(req: NextRequest) {
     const validCorrectIdx = Math.max(0, Math.min(Number(correctIndex) || 0, cleanOptions.length - 1));
 
     // Get max order
-    const maxOrderRes = await sql`SELECT COALESCE(MAX(order_num), 0) as max_order FROM quiz_questions`;
+    const maxOrderRes = await sql`SELECT COALESCE(MAX(order_num), 0) as max_order FROM quiz_questions WHERE user_id = ${admin.id}`;
     const nextOrder = (maxOrderRes[0]?.max_order || 0) + 1;
 
     const inserted = await sql`
-      INSERT INTO quiz_questions (question, options, correct_index, explanation, order_num)
+      INSERT INTO quiz_questions (question, options, correct_index, explanation, order_num, user_id)
       VALUES (
         ${question.trim()},
         ${JSON.stringify(cleanOptions)}::jsonb,
         ${validCorrectIdx},
         ${explanation?.trim() || ''},
-        ${nextOrder}
+        ${nextOrder},
+        ${admin.id}
       )
       RETURNING *
     `;
@@ -121,7 +123,7 @@ export async function PUT(req: NextRequest) {
         options = ${JSON.stringify(cleanOptions)}::jsonb,
         correct_index = ${validCorrectIdx},
         explanation = ${explanation?.trim() || ''}
-      WHERE id = ${id}
+      WHERE id = ${id} AND user_id = ${admin.id}
       RETURNING *
     `;
 
@@ -156,7 +158,7 @@ export async function DELETE(req: NextRequest) {
 
     await sql`
       DELETE FROM quiz_questions
-      WHERE id = ${Number(id)}
+      WHERE id = ${Number(id)} AND user_id = ${admin.id}
     `;
 
     return NextResponse.json({ success: true, message: 'Question deleted' });

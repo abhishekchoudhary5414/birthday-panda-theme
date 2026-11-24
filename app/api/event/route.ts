@@ -1,23 +1,35 @@
-import { NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
+import { sql, getDefaultOwnerUserId } from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
 import { getCached, setCached } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
-const CACHE_KEY = 'public_event_details';
-
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const cached = getCached(CACHE_KEY, 60000);
-    if (cached) {
-      return NextResponse.json(cached, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-        },
-      });
+    const token = req.cookies.get('admin_token')?.value;
+    const admin = token ? verifyToken(token) : null;
+    const { searchParams } = new URL(req.url);
+    const queryUserId = searchParams.get('userId');
+
+    let targetUserId = admin?.id || (queryUserId ? Number(queryUserId) : null);
+    if (!targetUserId) {
+      targetUserId = await getDefaultOwnerUserId();
     }
 
-    const rows = await sql`SELECT key, value FROM event_settings`;
+    const cacheKey = `public_event_details_${targetUserId}`;
+    if (!admin) {
+      const cached = getCached(cacheKey, 60000);
+      if (cached) {
+        return NextResponse.json(cached, {
+          headers: {
+            'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          },
+        });
+      }
+    }
+
+    const rows = await sql`SELECT key, value FROM event_settings WHERE user_id = ${targetUserId}`;
     const settingsMap: Record<string, string> = {};
     rows.forEach((r: any) => {
       settingsMap[r.key] = r.value || '';
@@ -41,11 +53,13 @@ export async function GET() {
     };
 
     const payload = { success: true, event: eventDetails };
-    setCached(CACHE_KEY, payload);
+    if (!admin) {
+      setCached(cacheKey, payload);
+    }
 
     return NextResponse.json(payload, {
       headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        'Cache-Control': admin ? 'no-store' : 'public, s-maxage=60, stale-while-revalidate=300',
       },
     });
   } catch (error: unknown) {

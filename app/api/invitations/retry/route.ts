@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     if (targetGuestId) {
       const gRows = await sql`
         SELECT id, name, email FROM guests 
-        WHERE id = ${targetGuestId} AND (user_id = ${admin.id} OR user_id IS NULL)
+        WHERE id = ${targetGuestId} AND user_id = ${admin.id}
       `;
       if (gRows.length > 0) {
         guestName = gRows[0].name;

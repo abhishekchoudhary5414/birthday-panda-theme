@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     if (guestId) {
       const rows = await sql`
-        SELECT name FROM guests WHERE id = ${parseInt(guestId, 10)} AND (user_id = ${admin.id} OR user_id IS NULL)
+        SELECT name FROM guests WHERE id = ${parseInt(guestId, 10)} AND user_id = ${admin.id}
       `;
       if (rows.length > 0 && rows[0].name) {
         targetGuestName = rows[0].name;

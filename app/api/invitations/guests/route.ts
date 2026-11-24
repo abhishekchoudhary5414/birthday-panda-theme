@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
              COALESCE(invitation_status, 'pending') as invitation_status,
              created_at, title
       FROM guests
-      WHERE (user_id = ${admin.id} OR user_id IS NULL)
+      WHERE user_id = ${admin.id}
       ORDER BY id DESC
     `;
 
@@ -112,7 +112,7 @@ export async function PUT(req: NextRequest) {
         rsvp_status = COALESCE(${rsvp_status}, rsvp_status),
         invitation_status = COALESCE(${invitation_status}, invitation_status),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${id} AND (user_id = ${admin.id} OR user_id IS NULL)
+      WHERE id = ${id} AND user_id = ${admin.id}
       RETURNING *
     `;
 
@@ -144,7 +144,7 @@ export async function DELETE(req: NextRequest) {
 
     await sql`
       DELETE FROM guests 
-      WHERE id = ${parseInt(id, 10)} AND (user_id = ${admin.id} OR user_id IS NULL)
+      WHERE id = ${parseInt(id, 10)} AND user_id = ${admin.id}
     `;
 
     return NextResponse.json({ success: true, message: 'Guest deleted successfully' });

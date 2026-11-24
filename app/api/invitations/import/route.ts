@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     // Get existing emails for deduplication
     const existingRows = await sql`
-      SELECT LOWER(email) as email FROM guests WHERE email IS NOT NULL AND (user_id = ${admin.id} OR user_id IS NULL)
+      SELECT LOWER(email) as email FROM guests WHERE email IS NOT NULL AND user_id = ${admin.id}
     `;
     const existingEmails = new Set(existingRows.map((r: any) => r.email));
 

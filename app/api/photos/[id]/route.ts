@@ -140,7 +140,7 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
 
     // 2. Delete metadata from Neon PostgreSQL
     try {
-      await sql`DELETE FROM drive_photos WHERE drive_file_id = ${id} AND (user_id = ${admin.id} OR user_id IS NULL)`;
+      await sql`DELETE FROM drive_photos WHERE drive_file_id = ${id} AND user_id = ${admin.id}`;
     } catch (dbErr) {
       console.warn('DB deletion error for drive_photos:', dbErr);
     }

@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const guests = await sql`
       SELECT id, name, email, invitation_status 
       FROM guests 
-      WHERE id = ANY(${guestIds}) AND (user_id = ${admin.id} OR user_id IS NULL)
+      WHERE id = ANY(${guestIds}) AND user_id = ${admin.id}
     `;
 
     const validGuests = guests.filter((g: any) => g.email && g.email.includes('@'));

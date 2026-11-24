@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
     const rows = await sql`
       SELECT id, player_name, score, total_questions, answers, submitted_at
       FROM quiz_submissions
+      WHERE user_id = ${admin.id}
       ORDER BY submitted_at DESC
     `;
 
@@ -57,7 +58,7 @@ export async function DELETE(req: NextRequest) {
 
     await sql`
       DELETE FROM quiz_submissions
-      WHERE id = ${Number(id)}
+      WHERE id = ${Number(id)} AND user_id = ${admin.id}
     `;
 
     return NextResponse.json({ success: true, message: 'Submission deleted' });

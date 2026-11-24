@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+function checkAuth(req: NextRequest) {
+  const token = req.cookies.get('admin_token')?.value;
+  return token ? verifyToken(token) : null;
+}
+
 export interface GiftRegistryItem {
   id: number;
+  user_id?: number;
   asin?: string;
   title: string;
   category: string;
@@ -26,20 +33,39 @@ export interface GiftRegistryItem {
 }
 
 // GET: Fetch all gifts from database
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const gifts = await sql`
-      SELECT 
-        id, asin, title, category, price, list_price, 
-        rating::float as rating, review_count, image_url, 
-        purchase_url, description, priority, is_ordered, 
-        ordered_by, ordered_email, ordered_phone, order_note, 
-        ordered_at, created_at
-      FROM gift_registry
-      ORDER BY 
-        CASE WHEN priority = 'high' THEN 1 WHEN priority = 'medium' THEN 2 ELSE 3 END,
-        created_at DESC
-    `;
+    const admin = checkAuth(req);
+    const { searchParams } = new URL(req.url);
+    const queryUserId = searchParams.get('userId');
+    const targetUserId = admin?.id || (queryUserId ? Number(queryUserId) : null);
+
+    const gifts = targetUserId
+      ? await sql`
+          SELECT 
+            id, user_id, asin, title, category, price, list_price, 
+            rating::float as rating, review_count, image_url, 
+            purchase_url, description, priority, is_ordered, 
+            ordered_by, ordered_email, ordered_phone, order_note, 
+            ordered_at, created_at
+          FROM gift_registry
+          WHERE user_id = ${targetUserId}
+          ORDER BY 
+            CASE WHEN priority = 'high' THEN 1 WHEN priority = 'medium' THEN 2 ELSE 3 END,
+            created_at DESC
+        `
+      : await sql`
+          SELECT 
+            id, user_id, asin, title, category, price, list_price, 
+            rating::float as rating, review_count, image_url, 
+            purchase_url, description, priority, is_ordered, 
+            ordered_by, ordered_email, ordered_phone, order_note, 
+            ordered_at, created_at
+          FROM gift_registry
+          ORDER BY 
+            CASE WHEN priority = 'high' THEN 1 WHEN priority = 'medium' THEN 2 ELSE 3 END,
+            created_at DESC
+        `;
 
     return NextResponse.json({
       success: true,
@@ -56,6 +82,11 @@ export async function GET() {
 // POST: Add new gift to database (Admin)
 export async function POST(req: NextRequest) {
   try {
+    const admin = checkAuth(req);
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
     const {
       asin = '',
@@ -80,9 +111,10 @@ export async function POST(req: NextRequest) {
 
     const inserted = await sql`
       INSERT INTO gift_registry (
-        asin, title, category, price, list_price, rating, review_count, 
+        user_id, asin, title, category, price, list_price, rating, review_count, 
         image_url, purchase_url, description, priority, is_ordered
       ) VALUES (
+        ${admin.id},
         ${asin},
         ${title},
         ${category},
@@ -114,6 +146,11 @@ export async function POST(req: NextRequest) {
 // DELETE: Delete a gift from registry
 export async function DELETE(req: NextRequest) {
   try {
+    const admin = checkAuth(req);
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
@@ -121,7 +158,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing gift id' }, { status: 400 });
     }
 
-    await sql`DELETE FROM gift_registry WHERE id = ${parseInt(id, 10)}`;
+    await sql`DELETE FROM gift_registry WHERE id = ${parseInt(id, 10)} AND user_id = ${admin.id}`;
 
     return NextResponse.json({
       success: true,
@@ -136,6 +173,11 @@ export async function DELETE(req: NextRequest) {
 // PUT: Update gift details or toggle status
 export async function PUT(req: NextRequest) {
   try {
+    const admin = checkAuth(req);
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { id, is_ordered, ordered_by } = body;
 
@@ -154,7 +196,7 @@ export async function PUT(req: NextRequest) {
           ordered_phone = null,
           order_note = null,
           ordered_at = null
-        WHERE id = ${parseInt(id, 10)}
+        WHERE id = ${parseInt(id, 10)} AND user_id = ${admin.id}
       `;
     } else {
       await sql`
@@ -163,7 +205,7 @@ export async function PUT(req: NextRequest) {
           is_ordered = true,
           ordered_by = ${ordered_by || 'Admin Marked'},
           ordered_at = CURRENT_TIMESTAMP
-        WHERE id = ${parseInt(id, 10)}
+        WHERE id = ${parseInt(id, 10)} AND user_id = ${admin.id}
       `;
     }
 

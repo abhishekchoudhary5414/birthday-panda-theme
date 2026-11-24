@@ -4,15 +4,16 @@ import { verifyToken } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   const token = req.cookies.get('admin_token')?.value;
-  if (!token || !verifyToken(token)) {
+  const admin = token ? verifyToken(token) : null;
+  if (!admin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const totalGuestsRes = await sql`SELECT count(*) FROM guests`;
-    const attendingRes = await sql`SELECT count(*) FROM guests WHERE rsvp_status = 'confirmed' OR rsvp_status = 'attending'`;
-    const pendingRes = await sql`SELECT count(*) FROM guests WHERE rsvp_status = 'pending'`;
-    const declinedRes = await sql`SELECT count(*) FROM guests WHERE rsvp_status = 'declined'`;
+    const totalGuestsRes = await sql`SELECT count(*) FROM guests WHERE user_id = ${admin.id}`;
+    const attendingRes = await sql`SELECT count(*) FROM guests WHERE user_id = ${admin.id} AND (rsvp_status = 'confirmed' OR rsvp_status = 'attending')`;
+    const pendingRes = await sql`SELECT count(*) FROM guests WHERE user_id = ${admin.id} AND rsvp_status = 'pending'`;
+    const declinedRes = await sql`SELECT count(*) FROM guests WHERE user_id = ${admin.id} AND rsvp_status = 'declined'`;
 
     return NextResponse.json({
       success: true,

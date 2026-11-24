@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     `;
 
     const rsvps = await sql`
-      SELECT * FROM rsvps ORDER BY id DESC
+      SELECT * FROM rsvps WHERE user_id = ${admin.id} ORDER BY id DESC
     `;
 
     return NextResponse.json({ success: true, rsvps });
@@ -60,7 +60,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     await sql`
-      DELETE FROM rsvps WHERE id = ${parseInt(id, 10)}
+      DELETE FROM rsvps WHERE id = ${parseInt(id, 10)} AND user_id = ${admin.id}
     `;
 
     return NextResponse.json({ success: true, message: 'RSVP deleted successfully' });

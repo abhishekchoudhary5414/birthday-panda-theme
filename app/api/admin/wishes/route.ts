@@ -26,16 +26,18 @@ export async function GET(req: NextRequest) {
       rows = await sql`
         SELECT id, name, relation, phone, message, avatar, likes, created_at
         FROM birthday_wishes
-        WHERE name ILIKE ${pattern}
+        WHERE user_id = ${admin.id}
+          AND (name ILIKE ${pattern}
            OR relation ILIKE ${pattern}
            OR phone ILIKE ${pattern}
-           OR message ILIKE ${pattern}
+           OR message ILIKE ${pattern})
         ORDER BY created_at DESC
       `;
     } else {
       rows = await sql`
         SELECT id, name, relation, phone, message, avatar, likes, created_at
         FROM birthday_wishes
+        WHERE user_id = ${admin.id}
         ORDER BY created_at DESC
       `;
     }
@@ -67,7 +69,7 @@ export async function DELETE(req: NextRequest) {
 
     await sql`
       DELETE FROM birthday_wishes
-      WHERE id = ${Number(id)}
+      WHERE id = ${Number(id)} AND user_id = ${admin.id}
     `;
 
     return NextResponse.json({ success: true, message: 'Wish removed successfully' });
