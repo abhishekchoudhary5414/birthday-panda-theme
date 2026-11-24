@@ -74,6 +74,11 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import StarIcon from '@mui/icons-material/Star';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
+import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
+import LaunchIcon from '@mui/icons-material/Launch';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { CARD_BG_BASE64 } from './cardBgBase64';
 import { PartyPanda, BambooStalkDecoration } from '@/components/PandaIllustrations';
 import { CommonModal, ModalType } from '@/components/CommonModal';
@@ -188,6 +193,17 @@ interface AdminGiftItem {
   order_note?: string;
   ordered_at?: string;
   created_at: string;
+}
+
+interface InstagramPost {
+  id: string;
+  caption: string;
+  mediaType: string;
+  mediaUrl: string | null;
+  permalink: string;
+  likeCount: number;
+  commentsCount: number;
+  timestamp?: string;
 }
 
 export default function AdminDashboardPage() {
@@ -311,6 +327,16 @@ export default function AdminDashboardPage() {
   const [isDisconnectingGmail, setIsDisconnectingGmail] = useState(false);
   const [gmailToast, setGmailToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Instagram Hashtag Search State
+  const [hashtagInput, setHashtagInput] = useState('birthday');
+  const [searchedTag, setSearchedTag] = useState('');
+  const [hashtagPosts, setHashtagPosts] = useState<InstagramPost[]>([]);
+  const [hashtagLoading, setHashtagLoading] = useState(false);
+  const [hashtagLoadingMore, setHashtagLoadingMore] = useState(false);
+  const [hashtagNextCursor, setHashtagNextCursor] = useState<string | null>(null);
+  const [hashtagError, setHashtagError] = useState<string | null>(null);
+  const [hashtagType, setHashtagType] = useState<'top_media' | 'recent_media'>('top_media');
+
   // Email template & customization state
   const [emailSubject, setEmailSubject] = useState("1st Birthday Celebration Celebration Invitation");
   const [emailCustomMessage, setEmailCustomMessage] = useState(
@@ -433,6 +459,59 @@ export default function AdminDashboardPage() {
       onCancel: () => setModalConfig((prev) => ({ ...prev, isOpen: false })),
     });
   }, []);
+
+  // Instagram Hashtag Search Handlers
+  const handleSearchHashtag = useCallback(async (tagToSearch?: string, mode?: 'top_media' | 'recent_media') => {
+    const rawTag = (tagToSearch !== undefined ? tagToSearch : hashtagInput).trim().replace(/^#/, '');
+    if (!rawTag) return;
+
+    const currentMode = mode || hashtagType;
+    setHashtagLoading(true);
+    setHashtagError(null);
+    setSearchedTag(rawTag);
+
+    try {
+      const res = await fetch(`/api/admin/instagram/hashtag?tag=${encodeURIComponent(rawTag)}&type=${currentMode}`);
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        setHashtagError(data.error || 'Failed to search hashtag');
+        setHashtagPosts([]);
+        setHashtagNextCursor(null);
+      } else {
+        setHashtagPosts(data.posts || []);
+        setHashtagNextCursor(data.nextCursor || null);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error searching hashtag';
+      setHashtagError(msg);
+      setHashtagPosts([]);
+      setHashtagNextCursor(null);
+    } finally {
+      setHashtagLoading(false);
+    }
+  }, [hashtagInput, hashtagType]);
+
+  const handleLoadMoreHashtag = useCallback(async () => {
+    if (!searchedTag || !hashtagNextCursor || hashtagLoadingMore) return;
+
+    setHashtagLoadingMore(true);
+    try {
+      const res = await fetch(`/api/admin/instagram/hashtag?tag=${encodeURIComponent(searchedTag)}&type=${hashtagType}&after=${encodeURIComponent(hashtagNextCursor)}`);
+      const data = await res.json();
+
+      if (data.posts && Array.isArray(data.posts)) {
+        setHashtagPosts((prev) => [...prev, ...data.posts]);
+        setHashtagNextCursor(data.nextCursor || null);
+      } else {
+        setHashtagNextCursor(null);
+      }
+    } catch (err: unknown) {
+      console.error('Failed to load more hashtag posts:', err);
+    } finally {
+      setHashtagLoadingMore(false);
+    }
+  }, [searchedTag, hashtagNextCursor, hashtagLoadingMore, hashtagType]);
 
   // Fetch photos from Google Drive
   const fetchDrivePhotos = useCallback(async () => {
@@ -6820,37 +6899,421 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Section: Official Event Hashtags */}
+        {/* Section: Official Event Hashtags & Instagram Live Hashtag Search */}
         {activeTab === 'hashtags' && (
-          <div>
-            <div className={styles.sectionHeader}>
-              <TagIcon sx={{ fontSize: 26, color: '#294B35' }} />
-              <span>Social Media &amp; Hashtag Campaign</span>
-            </div>
-            <div style={{ background: '#ffffff', padding: '32px', borderRadius: '14px', border: '1px solid #e1e7de' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#f3f8f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <TagIcon sx={{ color: '#294b35', fontSize: 28 }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className={styles.sectionHeader} style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #E1306C 0%, #C13584 50%, #833AB4 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  boxShadow: '0 4px 14px rgba(225, 48, 108, 0.3)'
+                }}>
+                  <InstagramIcon sx={{ fontSize: 24, color: '#ffffff' }} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.2rem' }}>Official Event Hashtags</h3>
-                  <p style={{ margin: '4px 0 0', color: '#6e7e73', fontSize: '0.88rem' }}>Share memories on Instagram, Facebook, and WhatsApp.</p>
+                  <h2 style={{ margin: 0, color: '#294B35', fontSize: '1.35rem', fontWeight: 800 }}>
+                    Instagram Hashtags &amp; Feed Explorer
+                  </h2>
+                  <p style={{ margin: '3px 0 0', color: '#6e7e73', fontSize: '0.86rem' }}>
+                    Search trending hashtags via Meta Graph API v27.0 and view public posts in cards
+                  </p>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
-                <span style={{ background: '#edf6ea', color: '#294b35', padding: '8px 16px', borderRadius: '20px', fontWeight: 700, fontSize: '0.95rem', border: '1px solid #cbe3c6', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <TagIcon sx={{ fontSize: 16, color: '#294b35' }} />
-                  <span>#{eventSettings.childName ? eventSettings.childName.replace(/\s+/g, '') : 'Baby'}TurnsOne</span>
-                </span>
-                <span style={{ background: '#edf6ea', color: '#294b35', padding: '8px 16px', borderRadius: '20px', fontWeight: 700, fontSize: '0.95rem', border: '1px solid #cbe3c6', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <TagIcon sx={{ fontSize: 16, color: '#294b35' }} />
-                  <span>#{eventSettings.childName ? eventSettings.childName.replace(/\s+/g, '') : 'Baby'}FirstBirthday</span>
-                </span>
-                <span style={{ background: '#edf6ea', color: '#294b35', padding: '8px 16px', borderRadius: '20px', fontWeight: 700, fontSize: '0.95rem', border: '1px solid #cbe3c6', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <TagIcon sx={{ fontSize: 16, color: '#294b35' }} />
-                  <span>#PandaPartyCelebration</span>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{
+                  background: '#fdf2f8',
+                  color: '#be185d',
+                  border: '1px solid #fbcfe8',
+                  padding: '6px 14px',
+                  borderRadius: '20px',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <InstagramIcon sx={{ fontSize: 16 }} />
+                  Meta Graph API v27.0
                 </span>
               </div>
+            </div>
+
+            {/* Event Suggested Tags Bar */}
+            <div style={{ background: '#ffffff', padding: '20px 24px', borderRadius: '16px', border: '1px solid #e1e7de', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                <TrendingUpIcon sx={{ fontSize: 20, color: '#294B35' }} />
+                <span style={{ fontWeight: 700, color: '#294B35', fontSize: '0.95rem' }}>Quick Event Hashtags</span>
+                <span style={{ color: '#889885', fontSize: '0.8rem' }}>(click any to search)</span>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {[
+                  eventSettings.childName ? `${eventSettings.childName.replace(/\s+/g, '')}TurnsOne` : 'BabyTurnsOne',
+                  eventSettings.childName ? `${eventSettings.childName.replace(/\s+/g, '')}FirstBirthday` : 'BabyFirstBirthday',
+                  'pandaparty',
+                  'firstbirthday',
+                  'birthdaycelebration',
+                  'birthdaybaby',
+                ].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      setHashtagInput(tag);
+                      handleSearchHashtag(tag);
+                    }}
+                    style={{
+                      background: searchedTag.toLowerCase() === tag.toLowerCase() ? 'linear-gradient(135deg, #294B35 0%, #437351 100%)' : '#f0f6ee',
+                      color: searchedTag.toLowerCase() === tag.toLowerCase() ? '#ffffff' : '#294b35',
+                      border: '1px solid #c8dec3',
+                      padding: '7px 14px',
+                      borderRadius: '20px',
+                      fontWeight: 700,
+                      fontSize: '0.86rem',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      transition: 'all 0.2s ease',
+                      boxShadow: searchedTag.toLowerCase() === tag.toLowerCase() ? '0 4px 10px rgba(41,75,53,0.2)' : 'none'
+                    }}
+                  >
+                    <TagIcon sx={{ fontSize: 14 }} />
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Search Input Box */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '16px', border: '1px solid #e1e7de', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSearchHashtag();
+                }}
+                style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}
+              >
+                <div style={{ position: 'relative', flex: '1 1 320px' }}>
+                  <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#789b63', display: 'flex', alignItems: 'center' }}>
+                    <TagIcon sx={{ fontSize: 22 }} />
+                  </div>
+                  <input
+                    type="text"
+                    value={hashtagInput}
+                    onChange={(e) => setHashtagInput(e.target.value)}
+                    placeholder="Enter hashtag (e.g. birthday, pandaparty, babyturnsone)..."
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px 12px 44px',
+                      borderRadius: '12px',
+                      border: '2px solid #dce8d2',
+                      fontSize: '0.96rem',
+                      color: '#294B35',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      fontWeight: 600,
+                      background: '#fbfdfa'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <select
+                    value={hashtagType}
+                    onChange={(e) => {
+                      const newType = e.target.value as 'top_media' | 'recent_media';
+                      setHashtagType(newType);
+                      if (searchedTag) {
+                        handleSearchHashtag(searchedTag, newType);
+                      }
+                    }}
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: '12px',
+                      border: '2px solid #dce8d2',
+                      background: '#ffffff',
+                      color: '#294B35',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="top_media">Top / Trending Media</option>
+                    <option value="recent_media">Recent Media</option>
+                  </select>
+
+                  <button
+                    type="submit"
+                    disabled={hashtagLoading || !hashtagInput.trim()}
+                    style={{
+                      background: 'linear-gradient(135deg, #E1306C 0%, #C13584 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '12px 26px',
+                      borderRadius: '12px',
+                      fontWeight: 700,
+                      fontSize: '0.94rem',
+                      cursor: hashtagLoading || !hashtagInput.trim() ? 'not-allowed' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 12px rgba(225, 48, 108, 0.25)',
+                      opacity: hashtagLoading || !hashtagInput.trim() ? 0.7 : 1,
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {hashtagLoading ? (
+                      <>
+                        <RefreshIcon sx={{ fontSize: 18, animation: 'spin 1s linear infinite' }} />
+                        <span>Searching...</span>
+                      </>
+                    ) : (
+                      <>
+                        <SearchIcon sx={{ fontSize: 18 }} />
+                        <span>Search Hashtag</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+
+              {hashtagError && (
+                <div style={{
+                  marginTop: '16px',
+                  padding: '12px 16px',
+                  borderRadius: '10px',
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  color: '#991b1b',
+                  fontSize: '0.88rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <WarningAmberIcon sx={{ fontSize: 20 }} />
+                  <span>{hashtagError}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Results Grid - 8 Cards per Batch */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ margin: 0, color: '#294B35', fontSize: '1.15rem', fontWeight: 700 }}>
+                    {searchedTag ? `Posts for #${searchedTag}` : 'Trending Hashtag Posts'}
+                  </h3>
+                  {hashtagPosts.length > 0 && (
+                    <span style={{ background: '#edf6ea', color: '#294b35', fontSize: '0.8rem', padding: '3px 10px', borderRadius: '12px', fontWeight: 700 }}>
+                      Showing {hashtagPosts.length} posts
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {hashtagLoading && hashtagPosts.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px 20px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e1e7de' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>📷✨</div>
+                  <p style={{ color: '#294B35', fontWeight: 700, margin: '0 0 6px' }}>Fetching Instagram Hashtag Posts...</p>
+                  <p style={{ color: '#889885', fontSize: '0.86rem', margin: 0 }}>Querying Instagram Graph API v27.0 for 8 top trending posts</p>
+                </div>
+              ) : hashtagPosts.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '50px 20px',
+                  background: '#ffffff',
+                  borderRadius: '16px',
+                  border: '2px dashed #dce8d2'
+                }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '8px' }}>🏷️📸</div>
+                  <h4 style={{ margin: '0 0 6px', color: '#294B35', fontSize: '1.1rem' }}>No Posts Displayed Yet</h4>
+                  <p style={{ margin: 0, color: '#6e7e73', fontSize: '0.88rem' }}>
+                    Click any quick hashtag above or enter a keyword and click <strong>Search Hashtag</strong> to fetch the 8 card grid.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                    gap: '20px'
+                  }}>
+                    {hashtagPosts.map((post, idx) => (
+                      <div
+                        key={post.id || idx}
+                        style={{
+                          background: '#ffffff',
+                          borderRadius: '16px',
+                          border: '1px solid #e3ede0',
+                          overflow: 'hidden',
+                          boxShadow: '0 4px 14px rgba(41, 75, 53, 0.05)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                        }}
+                      >
+                        {/* Media Preview Box */}
+                        <div style={{
+                          position: 'relative',
+                          width: '100%',
+                          height: '240px',
+                          background: '#1a1a1a',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          {post.mediaUrl ? (
+                            post.mediaType === 'VIDEO' ? (
+                              <video
+                                src={post.mediaUrl}
+                                controls
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <img
+                                src={post.mediaUrl}
+                                alt={post.caption?.slice(0, 40) || 'Instagram post'}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                loading="lazy"
+                              />
+                            )
+                          ) : (
+                            <div style={{ color: '#ffffff', textAlign: 'center', padding: '20px' }}>
+                              <InstagramIcon sx={{ fontSize: 44, opacity: 0.6 }} />
+                              <div style={{ fontSize: '0.78rem', marginTop: '6px', opacity: 0.8 }}>Preview on Instagram</div>
+                            </div>
+                          )}
+
+                          <span style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            background: 'rgba(0,0,0,0.65)',
+                            color: '#ffffff',
+                            padding: '3px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            backdropFilter: 'blur(4px)',
+                            textTransform: 'uppercase'
+                          }}>
+                            {post.mediaType}
+                          </span>
+                        </div>
+
+                        {/* Card Body */}
+                        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+                          <div>
+                            {/* Likes and Comments Counters */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '10px', color: '#4a5b4e', fontSize: '0.84rem', fontWeight: 700 }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                                <ThumbUpOutlinedIcon sx={{ fontSize: 16, color: '#e1306c' }} />
+                                {Number(post.likeCount).toLocaleString()}
+                              </span>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                                <ChatBubbleOutlineOutlinedIcon sx={{ fontSize: 16, color: '#437351' }} />
+                                {Number(post.commentsCount).toLocaleString()}
+                              </span>
+                            </div>
+
+                            {/* Caption excerpt */}
+                            <p style={{
+                              margin: '0 0 14px',
+                              fontSize: '0.84rem',
+                              color: '#334135',
+                              lineHeight: 1.45,
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              wordBreak: 'break-word'
+                            }}>
+                              {post.caption || '(No caption provided)'}
+                            </p>
+                          </div>
+
+                          {/* Footer with Instagram Link */}
+                          <div style={{ paddingTop: '10px', borderTop: '1px solid #f0f4ef', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '0.75rem', color: '#889885' }}>
+                              {post.timestamp ? new Date(post.timestamp).toLocaleDateString() : 'Instagram'}
+                            </span>
+                            <a
+                              href={post.permalink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                color: '#be185d',
+                                textDecoration: 'none'
+                              }}
+                            >
+                              <span>View Post</span>
+                              <LaunchIcon sx={{ fontSize: 14 }} />
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Load More Button */}
+                  <div style={{ textAlign: 'center', marginTop: '28px' }}>
+                    {hashtagNextCursor ? (
+                      <button
+                        type="button"
+                        onClick={handleLoadMoreHashtag}
+                        disabled={hashtagLoadingMore}
+                        style={{
+                          background: '#ffffff',
+                          color: '#294B35',
+                          border: '2px solid #789b63',
+                          padding: '12px 32px',
+                          borderRadius: '24px',
+                          fontWeight: 700,
+                          fontSize: '0.95rem',
+                          cursor: hashtagLoadingMore ? 'not-allowed' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          boxShadow: '0 4px 12px rgba(41,75,53,0.06)',
+                          transition: 'all 0.2s ease',
+                          opacity: hashtagLoadingMore ? 0.7 : 1
+                        }}
+                      >
+                        {hashtagLoadingMore ? (
+                          <>
+                            <RefreshIcon sx={{ fontSize: 18, animation: 'spin 1s linear infinite' }} />
+                            <span>Loading more posts...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Load More Posts</span>
+                            <ChevronRightIcon sx={{ fontSize: 18 }} />
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <div style={{ color: '#889885', fontSize: '0.88rem', fontWeight: 600 }}>
+                        All posts for #{searchedTag} loaded.
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
